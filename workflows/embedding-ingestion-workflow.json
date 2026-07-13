@@ -1,0 +1,178 @@
+{
+  "name": "Embedding - Mock Data Ingestion",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "e0380b7d-3364-4787-a23e-ab7a453a8522",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "fileSelector": "/home/node/.n8n-files/mock-data/vpn-remote-access.md",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "006f7df3-a485-41c1-acb2-d1922dcecba9",
+      "name": "Read/Write Files from Disk"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:11434/api/embed",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "embeddinggemma"
+            },
+            {
+              "name": "input",
+              "value": "={{ $json.content }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        624,
+        0
+      ],
+      "id": "880cdadf-6c91-4b69-8ac8-60b3a44c75d9",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nif (!items.length) {\n  throw new Error('No input item found');\n}\n\nconst item = items[0];\n\nlet fileContent = '';\n\nif (item.json.data || item.json.content || item.json.text || item.json.fileContent) {\n  fileContent =\n    item.json.data ||\n    item.json.content ||\n    item.json.text ||\n    item.json.fileContent;\n} else if (item.binary) {\n  const binaryKey = Object.keys(item.binary)[0];\n\n  if (!binaryKey) {\n    throw new Error('Binary file found, but binary key is missing');\n  }\n\n  const buffer = await this.helpers.getBinaryDataBuffer(0, binaryKey);\n  fileContent = buffer.toString('utf8');\n} else {\n  throw new Error('No text or binary file content found');\n}\n\nconst title = 'VPN ve Uzaktan Erişim Sorunları';\nconst category = 'vpn';\n\nconst cleaned = fileContent\n  .replace(/\\r\\n/g, '\\n')\n  .replace(/\\n{3,}/g, '\\n\\n')\n  .trim();\n\nif (!cleaned) {\n  throw new Error('File content is empty after cleaning');\n}\n\nconst paragraphs = cleaned\n  .split(/\\n\\s*\\n/)\n  .map(p => p.trim())\n  .filter(p => p.length > 0);\n\nreturn paragraphs.map((paragraph, index) => ({\n  json: {\n    document_id: 'vpn-remote-access',\n    title,\n    category,\n    chunk_index: index,\n    content: paragraph\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "bba0dc06-a471-4ef3-8ea1-181284ddc82b",
+      "name": "Create Chunks"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const embedding = $json.embeddings?.[0];\n\nif (!embedding) {\n  throw new Error('Embedding response not found');\n}\n\nconst chunk = $('Create Chunks').item.json;\n\nfunction sqlEscape(value) {\n  return String(value ?? '').replace(/'/g, \"''\");\n}\n\nconst documentId = chunk.document_id;\nconst title = chunk.title;\nconst category = chunk.category;\nconst chunkIndex = chunk.chunk_index;\nconst content = chunk.content;\nconst embeddingVector = `[${embedding.join(',')}]`;\n\nconst insertQuery = `\nINSERT INTO document_chunks (\n  document_id,\n  title,\n  category,\n  chunk_index,\n  content,\n  embedding\n)\nVALUES (\n  '${sqlEscape(documentId)}',\n  '${sqlEscape(title)}',\n  '${sqlEscape(category)}',\n  ${chunkIndex},\n  '${sqlEscape(content)}',\n  '${embeddingVector}'::vector\n);\n`;\n\nreturn {\n  json: {\n    document_id: documentId,\n    title,\n    category,\n    chunk_index: chunkIndex,\n    content,\n    embedding_vector: embeddingVector,\n    insert_query: insertQuery\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        832,
+        0
+      ],
+      "id": "6e9d2707-af08-4fdf-a6bb-8c6cdc315ba8",
+      "name": "Prepare Embedding Record"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "{{ $json.insert_query }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1040,
+        0
+      ],
+      "id": "0a6ca8b0-4d41-4a17-a84a-9bd8e0a232aa",
+      "name": "Execute a SQL query",
+      "credentials": {
+        "postgres": {
+          "id": "jShdzm8IEPIqSd41",
+          "name": "Postgres account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read/Write Files from Disk": {
+      "main": [
+        [
+          {
+            "node": "Create Chunks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Prepare Embedding Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Chunks": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Embedding Record": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "5a654d5f-9d6c-4c40-9016-7ab80e443956",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8ad5e91ca19f2aebbe2ce2f031589771f3e4e7c0049e38f9c59f6c20dd949760"
+  },
+  "nodeGroups": [],
+  "id": "03S222EMkrUIXjNw",
+  "tags": []
+}
