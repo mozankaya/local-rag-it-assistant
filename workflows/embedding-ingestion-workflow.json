@@ -20,7 +20,7 @@
       "type": "n8n-nodes-base.readWriteFile",
       "typeVersion": 1.1,
       "position": [
-        208,
+        416,
         0
       ],
       "id": "006f7df3-a485-41c1-acb2-d1922dcecba9",
@@ -48,7 +48,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        624,
+        832,
         0
       ],
       "id": "880cdadf-6c91-4b69-8ac8-60b3a44c75d9",
@@ -61,7 +61,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        416,
+        624,
         0
       ],
       "id": "bba0dc06-a471-4ef3-8ea1-181284ddc82b",
@@ -75,7 +75,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        832,
+        1040,
         0
       ],
       "id": "6e9d2707-af08-4fdf-a6bb-8c6cdc315ba8",
@@ -90,11 +90,32 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        1040,
+        1248,
         0
       ],
       "id": "0a6ca8b0-4d41-4a17-a84a-9bd8e0a232aa",
       "name": "Execute a SQL query",
+      "credentials": {
+        "postgres": {
+          "id": "jShdzm8IEPIqSd41",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "DELETE FROM document_chunks\nWHERE document_id = 'vpn-remote-access';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        208,
+        0
+      ],
+      "id": "5b772744-4c88-48ca-a4c9-43e6222f5e54",
+      "name": "Clear Existing VPN Chunks",
       "credentials": {
         "postgres": {
           "id": "jShdzm8IEPIqSd41",
@@ -109,7 +130,7 @@
       "main": [
         [
           {
-            "node": "Read/Write Files from Disk",
+            "node": "Clear Existing VPN Chunks",
             "type": "main",
             "index": 0
           }
@@ -159,6 +180,17 @@
           }
         ]
       ]
+    },
+    "Clear Existing VPN Chunks": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
@@ -167,7 +199,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "5a654d5f-9d6c-4c40-9016-7ab80e443956",
+  "versionId": "d4683ca6-00db-4d47-a7d1-69c7bd35c8ca",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "8ad5e91ca19f2aebbe2ce2f031589771f3e4e7c0049e38f9c59f6c20dd949760"
