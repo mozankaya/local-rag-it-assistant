@@ -14,13 +14,13 @@
     },
     {
       "parameters": {
-        "fileSelector": "/home/node/.n8n-files/mock-data/vpn-remote-access.md",
+        "fileSelector": "={{ $json.file_path }}",
         "options": {}
       },
       "type": "n8n-nodes-base.readWriteFile",
       "typeVersion": 1.1,
       "position": [
-        416,
+        624,
         0
       ],
       "id": "006f7df3-a485-41c1-acb2-d1922dcecba9",
@@ -48,7 +48,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        832,
+        1040,
         0
       ],
       "id": "880cdadf-6c91-4b69-8ac8-60b3a44c75d9",
@@ -56,12 +56,12 @@
     },
     {
       "parameters": {
-        "jsCode": "const items = $input.all();\n\nif (!items.length) {\n  throw new Error('No input item found');\n}\n\nconst item = items[0];\n\nlet fileContent = '';\n\nif (item.json.data || item.json.content || item.json.text || item.json.fileContent) {\n  fileContent =\n    item.json.data ||\n    item.json.content ||\n    item.json.text ||\n    item.json.fileContent;\n} else if (item.binary) {\n  const binaryKey = Object.keys(item.binary)[0];\n\n  if (!binaryKey) {\n    throw new Error('Binary file found, but binary key is missing');\n  }\n\n  const buffer = await this.helpers.getBinaryDataBuffer(0, binaryKey);\n  fileContent = buffer.toString('utf8');\n} else {\n  throw new Error('No text or binary file content found');\n}\n\nconst title = 'VPN ve Uzaktan Erişim Sorunları';\nconst category = 'vpn';\n\nconst cleaned = fileContent\n  .replace(/\\r\\n/g, '\\n')\n  .replace(/\\n{3,}/g, '\\n\\n')\n  .trim();\n\nif (!cleaned) {\n  throw new Error('File content is empty after cleaning');\n}\n\nconst paragraphs = cleaned\n  .split(/\\n\\s*\\n/)\n  .map(p => p.trim())\n  .filter(p => p.length > 0);\n\nreturn paragraphs.map((paragraph, index) => ({\n  json: {\n    document_id: 'vpn-remote-access',\n    title,\n    category,\n    chunk_index: index,\n    content: paragraph\n  }\n}));"
+        "jsCode": "const items = $input.all();\nconst fileListItems = $('Create File List').all();\n\nconst output = [];\n\nif (!items.length) {\n  throw new Error('No input item found');\n}\n\nfor (let i = 0; i < items.length; i++) {\n  const item = items[i];\n  const fileMeta = fileListItems[i]?.json || {};\n\n  let fileContent = '';\n\n  if (item.json.data || item.json.content || item.json.text || item.json.fileContent) {\n    fileContent =\n      item.json.data ||\n      item.json.content ||\n      item.json.text ||\n      item.json.fileContent;\n  } else if (item.binary) {\n    const binaryKey = Object.keys(item.binary)[0];\n\n    if (!binaryKey) {\n      throw new Error(`Binary file found, but binary key is missing for item ${i}`);\n    }\n\n    // n8n binary dosya içeriğini text'e çevirmek için kullanılır\n    // @ts-ignore\n    const buffer = await this.helpers.getBinaryDataBuffer(i, binaryKey);\n\n    fileContent = buffer.toString('utf8');\n  } else {\n    throw new Error(`No text or binary file content found for item ${i}`);\n  }\n\n  const documentId = item.json.document_id || fileMeta.document_id;\n  const title = item.json.title || fileMeta.title;\n  const category = item.json.category || fileMeta.category;\n\n  if (!documentId || !title || !category) {\n    throw new Error(`Missing metadata for item ${i}. document_id, title or category not found.`);\n  }\n\n  const cleaned = fileContent\n    .replace(/\\r\\n/g, '\\n')\n    .replace(/\\n{3,}/g, '\\n\\n')\n    .trim();\n\n  if (!cleaned) {\n    throw new Error(`File content is empty after cleaning for document ${documentId}`);\n  }\n\n  let chunks = cleaned\n    .split(/(?=^##\\s+)/m)\n    .map(p => p.trim())\n    .filter(p => p.length > 0);\n\n  if (chunks.length <= 1) {\n    chunks = cleaned\n      .split(/\\n(?=-\\s|\\d+\\.\\s|###\\s|##\\s)/)\n      .map(p => p.trim())\n      .filter(p => p.length > 0);\n  }\n\n  if (chunks.length <= 1 && cleaned.length > 1000) {\n    chunks = [];\n\n    const maxLength = 800;\n\n    for (let start = 0; start < cleaned.length; start += maxLength) {\n      const chunk = cleaned.slice(start, start + maxLength).trim();\n\n      if (chunk.length > 0) {\n        chunks.push(chunk);\n      }\n    }\n  }\n\n  for (let index = 0; index < chunks.length; index++) {\n    output.push({\n      json: {\n        document_id: documentId,\n        title,\n        category,\n        chunk_index: index,\n        content: chunks[index]\n      }\n    });\n  }\n}\n\nreturn output;"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        624,
+        832,
         0
       ],
       "id": "bba0dc06-a471-4ef3-8ea1-181284ddc82b",
@@ -75,7 +75,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1040,
+        1248,
         0
       ],
       "id": "6e9d2707-af08-4fdf-a6bb-8c6cdc315ba8",
@@ -90,7 +90,7 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        1248,
+        1456,
         0
       ],
       "id": "0a6ca8b0-4d41-4a17-a84a-9bd8e0a232aa",
@@ -104,8 +104,21 @@
     },
     {
       "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      file_path: '/home/node/.n8n-files/mock-data/password-and-account.md',\n      document_id: 'password-and-account',\n      title: 'Şifre ve Hesap İşlemleri',\n      category: 'account'\n    }\n  },\n  {\n    json: {\n      file_path: '/home/node/.n8n-files/mock-data/vpn-remote-access.md',\n      document_id: 'vpn-remote-access',\n      title: 'VPN ve Uzaktan Erişim Sorunları',\n      category: 'vpn'\n    }\n  },\n  {\n    json: {\n      file_path: '/home/node/.n8n-files/mock-data/email-outlook.md',\n      document_id: 'email-outlook',\n      title: 'E-posta ve Outlook Sorunları',\n      category: 'email'\n    }\n  },\n  {\n    json: {\n      file_path: '/home/node/.n8n-files/mock-data/printer-support.md',\n      document_id: 'printer-support',\n      title: 'Yazıcı Destek İşlemleri',\n      category: 'printer'\n    }\n  },\n  {\n    json: {\n      file_path: '/home/node/.n8n-files/mock-data/hardware-support.md',\n      document_id: 'hardware-support',\n      title: 'Donanım Destek İşlemleri',\n      category: 'hardware'\n    }\n  },\n  {\n    json: {\n      file_path: '/home/node/.n8n-files/mock-data/network-connection.md',\n      document_id: 'network-connection',\n      title: 'Ağ ve İnternet Bağlantısı Sorunları',\n      category: 'network'\n    }\n  },\n  {\n    json: {\n      file_path: '/home/node/.n8n-files/mock-data/equipment-request.md',\n      document_id: 'equipment-request',\n      title: 'Ekipman ve Yetki Talepleri',\n      category: 'request'\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "e85d9a67-8084-4f95-a81e-defdd3924f8b",
+      "name": "Create File List"
+    },
+    {
+      "parameters": {
         "operation": "executeQuery",
-        "query": "DELETE FROM document_chunks\nWHERE document_id = 'vpn-remote-access';",
+        "query": "DELETE FROM document_chunks\nWHERE document_id IN (\n  'password-and-account',\n  'vpn-remote-access',\n  'email-outlook',\n  'printer-support',\n  'hardware-support',\n  'network-connection',\n  'equipment-request'\n);",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
@@ -115,7 +128,7 @@
         0
       ],
       "id": "5b772744-4c88-48ca-a4c9-43e6222f5e54",
-      "name": "Clear Existing VPN Chunks",
+      "name": "Clear Existing Chunks",
       "credentials": {
         "postgres": {
           "id": "jShdzm8IEPIqSd41",
@@ -130,7 +143,7 @@
       "main": [
         [
           {
-            "node": "Clear Existing VPN Chunks",
+            "node": "Clear Existing Chunks",
             "type": "main",
             "index": 0
           }
@@ -181,11 +194,22 @@
         ]
       ]
     },
-    "Clear Existing VPN Chunks": {
+    "Create File List": {
       "main": [
         [
           {
             "node": "Read/Write Files from Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clear Existing Chunks": {
+      "main": [
+        [
+          {
+            "node": "Create File List",
             "type": "main",
             "index": 0
           }
@@ -199,7 +223,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "d4683ca6-00db-4d47-a7d1-69c7bd35c8ca",
+  "versionId": "d1ce8d4c-65d2-4f9d-ad1d-edce16eb121c",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "8ad5e91ca19f2aebbe2ce2f031589771f3e4e7c0049e38f9c59f6c20dd949760"
