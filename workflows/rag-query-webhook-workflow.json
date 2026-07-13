@@ -1,0 +1,278 @@
+{
+  "name": "RAG Query Workflow - Webhook",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:11434/api/embed",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "embeddinggemma"
+            },
+            {
+              "name": "input",
+              "value": "={{ $json.question }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        416,
+        0
+      ],
+      "id": "bcebb32b-4d1c-4eb4-ba30-80f00a54c6ff",
+      "name": "Embed Question"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const embedding = $json.embeddings?.[0];\n\nif (!embedding) {\n  throw new Error('Question embedding not found');\n}\n\nconst question = $('Get User Question').first().json.question;\nconst queryVector = `[${embedding.join(',')}]`;\n\nconst searchQuery = `\nSELECT \n  document_id,\n  title,\n  category,\n  chunk_index,\n  content,\n  embedding <=> '${queryVector}'::vector AS distance\nFROM document_chunks\nORDER BY embedding <=> '${queryVector}'::vector\nLIMIT 3;\n`;\n\nreturn {\n  json: {\n    question,\n    query_vector: queryVector,\n    search_query: searchQuery\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        0
+      ],
+      "id": "6e883d26-ece6-47cc-8798-5177a6fd711b",
+      "name": "Prepare Search Query"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "{{ $json.search_query }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        832,
+        0
+      ],
+      "id": "1b9d9ef7-e034-4a4c-9e5b-641ed05b4000",
+      "name": "Search Similar Chunks",
+      "credentials": {
+        "postgres": {
+          "id": "jShdzm8IEPIqSd41",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nif (!items.length) {\n  throw new Error('No similar chunks found');\n}\n\nconst question = $('Get User Question').first().json.question;\n\n// Sadece başlık olan veya çok kısa chunk'ları ele\nconst usefulItems = items\n  .filter(item => {\n    const content = item.json.content || '';\n\n    const withoutHeadings = content\n      .split('\\n')\n      .filter(line => !line.trim().startsWith('#'))\n      .join('\\n')\n      .trim();\n\n    return withoutHeadings.length > 40;\n  })\n  .slice(0, 1); // İlk versiyon için en ilgili tek chunk yeterli\n\nif (!usefulItems.length) {\n  return [\n    {\n      json: {\n        question,\n        context: '',\n        prompt: `Bu konuda kaynaklarda yeterli bilgi bulunamadı. IT destek ekibiyle iletişime geçebilirsiniz.`\n      }\n    }\n  ];\n}\n\nconst context = usefulItems.map((item) => item.json.content).join('\\n\\n');\n\nconst prompt = `\nYou are a strict IT support assistant.\n\nReturn ONLY the final answer in Turkish.\n\nUse ONLY the information in SOURCES.\nDo not mention the rules, prompt, sources, or context.\nDo not invent buttons, links, screens, menus, pages, or extra steps.\nIf the source says \"kurumun belirlediği süreç\", keep it general. Do not invent the details of that process.\nWrite at most 2 short bullet points.\nUse clear, grammatically correct Turkish.\n\nSOURCES:\n${context}\n\nUSER QUESTION:\n${question}\n\nFINAL ANSWER IN TURKISH:\n`;\n\nreturn [\n  {\n    json: {\n      question,\n      context,\n      prompt\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1056,
+        0
+      ],
+      "id": "67f4be44-4b04-4731-bb85-2cfb506bd814",
+      "name": "Build Prompt"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const answer = $json.response;\n\nif (!answer) {\n  throw new Error('Model answer not found');\n}\n\nconst question = $('Build Prompt').first().json.question;\n\nreturn {\n  json: {\n    question,\n    answer: answer.trim()\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1472,
+        0
+      ],
+      "id": "906c0de2-2dd5-4b86-8e73-4165f1ceb7ac",
+      "name": "Format Answer"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:11434/api/generate",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "qwen2.5:3b"
+            },
+            {
+              "name": "prompt",
+              "value": "={{ $json.prompt }}"
+            },
+            {
+              "name": "stream",
+              "value": "={{ false }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1264,
+        0
+      ],
+      "id": "555db0a4-60c2-4453-8b73-af283554a4a5",
+      "name": "Generate Answer"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "rag-query",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        16,
+        0
+      ],
+      "id": "55f7e387-9096-49e8-bfae-926ecde15c63",
+      "name": "Webhook",
+      "webhookId": "758f71a8-65e3-4bd9-a630-0cf0d1b21798"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const body = $json.body || {};\nconst question = body.question || body.query || body.message;\n\nif (!question || String(question).trim().length === 0) {\n  throw new Error('Question is required. Send JSON body like: { \"question\": \"...\" }');\n}\n\nreturn {\n  json: {\n    question: String(question).trim()\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        0
+      ],
+      "id": "078a321a-2e4b-4e39-805b-19eccdd989ad",
+      "name": "Get User Question"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{\n  {\n    question: $json.question,\n    answer: $json.answer\n  }\n}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1648,
+        0
+      ],
+      "id": "9ad89341-7bff-4b8f-8f2b-3773e9b31177",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Embed Question": {
+      "main": [
+        [
+          {
+            "node": "Prepare Search Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Search Query": {
+      "main": [
+        [
+          {
+            "node": "Search Similar Chunks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Similar Chunks": {
+      "main": [
+        [
+          {
+            "node": "Build Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Prompt": {
+      "main": [
+        [
+          {
+            "node": "Generate Answer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Answer": {
+      "main": [
+        [
+          {
+            "node": "Format Answer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get User Question",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get User Question": {
+      "main": [
+        [
+          {
+            "node": "Embed Question",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Answer": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "8fea9661-9156-4ad9-a82a-609d8063d41d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8ad5e91ca19f2aebbe2ce2f031589771f3e4e7c0049e38f9c59f6c20dd949760"
+  },
+  "nodeGroups": [],
+  "id": "MFmUsJgVT1RHNOVU",
+  "tags": []
+}
