@@ -1,11 +1,14 @@
 import { useState } from "react";
-import { askQuestion } from "../api/chatApi";
-import type { Source } from "../api/chatApi";
+import { askQuestion, sendFeedback } from "../api/chatApi";
+import type { FeedbackValue, Source } from "../api/chatApi";
 
 type Message = {
   role: "user" | "assistant";
   content: string;
+  question?: string;
   sources?: Source[];
+  feedback?: FeedbackValue;
+  feedbackStatus?: "idle" | "sending" | "sent" | "error";
 };
 
 export default function ChatBox() {
@@ -43,7 +46,9 @@ export default function ChatBox() {
         {
           role: "assistant",
           content: result.answer,
+          question: trimmedQuestion,
           sources: result.sources,
+          feedbackStatus: "idle",
         },
       ]);
     } catch (err) {
@@ -55,6 +60,53 @@ export default function ChatBox() {
       setIsLoading(false);
     }
   }
+
+  async function handleFeedback(messageIndex: number, feedback: FeedbackValue) {
+    const message = messages[messageIndex];
+
+    if (!message || message.role !== "assistant" || !message.question) {
+      return;
+    }
+
+    setMessages((previous) =>
+      previous.map((item, index) =>
+        index === messageIndex ? { ...item, feedbackStatus: "sending" } : item,
+      ),
+    );
+
+    try {
+      await sendFeedback({
+        question: message.question,
+        answer: message.content,
+        feedback,
+        sources: message.sources,
+      });
+
+      setMessages((previous) =>
+        previous.map((item, index) =>
+          index === messageIndex
+            ? {
+                ...item,
+                feedback,
+                feedbackStatus: "sent",
+              }
+            : item,
+        ),
+      );
+    } catch {
+      setMessages((previous) =>
+        previous.map((item, index) =>
+          index === messageIndex
+            ? {
+                ...item,
+                feedbackStatus: "error",
+              }
+            : item,
+        ),
+      );
+    }
+  }
+
 
   return (
     <div className="chat-card">
@@ -125,6 +177,42 @@ export default function ChatBox() {
                     </div>
                   </div>
                 )}
+
+              {message.role === "assistant" && (
+                <div className="feedback-area">
+                  {message.feedbackStatus === "sent" ? (
+                    <span className="feedback-saved">
+                      Geri bildiriminiz kaydedildi.
+                    </span>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        className="feedback-button"
+                        disabled={message.feedbackStatus === "sending"}
+                        onClick={() => handleFeedback(index, "useful")}
+                      >
+                        👍 Faydalı
+                      </button>
+
+                      <button
+                        type="button"
+                        className="feedback-button"
+                        disabled={message.feedbackStatus === "sending"}
+                        onClick={() => handleFeedback(index, "not_useful")}
+                      >
+                        👎 Faydasız
+                      </button>
+                    </>
+                  )}
+
+                  {message.feedbackStatus === "error" && (
+                    <span className="feedback-error">
+                      Geri bildirim kaydedilemedi.
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           ))
         )}

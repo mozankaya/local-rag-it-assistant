@@ -243,6 +243,50 @@ body {
 
 
 
+.feedback-area {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.feedback-button {
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.feedback-button:hover:not(:disabled) {
+  background: #f1f5f9;
+}
+
+.feedback-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.feedback-saved {
+  font-size: 12px;
+  color: #15803d;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 999px;
+  padding: 6px 10px;
+}
+
+.feedback-error {
+  font-size: 12px;
+  color: #b91c1c;
+}
+
+
+
 @media (max-width: 700px) {
   .app-shell {
     padding: 12px;
