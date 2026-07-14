@@ -181,6 +181,68 @@ body {
   cursor: not-allowed;
 }
 
+
+.source-tooltip-wrapper {
+  position: relative;
+  display: inline-block;
+  margin-top: 12px;
+}
+
+.source-chip {
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #2563eb;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: default;
+}
+
+.source-tooltip {
+  display: none;
+  position: absolute;
+  left: 0;
+  bottom: 34px;
+  width: 260px;
+  background: #ffffff;
+  border: 1px solid #dbe4ee;
+  border-radius: 12px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
+  padding: 10px;
+  z-index: 10;
+}
+
+.source-tooltip-wrapper:hover .source-tooltip {
+  display: block;
+}
+
+.source-tooltip-item {
+  padding: 8px;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 8px;
+}
+
+.source-tooltip-item:last-child {
+  margin-bottom: 0;
+}
+
+.source-tooltip-item strong {
+  display: block;
+  font-size: 13px;
+  color: #172033;
+  margin-bottom: 4px;
+}
+
+.source-tooltip-item span {
+  font-size: 12px;
+  color: #64748b;
+}
+
+
+
 @media (max-width: 700px) {
   .app-shell {
     padding: 12px;

@@ -2,9 +2,17 @@ export type ChatRequest = {
   question: string;
 };
 
+export type Source = {
+  document_id: string;
+  title: string;
+  category: string;
+  chunk_index: number;
+};
+
 export type ChatResponse = {
   question: string;
   answer: string;
+  sources?: Source[];
 };
 
 const API_URL = import.meta.env.VITE_RAG_API_URL as string;

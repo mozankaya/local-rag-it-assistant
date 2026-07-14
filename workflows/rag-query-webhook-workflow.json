@@ -66,7 +66,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const items = $input.all();\n\nif (!items.length) {\n  throw new Error('No similar chunks found');\n}\n\nconst question = $('Get User Question').first().json.question;\n\n// Sadece başlık olan veya çok kısa chunk'ları ele\nconst usefulItems = items\n  .filter(item => {\n    const content = item.json.content || '';\n\n    const withoutHeadings = content\n      .split('\\n')\n      .filter(line => !line.trim().startsWith('#'))\n      .join('\\n')\n      .trim();\n\n    return withoutHeadings.length > 40;\n  })\n  .slice(0, 1); // İlk versiyon için en ilgili tek chunk yeterli\n\nif (!usefulItems.length) {\n  return [\n    {\n      json: {\n        question,\n        context: '',\n        prompt: `Bu konuda kaynaklarda yeterli bilgi bulunamadı. IT destek ekibiyle iletişime geçebilirsiniz.`\n      }\n    }\n  ];\n}\n\nconst context = usefulItems.map((item) => item.json.content).join('\\n\\n');\n\nconst prompt = `\nYou are a strict IT support assistant.\n\nReturn ONLY the final answer in Turkish.\n\nUse ONLY the information in SOURCES.\nDo not mention the rules, prompt, sources, or context.\nDo not invent buttons, links, screens, menus, pages, or extra steps.\nIf the source says \"kurumun belirlediği süreç\", keep it general. Do not invent the details of that process.\nWrite at most 2 short bullet points.\nUse clear, grammatically correct Turkish.\n\nSOURCES:\n${context}\n\nUSER QUESTION:\n${question}\n\nFINAL ANSWER IN TURKISH:\n`;\n\nreturn [\n  {\n    json: {\n      question,\n      context,\n      prompt\n    }\n  }\n];"
+        "jsCode": "const items = $input.all();\n\nif (!items.length) {\n  throw new Error('No similar chunks found');\n}\n\nconst question = $('Get User Question').first().json.question;\n\n// Sadece başlık olan veya çok kısa chunk'ları ele\nconst usefulItems = items\n  .filter(item => {\n    const content = item.json.content || '';\n\n    const withoutHeadings = content\n      .split('\\n')\n      .filter(line => !line.trim().startsWith('#'))\n      .join('\\n')\n      .trim();\n\n    return withoutHeadings.length > 40;\n  })\n  .slice(0, 2);\n\nif (!usefulItems.length) {\n  return [\n    {\n      json: {\n        question,\n        context: '',\n        prompt: `Bu konuda kaynaklarda yeterli bilgi bulunamadı. IT destek ekibiyle iletişime geçebilirsiniz.`,\n        sources: []\n      }\n    }\n  ];\n}\n\nconst context = usefulItems\n  .map((item) => item.json.content)\n  .join('\\n\\n---\\n\\n');\n\nconst sources = usefulItems.map((item) => {\n  const row = item.json;\n\n  return {\n    document_id: row.document_id,\n    title: row.title,\n    category: row.category,\n    chunk_index: row.chunk_index\n  };\n});\n\nconst prompt = `\nYou are a strict IT support assistant.\n\nReturn ONLY the final answer in Turkish.\n\nUse ONLY the information in SOURCES.\nDo not mention the rules, prompt, sources, or context.\nDo not invent buttons, links, screens, menus, pages, or extra steps.\nIf the source says \"kurumun belirlediği süreç\", keep it general. Do not invent the details of that process.\nWrite exactly 3 short bullet points maximum. Do not write more than 3 bullet points.\nUse clear, grammatically correct Turkish.\n\nSOURCES:\n${context}\n\nUSER QUESTION:\n${question}\n\nFINAL ANSWER IN TURKISH:\n`;\n\nreturn [\n  {\n    json: {\n      question,\n      context,\n      prompt,\n      sources\n    }\n  }\n];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -80,7 +80,7 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const answer = $json.response;\n\nif (!answer) {\n  throw new Error('Model answer not found');\n}\n\nconst question = $('Build Prompt').first().json.question;\n\nreturn {\n  json: {\n    question,\n    answer: answer.trim()\n  }\n};"
+        "jsCode": "const buildPromptOutput = $('Build Prompt').first().json;\n\nconst question = buildPromptOutput.question;\nconst sources = buildPromptOutput.sources || [];\n\nconst answer = $json.response;\n\nif (!answer) {\n  throw new Error('Model answer not found');\n}\n\nreturn {\n  json: {\n    question,\n    answer: answer.trim(),\n    sources\n  }\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -157,7 +157,7 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{\n  {\n    question: $json.question,\n    answer: $json.answer\n  }\n}}",
+        "responseBody": "={{ $json }}",
         "options": {}
       },
       "type": "n8n-nodes-base.respondToWebhook",
@@ -267,7 +267,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "8fea9661-9156-4ad9-a82a-609d8063d41d",
+  "versionId": "5d189961-ea36-46ce-b68d-c1863ac959e0",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "8ad5e91ca19f2aebbe2ce2f031589771f3e4e7c0049e38f9c59f6c20dd949760"

@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { askQuestion } from "../api/chatApi";
+import type { Source } from "../api/chatApi";
 
 type Message = {
   role: "user" | "assistant";
   content: string;
+  sources?: Source[];
 };
 
 export default function ChatBox() {
@@ -41,13 +43,12 @@ export default function ChatBox() {
         {
           role: "assistant",
           content: result.answer,
+          sources: result.sources,
         },
       ]);
     } catch (err) {
       const message =
-        err instanceof Error
-          ? err.message
-          : "Beklenmeyen bir hata oluştu.";
+        err instanceof Error ? err.message : "Beklenmeyen bir hata oluştu.";
 
       setError(message);
     } finally {
@@ -70,13 +71,23 @@ export default function ChatBox() {
           <div className="empty-state">
             <p>Bir IT destek sorusu yazarak başlayabilirsiniz.</p>
             <div className="examples">
-              <button onClick={() => setQuestion("VPN bağlantısı kuramıyorum, ne yapmalıyım?")}>
+              <button
+                onClick={() =>
+                  setQuestion("VPN bağlantısı kuramıyorum, ne yapmalıyım?")
+                }
+              >
                 VPN bağlantısı kuramıyorum
               </button>
-              <button onClick={() => setQuestion("Şifremi unuttum, nasıl sıfırlayabilirim?")}>
+              <button
+                onClick={() =>
+                  setQuestion("Şifremi unuttum, nasıl sıfırlayabilirim?")
+                }
+              >
                 Şifremi unuttum
               </button>
-              <button onClick={() => setQuestion("Yazıcıdan çıktı alamıyorum.")}>
+              <button
+                onClick={() => setQuestion("Yazıcıdan çıktı alamıyorum.")}
+              >
                 Yazıcıdan çıktı alamıyorum
               </button>
             </div>
@@ -91,6 +102,29 @@ export default function ChatBox() {
                 {message.role === "user" ? "Kullanıcı" : "Asistan"}
               </div>
               <div className="message-content">{message.content}</div>
+              {message.role === "assistant" &&
+                message.sources &&
+                message.sources.length > 0 && (
+                  <div className="source-tooltip-wrapper">
+                    <button className="source-chip" type="button">
+                      ⓘ Kaynaklar ({message.sources.length})
+                    </button>
+
+                    <div className="source-tooltip">
+                      {message.sources.map((source, sourceIndex) => (
+                        <div
+                          key={`${source.document_id}-${source.chunk_index}-${sourceIndex}`}
+                          className="source-tooltip-item"
+                        >
+                          <strong>{source.title}</strong>
+                          <span>
+                            {source.category} / chunk {source.chunk_index}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
             </div>
           ))
         )}
