@@ -57,7 +57,8 @@ Bu ilk sürümde sistem aşağıdaki yetenekleri sağlamaktadır:
 │   └── .env.example
 │
 ├── docs/
-│   └── deployment-guide.md
+│   └── deployment-guide/
+|       └── notes.md
 │
 ├── frontend/
 │   ├── src/
