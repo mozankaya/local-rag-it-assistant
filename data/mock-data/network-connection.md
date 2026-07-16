@@ -1,13 +1,39 @@
 # Ağ ve İnternet Bağlantısı Sorunları
 
+Bu doküman, kurum ağı ve internet bağlantısı sırasında karşılaşılan temel sorunlar için hazırlanmıştır.
+
 ## İnternet bağlantısı yok
 
-Kullanıcı öncelikle Wi-Fi veya Ethernet bağlantısını kontrol etmelidir. Ağ bağlantısı aktif görünmüyorsa cihaz yeniden başlatılmalıdır.
+İnternet bağlantınız yoksa aşağıdaki adımları izleyin:
+
+- Bilgisayarınızın Wi-Fi veya Ethernet bağlantısını kontrol edin.
+- Ağ bağlantı durumunu kontrol edin.
+- Bilgisayarınızı yeniden başlatın.
+- Sorun devam ederse bağlantı türü ve hata bilgisini IT destek ekibine iletin.
 
 ## Wi-Fi bağlantısı zayıf
 
-Wi-Fi sinyali zayıfsa kullanıcı modem veya access point'e daha yakın bir konuma geçmelidir. Mümkünse kablolu bağlantı denenmelidir.
+Wi-Fi bağlantınız zayıfsa aşağıdaki adımları izleyin:
+
+- Erişim noktasına daha yakın bir konuma geçmeyi deneyin.
+- Kablosuz bağlantı kopuyorsa farklı bir ağa bağlanmayı deneyin.
+- Gereksiz ağ kullanımı yapan uygulamaları kapatın.
+- Sorun devam ederse konum ve bağlantı bilgisini IT destek ekibine iletin.
+
+## Kablolu ağ bağlantısı çalışmıyor
+
+Kablolu ağ bağlantısı çalışmıyorsa aşağıdaki adımları izleyin:
+
+- Ethernet kablosunun doğru takıldığını kontrol edin.
+- Bilgisayardaki ağ bağlantı durumunu kontrol edin.
+- Farklı bir ağ kablosu veya bağlantı noktası deneyin.
+- Sorun devam ederse IT destek ekibine başvurun.
 
 ## Yerel ağ kaynağına erişilemiyor
 
-Paylaşımlı klasör veya ağ kaynağına erişilemiyorsa kullanıcının ağ bağlantısı, yetkisi ve doğru ağda olup olmadığı kontrol edilmelidir.
+Yerel ağdaki bir kaynağa erişemiyorsanız aşağıdaki adımları izleyin:
+
+- Kurum ağına bağlı olduğunuzu kontrol edin.
+- Erişmek istediğiniz kaynağın adını veya adresini kontrol edin.
+- İlgili kaynağa erişim yetkiniz olup olmadığını kontrol edin.
+- Sorun devam ederse kaynak adı ve hata bilgisini IT destek ekibine iletin.

@@ -1,11 +1,40 @@
-# Yazıcı Sorunları
+# Yazıcı Destek İşlemleri
+
+Bu doküman, yazıcı kullanımı sırasında karşılaşılan temel sorunlar için hazırlanmıştır.
 
 ## Yazıcıdan çıktı alınamıyor
 
-Yazıcıdan çıktı alınamıyorsa yazıcının açık olduğundan, bilgisayar ile aynı ağda bulunduğundan ve varsayılan yazıcı olarak seçildiğinden emin olunmalıdır.
+Yazıcıdan çıktı alamıyorsanız aşağıdaki adımları izleyin:
 
-Kağıt sıkışması, toner bitmesi veya yazıcı kuyruğunda bekleyen eski işler kontrol edilmelidir.
+- Bilgisayarınızın ve yazıcınızın aynı ağda olduğunu kontrol edin.
+- Doğru yazıcının seçili olduğundan emin olun.
+- Yazıcıda kağıt ve toner durumunu kontrol edin.
+- Yazıcı kuyruğunda bekleyen eski işler varsa iptal edin.
+- Sorun devam ederse yazıcı adı ve hata bilgisini IT destek ekibine iletin.
 
 ## Yanlış yazıcıya çıktı gidiyor
 
-Kullanıcı yazdırma ekranında seçili yazıcıyı kontrol etmelidir. Sık kullanılan yazıcı varsayılan yazıcı olarak ayarlanabilir.
+Çıktı yanlış yazıcıya gidiyorsa aşağıdaki adımları izleyin:
+
+- Yazdırma ekranında seçili yazıcıyı kontrol edin.
+- Varsayılan yazıcı ayarını gözden geçirin.
+- Doğru yazıcıyı seçerek çıktı almayı tekrar deneyin.
+- Sorun devam ederse IT destek ekibine başvurun.
+
+## Yazıcı kuyruğunda işler bekliyor
+
+Yazıcı kuyruğunda işler bekliyorsa aşağıdaki adımları izleyin:
+
+- Yazıcı kuyruğundaki eski veya hatalı işleri iptal edin.
+- Yazıcıyı kapatıp tekrar açın.
+- Bilgisayardan yazdırma işlemini tekrar deneyin.
+- Sorun devam ederse yazıcı adı ve bekleyen iş bilgisini IT destek ekibine iletin.
+
+## Yazıcı bağlantısı görünmüyor
+
+Yazıcı bilgisayarınızda görünmüyorsa aşağıdaki adımları izleyin:
+
+- Bilgisayarınızın kurum ağına bağlı olduğunu kontrol edin.
+- Yazıcının açık ve ağa bağlı olduğunu kontrol edin.
+- Yazıcı listesini yenileyin.
+- Sorun devam ederse IT destek ekibine başvurun.

@@ -1,13 +1,41 @@
 # VPN ve Uzaktan Erişim Sorunları
 
+Bu doküman, VPN bağlantısı ve uzaktan erişim sırasında karşılaşılan temel sorunlar için hazırlanmıştır.
+
 ## VPN bağlantısı kurulamıyor
 
-VPN bağlantısı kurulamadığında kullanıcı öncelikle internet bağlantısını kontrol etmelidir. İnternet bağlantısı aktifse VPN kullanıcı adı ve şifresinin doğru girildiğinden emin olunmalıdır. Çok faktörlü doğrulama kullanılıyorsa telefona gelen onay bildirimi kontrol edilmelidir.
+VPN bağlantısı kurulamıyorsa aşağıdaki adımları izleyin:
 
-Sorun devam ederse kullanıcı VPN uygulamasını kapatıp tekrar açmalı, bilgisayarı yeniden başlatmalı ve hata mesajının ekran görüntüsünü IT destek ekibine iletmelidir.
+- Bilgisayarınızın internete bağlı olduğunu kontrol edin.
+- VPN kullanıcı adı ve şifrenizi doğru girdiğinizden emin olun.
+- Çok faktörlü doğrulama kullanılıyorsa telefona gelen onay bildirimini kontrol edin.
+- VPN uygulamasını kapatıp tekrar açın.
+- Sorun devam ederse hata mesajının ekran görüntüsünü IT destek ekibine iletin.
 
-## VPN bağlantısı sık sık kopuyor
+## VPN sürekli kopuyor
 
-VPN bağlantısı sık sık kopuyorsa kablosuz ağ sinyal gücü kontrol edilmelidir. Mümkünse kablolu bağlantı denenmelidir. Aynı ağda başka kullanıcıların da sorun yaşayıp yaşamadığı kontrol edilmelidir.
+VPN bağlantısı sık sık kesiliyorsa aşağıdaki adımları izleyin:
 
-Sorun devam ederse bağlantı zamanı, kullanılan ağ ve alınan hata mesajı IT destek ekibine bildirilmelidir.
+- İnternet bağlantınızın stabil olup olmadığını kontrol edin.
+- Kablosuz bağlantı kullanıyorsanız daha stabil bir ağa geçmeyi deneyin.
+- VPN uygulamasını kapatıp tekrar açın.
+- Yoğun ağ kullanan gereksiz uygulamaları kapatın.
+- Sorun devam ederse kopma zamanı ve hata mesajını IT destek ekibine iletin.
+
+## VPN bağlantısı yavaş çalışıyor
+
+VPN bağlantısı yavaş çalışıyorsa aşağıdaki adımları izleyin:
+
+- İnternet bağlantı hızınızı kontrol edin.
+- Gereksiz dosya indirme veya video akışı gibi işlemleri durdurun.
+- VPN uygulamasını yeniden başlatın.
+- Sorun devam ederse kullanılan ağ bilgisi ve yaşanan yavaşlığı IT destek ekibine bildirin.
+
+## Çok faktörlü doğrulama onayı gelmiyor
+
+Çok faktörlü doğrulama onayı gelmiyorsa aşağıdaki adımları izleyin:
+
+- Telefonunuzun internet bağlantısını kontrol edin.
+- Kimlik doğrulama uygulamasının bildirim iznini kontrol edin.
+- Onay bildirimi gelmiyorsa uygulamayı açarak manuel onay ekranını kontrol edin.
+- Sorun devam ederse IT destek ekibine başvurun.
