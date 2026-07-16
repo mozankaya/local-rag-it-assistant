@@ -1,0 +1,51 @@
+[
+  {
+    "document_id": "vpn-remote-access",
+    "title": "VPN ve Uzaktan Erişim Sorunları",
+    "category": "vpn",
+    "file_name": "vpn-remote-access.md",
+    "last_updated": "2026-07"
+  },
+  {
+    "document_id": "password-and-account",
+    "title": "Şifre ve Hesap İşlemleri",
+    "category": "account",
+    "file_name": "password-and-account.md",
+    "last_updated": "2026-07"
+  },
+  {
+    "document_id": "email-outlook",
+    "title": "E-posta ve Outlook Sorunları",
+    "category": "email",
+    "file_name": "email-outlook.md",
+    "last_updated": "2026-07"
+  },
+  {
+    "document_id": "printer-support",
+    "title": "Yazıcı Destek İşlemleri",
+    "category": "printer",
+    "file_name": "printer-support.md",
+    "last_updated": "2026-07"
+  },
+  {
+    "document_id": "hardware-support",
+    "title": "Donanım Destek İşlemleri",
+    "category": "hardware",
+    "file_name": "hardware-support.md",
+    "last_updated": "2026-07"
+  },
+  {
+    "document_id": "network-connection",
+    "title": "Ağ ve İnternet Bağlantısı Sorunları",
+    "category": "network",
+    "file_name": "network-connection.md",
+    "last_updated": "2026-07"
+  },
+  {
+    "document_id": "equipment-request",
+    "title": "Ekipman ve Yetki Talepleri",
+    "category": "request",
+    "file_name": "equipment-request.md",
+    "last_updated": "2026-07"
+  }
+]

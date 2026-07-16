@@ -24,7 +24,7 @@ services:
       N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
     volumes:
       - n8n_data:/home/node/.n8n
-      - ../data/mock-data:/home/node/.n8n-files/mock-data:ro
+      - ../data:/home/node/.n8n-files/data:ro
     depends_on:
       - postgres
 
