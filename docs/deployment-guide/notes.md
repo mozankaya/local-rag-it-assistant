@@ -1,8 +1,8 @@
 # Deployment Guide Notes
 
-Bu doküman, **Local LLM & RAG Based IT Assistant** projesinin lokal geliştirme ortamında çalıştırılması için gerekli teknik adımları açıklar.
+Bu doküman, **Local LLM & RAG Based IT Assistant** projesinin lokal geliştirme ortamında çalıştırılması için gerekli temel teknik adımları açıklar.
 
-Bu dosya geliştirme sürecinde kullanılan teknik kurulum notlarını içerir. Proje sonunda ayrı olarak kullanıcı kılavuzu ve bakım kılavuzu hazırlanacaktır.
+Bu dosya geliştirme sürecinde kullanılan kısa kurulum ve bakım notlarını içerir.
 
 ---
 
@@ -16,7 +16,7 @@ Aşağıdaki araçların kurulu olması gerekir:
 - npm
 - Ollama
 - n8n
-- DBeaver veya PostgreSQL istemcisi
+- DBeaver veya başka bir PostgreSQL istemcisi
 - Postman
 
 ---
@@ -25,87 +25,76 @@ Aşağıdaki araçların kurulu olması gerekir:
 
 Proje içinde `docker` klasörüne gidilir:
 
-```bash
-cd docker
-```
+    cd docker
 
 `.env.example` dosyasından `.env` dosyası oluşturulur:
 
-```bash
-cp .env.example .env
-```
+    cp .env.example .env
 
-Windows PowerShell kullanılıyorsa:
+Windows PowerShell için:
 
-```powershell
-Copy-Item .env.example .env
-```
+    Copy-Item .env.example .env
 
 Docker servisleri başlatılır:
 
-```bash
-docker compose up -d
-```
+    docker compose up -d
 
 Çalışan container’ları kontrol etmek için:
 
-```bash
-docker ps
-```
+    docker ps
 
-Aşağıdaki servislerin çalışıyor olması beklenir:
+Beklenen servisler:
 
-```text
-rag_postgres
-rag_n8n
-```
+    rag_postgres
+    rag_n8n
+
+Not: Container’ları tek tek Docker Desktop üzerinden başlatmak yerine `docker compose up -d` komutu kullanılmalıdır. Aksi durumda n8n, PostgreSQL servisini doğru çözemeyebilir.
 
 ---
 
-## 3. PostgreSQL ve pgvector Kontrolü
+## 3. PostgreSQL ve pgvector
 
 PostgreSQL container içine bağlanmak için:
 
-```bash
-docker exec -it rag_postgres psql -U rag_user -d rag_db
-```
+    docker exec -it rag_postgres psql -U rag_user -d rag_db
 
-Tablo ve extension kurulumu için `database/schema.sql` dosyası kullanılabilir.
+Tablo ve extension kurulumu için şu dosya kullanılabilir:
+
+    database/schema.sql
 
 Beklenen temel tablolar:
 
-```text
-document_chunks
-feedback_logs
-```
+    document_chunks
+    feedback_logs
+    chat_logs
 
 Doküman chunk kayıtlarını kontrol etmek için:
 
-```sql
-SELECT document_id, COUNT(*) AS chunk_count
-FROM document_chunks
-GROUP BY document_id
-ORDER BY document_id;
-```
+    SELECT document_id, COUNT(*) AS chunk_count
+    FROM document_chunks
+    GROUP BY document_id
+    ORDER BY document_id;
 
-Embedding alanının dolu olup olmadığını kontrol etmek için:
+Embedding alanını kontrol etmek için:
 
-```sql
-SELECT 
-  document_id,
-  chunk_index,
-  embedding IS NOT NULL AS has_embedding
-FROM document_chunks
-ORDER BY document_id, chunk_index;
-```
+    SELECT 
+      document_id,
+      chunk_index,
+      embedding IS NOT NULL AS has_embedding
+    FROM document_chunks
+    ORDER BY document_id, chunk_index;
 
 Feedback kayıtlarını kontrol etmek için:
 
-```sql
-SELECT id, question, feedback, sources, created_at
-FROM feedback_logs
-ORDER BY created_at DESC;
-```
+    SELECT id, question, feedback, created_at
+    FROM feedback_logs
+    ORDER BY created_at DESC;
+
+Chat log kayıtlarını kontrol etmek için:
+
+    SELECT id, question, category, section_title, response_type, created_at
+    FROM chat_logs
+    ORDER BY created_at DESC;
 
 ---
 
@@ -113,363 +102,254 @@ ORDER BY created_at DESC;
 
 Cevap üretimi için Qwen modeli kullanılır:
 
-```bash
-ollama pull qwen2.5:3b
-```
+    ollama pull qwen2.5:3b
 
 Embedding üretimi için embedding modeli kullanılır:
 
-```bash
-ollama pull embeddinggemma
-```
+    ollama pull embeddinggemma
 
 Ollama servisinin çalıştığını kontrol etmek için:
 
-```bash
-ollama list
-```
+    ollama list
 
 Host bilgisayardan Ollama API test edilebilir:
 
-```bash
-curl http://localhost:11434/api/tags
-```
+    curl http://localhost:11434/api/tags
 
-n8n Docker container içinden Ollama’ya erişirken aşağıdaki adres kullanılır:
+n8n Docker container içinden Ollama’ya erişirken şu adres kullanılır:
 
-```text
-http://host.docker.internal:11434
-```
+    http://host.docker.internal:11434
 
 ---
 
 ## 5. n8n Workflow Import
 
-n8n arayüzüne gidilir:
+n8n arayüzü:
 
-```text
-http://localhost:5678
-```
+    http://localhost:5678
 
 Aşağıdaki workflow JSON dosyaları import edilir:
 
-```text
-workflows/embedding-ingestion-workflow.json
-workflows/rag-query-workflow.json
-workflows/rag-query-webhook-workflow.json
-workflows/feedback-webhook-workflow.json
-```
+    workflows/embedding-ingestion-workflow.json
+    workflows/rag-query-workflow.json
+    workflows/rag-query-webhook-workflow.json
+    workflows/feedback-webhook-workflow.json
+
+Sürekli kullanım için aktif olması gereken workflow’lar:
+
+    RAG Query Webhook Workflow
+    Feedback Webhook Workflow
+
+Manuel çalıştırılması yeterli olan workflow:
+
+    Embedding Ingestion Workflow
+
+Manuel test için kullanılan workflow:
+
+    RAG Query Workflow
 
 ---
 
 ## 6. Embedding Ingestion Workflow
 
-Önce `Embedding Ingestion Workflow` çalıştırılır.
+`Embedding Ingestion Workflow`, dokümanları vektör veritabanına hazırlayan akıştır.
 
 Bu workflow:
 
-```text
-Mock dokümanları okur
-↓
-Chunk’lara böler
-↓
-Embedding üretir
-↓
-PostgreSQL + pgvector veritabanına kaydeder
-```
+- `data/documents.json` dosyasındaki doküman listesini okur.
+- `data/mock-data` klasöründeki mock IT dokümanlarını işler.
+- Dokümanları section ve chunk yapılarına böler.
+- Ollama üzerinden embedding üretir.
+- Sonuçları PostgreSQL + pgvector üzerindeki `document_chunks` tablosuna kaydeder.
 
-Bu workflow manuel çalıştırılabilir. Çünkü dokümanlar her değiştiğinde tekrar ingestion yapılması gerekir, ancak her kullanıcı sorusunda çalışması gerekmez.
+Bu workflow her kullanıcı sorusunda çalışmaz. Sadece dokümanlar değiştiğinde manuel olarak çalıştırılır.
 
-Workflow çalıştıktan sonra veritabanında kayıtlar kontrol edilir:
+Workflow çalıştıktan sonra kontrol için:
 
-```sql
-SELECT document_id, COUNT(*) AS chunk_count
-FROM document_chunks
-GROUP BY document_id
-ORDER BY document_id;
-```
+    SELECT document_id, section_title, chunk_index, LEFT(content, 120) AS preview
+    FROM document_chunks
+    ORDER BY document_id, chunk_index;
 
-Beklenen doküman kayıtları:
+Beklenen dokümanlar:
 
-```text
-email-outlook
-equipment-request
-hardware-support
-network-connection
-password-and-account
-printer-support
-vpn-remote-access
-```
+    email-outlook
+    equipment-request
+    hardware-support
+    network-connection
+    password-and-account
+    printer-support
+    vpn-remote-access
+
+Not: Mevcut prototipte ingestion işlemi tam yeniden indexleme mantığıyla çalışır. Büyük veri setleri için ileride document-level reindexing ve hash tabanlı incremental indexing eklenmesi planlanabilir.
 
 ---
 
-## 7. RAG Query Workflow Testi
+## 7. RAG Query Webhook Workflow
 
-Manuel test için `RAG Query Workflow` kullanılabilir.
+Frontend ile kullanılan ana soru-cevap workflow’udur.
 
-Bu workflow içinde test sorusu Code node üzerinden verilir.
+Webhook ayarları:
 
-Örnek soru:
+    HTTP Method: POST
+    Path: rag-query
+    Response Mode: Using Respond to Webhook node
 
-```text
-VPN bağlantısı kuramıyorum, ne yapmalıyım?
-```
+Test URL:
 
-Workflow çıktısında aşağıdaki alanlar beklenir:
+    http://localhost:5678/webhook-test/rag-query
 
-```json
-{
-  "question": "...",
-  "answer": "...",
-  "sources": [...]
-}
-```
+Production URL:
 
----
-
-## 8. RAG Query Webhook Workflow
-
-Webhook tabanlı kullanım için `RAG Query Webhook Workflow` kullanılır.
-
-Webhook node ayarlarında:
-
-```text
-HTTP Method: POST
-Path: rag-query
-Response Mode: Using Respond to Webhook node
-```
-
-Test URL örneği:
-
-```text
-http://localhost:5678/webhook-test/rag-query
-```
-
-Production URL örneği:
-
-```text
-http://localhost:5678/webhook/rag-query
-```
-
-Test URL kullanılacaksa n8n üzerinde workflow test modunda çalıştırılmalıdır.
-
-Production URL kullanılacaksa workflow aktif hale getirilmelidir.
+    http://localhost:5678/webhook/rag-query
 
 Postman ile örnek istek:
 
-```json
-{
-  "question": "VPN bağlantısı kuramıyorum, ne yapmalıyım?"
-}
-```
-
-Beklenen cevap:
-
-```json
-{
-  "question": "VPN bağlantısı kuramıyorum, ne yapmalıyım?",
-  "answer": "- İnternet bağlantınızı kontrol edin...",
-  "sources": [
     {
-      "document_id": "vpn-remote-access",
-      "title": "VPN ve Uzaktan Erişim Sorunları",
-      "category": "vpn",
-      "chunk_index": 1
+      "question": "VPN bağlantısı kuramıyorum, ne yapmalıyım?"
     }
-  ]
-}
-```
+
+Beklenen cevap yapısı:
+
+    {
+      "question": "...",
+      "answer": "...",
+      "sources": [
+        {
+          "document_id": "vpn-remote-access",
+          "title": "VPN ve Uzaktan Erişim Sorunları",
+          "category": "vpn",
+          "section_title": "VPN bağlantısı kurulamıyor",
+          "chunk_index": 1
+        }
+      ]
+    }
+
+Bu workflow ayrıca soru-cevap kayıtlarını `chat_logs` tablosuna kaydeder.
 
 ---
 
-## 9. Feedback Webhook Workflow
+## 8. Feedback Webhook Workflow
 
-Kullanıcıların chatbot cevaplarını **Faydalı / Faydasız** olarak değerlendirebilmesi için `Feedback Webhook Workflow` kullanılır.
+Kullanıcıların chatbot cevaplarını **Faydalı / Faydasız** olarak değerlendirmesi için kullanılır.
 
-Webhook node ayarlarında:
+Webhook ayarları:
 
-```text
-HTTP Method: POST
-Path: feedback
-Response Mode: Using Respond to Webhook node
-```
+    HTTP Method: POST
+    Path: feedback
+    Response Mode: Using Respond to Webhook node
 
-Test URL örneği:
+Test URL:
 
-```text
-http://localhost:5678/webhook-test/feedback
-```
+    http://localhost:5678/webhook-test/feedback
 
-Production URL örneği:
+Production URL:
 
-```text
-http://localhost:5678/webhook/feedback
-```
-
-Test URL kullanılacaksa n8n üzerinde workflow test modunda çalıştırılmalıdır.
-
-Production URL kullanılacaksa workflow aktif hale getirilmelidir.
+    http://localhost:5678/webhook/feedback
 
 Postman ile örnek istek:
 
-```json
-{
-  "question": "VPN bağlantısı kuramıyorum, ne yapmalıyım?",
-  "answer": "- İnternet bağlantınızı kontrol edin.",
-  "feedback": "useful",
-  "sources": [
     {
-      "document_id": "vpn-remote-access",
-      "title": "VPN ve Uzaktan Erişim Sorunları",
-      "category": "vpn",
-      "chunk_index": 1
+      "question": "VPN bağlantısı kuramıyorum, ne yapmalıyım?",
+      "answer": "- İnternet bağlantınızı kontrol edin.",
+      "feedback": "useful",
+      "sources": [
+        {
+          "document_id": "vpn-remote-access",
+          "title": "VPN ve Uzaktan Erişim Sorunları",
+          "category": "vpn",
+          "section_title": "VPN bağlantısı kurulamıyor",
+          "chunk_index": 1
+        }
+      ]
     }
-  ]
-}
-```
 
 Beklenen cevap:
 
-```json
-{
-  "status": "success",
-  "message": "Feedback saved successfully.",
-  "feedback": "useful"
-}
-```
+    {
+      "status": "success",
+      "message": "Feedback saved successfully.",
+      "feedback": "useful"
+    }
 
-Feedback kayıtları PostgreSQL üzerinde `feedback_logs` tablosunda tutulur.
-
-Kontrol için:
-
-```sql
-SELECT id, question, feedback, sources, created_at
-FROM feedback_logs
-ORDER BY created_at DESC;
-```
+Feedback kayıtları `feedback_logs` tablosunda tutulur.
 
 ---
 
-## 10. Frontend Çalıştırma
+## 9. Frontend Çalıştırma
 
 Frontend klasörüne gidilir:
 
-```bash
-cd frontend
-```
+    cd frontend
 
 Paketler yüklenir:
 
-```bash
-npm install
-```
+    npm install
 
 `.env.example` dosyasından `.env` dosyası oluşturulur:
 
-```bash
-cp .env.example .env
-```
+    cp .env.example .env
 
-Windows PowerShell kullanılıyorsa:
+Windows PowerShell için:
 
-```powershell
-Copy-Item .env.example .env
-```
-
-`.env` içindeki webhook URL’leri düzenlenir.
+    Copy-Item .env.example .env
 
 Test URL ile kullanım:
 
-```env
-VITE_RAG_API_URL=http://localhost:5678/webhook-test/rag-query
-VITE_FEEDBACK_API_URL=http://localhost:5678/webhook-test/feedback
-```
+    VITE_RAG_API_URL=http://localhost:5678/webhook-test/rag-query
+    VITE_FEEDBACK_API_URL=http://localhost:5678/webhook-test/feedback
 
 Production URL ile kullanım:
 
-```env
-VITE_RAG_API_URL=http://localhost:5678/webhook/rag-query
-VITE_FEEDBACK_API_URL=http://localhost:5678/webhook/feedback
-```
-
-Test URL kullanılıyorsa ilgili workflow n8n üzerinde test modunda çalıştırılmalıdır.
-
-Production URL kullanılıyorsa ilgili workflow aktif hale getirilmelidir.
+    VITE_RAG_API_URL=http://localhost:5678/webhook/rag-query
+    VITE_FEEDBACK_API_URL=http://localhost:5678/webhook/feedback
 
 Geliştirme sunucusu başlatılır:
 
-```bash
-npm run dev
-```
+    npm run dev
 
 Frontend varsayılan olarak şu adreste çalışır:
 
-```text
-http://localhost:5173
-```
+    http://localhost:5173
+
+Not: `.env` değiştirildikten sonra Vite geliştirme sunucusu yeniden başlatılmalıdır.
 
 ---
 
-## 11. Webhook Test ve Production URL Farkı
+## 10. Webhook Test ve Production URL Farkı
 
-### Test URL
+Test URL formatı:
 
-```text
-/webhook-test/...
-```
+    /webhook-test/...
 
 Bu URL sadece n8n üzerinde workflow test modunda çalışırken kullanılabilir.
 
-Örnek:
+Production URL formatı:
 
-```text
-http://localhost:5678/webhook-test/rag-query
-http://localhost:5678/webhook-test/feedback
-```
+    /webhook/...
 
-### Production URL
-
-```text
-/webhook/...
-```
-
-Bu URL için workflow aktif hale getirilmelidir.
-
-Örnek:
-
-```text
-http://localhost:5678/webhook/rag-query
-http://localhost:5678/webhook/feedback
-```
+Bu URL için ilgili workflow aktif hale getirilmelidir.
 
 Frontend sürekli kullanılacaksa `.env` içinde production webhook URL kullanılması önerilir.
 
 ---
 
-## 12. Aktif Olması Gereken Workflow'lar
+## 11. Chat Log Temizliği
 
-Sürekli kullanım için aşağıdaki workflow’lar aktif hale getirilmelidir:
+Chatbot soru-cevap kayıtları, test sürecini izlemek ve ileride admin dashboard üzerinde istatistik göstermek için `chat_logs` tablosunda tutulur.
 
-```text
-RAG Query Webhook Workflow
-Feedback Webhook Workflow
-```
+Prototip aşamasında log temizliği otomatik olarak çalıştırılmaz. Gerekirse eski kayıtlar manuel olarak temizlenebilir.
 
-Manuel çalıştırılması yeterli olan workflow:
+Temizlik sorgusu şu dosyada bulunur:
 
-```text
-Embedding Ingestion Workflow
-```
+    database/maintenance.sql
 
-Manuel test için kullanılan workflow:
+Bu sorgu, 180 günden eski chat log kayıtlarını silmek için hazırlanmıştır.
 
-```text
-RAG Query Workflow
-```
+Gerçek kullanım senaryosunda bu işlem n8n, backend cron job veya veritabanı zamanlayıcısı ile periyodik hale getirilebilir.
 
 ---
 
-## 13. Olası Hatalar
+## 12. Olası Hatalar
 
 ### Frontend: Failed to fetch
 
@@ -478,8 +358,7 @@ Olası nedenler:
 - n8n workflow test modunda çalışmıyor olabilir.
 - `.env` içindeki webhook URL yanlış olabilir.
 - Production URL kullanılıyorsa workflow aktif olmayabilir.
-- Frontend çalışırken `.env` değiştirildiyse Vite yeniden başlatılmamış olabilir.
-- CORS veya ağ bağlantısı sorunu olabilir.
+- `.env` değiştirildikten sonra Vite yeniden başlatılmamış olabilir.
 
 ### n8n: Question embedding not found
 
@@ -496,39 +375,31 @@ Olası nedenler:
 - `feedback_logs` tablosu oluşturulmamış olabilir.
 - Feedback değeri `useful` veya `not_useful` dışında gönderilmiş olabilir.
 - Postgres credentials yanlış olabilir.
-- Workflow aktif olmayabilir veya test URL için Execute Workflow yapılmamış olabilir.
+- Workflow aktif olmayabilir.
 
 ### PostgreSQL bağlantı hatası
 
-n8n container içinden PostgreSQL bağlantısı için host değeri:
+n8n container içinden PostgreSQL host değeri:
 
-```text
-postgres
-```
+    postgres
 
-DBeaver veya host bilgisayardan bağlantı için host değeri:
+DBeaver veya host bilgisayardan bağlantı host değeri:
 
-```text
-localhost
-```
+    localhost
 
 ### Ollama bağlantı hatası
 
-Host bilgisayardan Ollama için:
+Host bilgisayardan Ollama adresi:
 
-```text
-http://localhost:11434
-```
+    http://localhost:11434
 
-n8n Docker container içinden Ollama için:
+n8n Docker container içinden Ollama adresi:
 
-```text
-http://host.docker.internal:11434
-```
+    http://host.docker.internal:11434
 
 ---
 
-## 14. Mevcut Prototip Notu
+## 13. Mevcut Prototip Notu
 
 Bu deployment adımları lokal geliştirme ortamında çalışan prototip için hazırlanmıştır.
 
@@ -537,12 +408,11 @@ Mevcut prototipte aşağıdaki özellikler bulunmaktadır:
 - Docker tabanlı PostgreSQL + pgvector kurulumu
 - Docker tabanlı n8n kurulumu
 - Host bilgisayarda çalışan Ollama servisi
-- Mock IT dokümanlarının embedding'e çevrilmesi
-- RAG tabanlı soru-cevap workflow'u
+- Mock IT dokümanlarının manifest üzerinden okunması
+- Dokümanların embedding’e çevrilmesi
+- RAG tabanlı soru-cevap workflow’u
 - Webhook üzerinden frontend entegrasyonu
 - React + TypeScript frontend
-- Cevaplarda kaynak doküman bilgisinin gösterilmesi
+- Cevaplarda kaynak doküman ve bölüm bilgisinin gösterilmesi
 - Faydalı / Faydasız kullanıcı geri bildirimi
-- Feedback kayıtlarının PostgreSQL üzerinde saklanması
-
-Bu dosya proje geliştirme sürecindeki teknik çalıştırma notlarını içerir.
+- Chat log ve feedback kayıtlarının PostgreSQL üzerinde saklanması
