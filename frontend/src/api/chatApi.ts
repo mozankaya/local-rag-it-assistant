@@ -2,12 +2,13 @@ export type ChatRequest = {
   question: string;
 };
 
-export type Source = {
+export interface Source {
   document_id: string;
   title: string;
   category: string;
+  section_title?: string;
   chunk_index: number;
-};
+}
 
 export type ChatResponse = {
   question: string;

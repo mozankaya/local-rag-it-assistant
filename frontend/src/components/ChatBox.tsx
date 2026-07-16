@@ -48,6 +48,18 @@ function formatFeedbackText(feedback?: FeedbackValue) {
   return "";
 }
 
+function formatSourceTitle(source: Source) {
+  return source.section_title
+    ? `${source.title} / ${source.section_title}`
+    : source.title;
+}
+
+function formatSourceMeta(source: Source) {
+  return source.section_title
+    ? `${source.category} / chunk ${source.chunk_index}`
+    : `${source.category} / chunk ${source.chunk_index}`;
+}
+
 export default function ChatBox() {
   const messageListRef = useRef<HTMLDivElement | null>(null);
   const [inputValue, setInputValue] = useState("");
@@ -254,10 +266,8 @@ export default function ChatBox() {
                             key={`${source.document_id}-${source.chunk_index}-${sourceIndex}`}
                             className="source-tooltip-item"
                           >
-                            <strong>{source.title}</strong>
-                            <span>
-                              {source.category} / chunk {source.chunk_index}
-                            </span>
+                            <strong>{formatSourceTitle(source)}</strong>
+                            <span>{formatSourceMeta(source)}</span>
                           </div>
                         ))}
                       </div>
