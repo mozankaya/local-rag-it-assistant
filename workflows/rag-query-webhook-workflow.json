@@ -149,7 +149,7 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        2080,
+        2704,
         0
       ],
       "id": "9ad89341-7bff-4b8f-8f2b-3773e9b31177",
@@ -265,6 +265,55 @@
       ],
       "id": "ac23b8b9-b77f-4ce8-8f88-84ecc066ee6a",
       "name": "IF Supported Topic"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const question = String($json.question || '').trim();\nconst answer = String($json.answer || '').trim();\nconst sources = Array.isArray($json.sources) ? $json.sources : [];\n\nif (!question) {\n  throw new Error('Question is required for chat log.');\n}\n\nif (!answer) {\n  throw new Error('Answer is required for chat log.');\n}\n\nfunction sqlEscape(value) {\n  return String(value ?? '').replace(/'/g, \"''\");\n}\n\nfunction maskSensitiveText(value) {\n  return String(value ?? '')\n    // E-mail maskeleme\n    .replace(\n      /[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}/gi,\n      '[masked_email]'\n    )\n    // Türkiye telefon numarası benzeri değerleri maskeleme\n    .replace(\n      /(\\+90|0)?\\s?5\\d{2}\\s?\\d{3}\\s?\\d{2}\\s?\\d{2}/g,\n      '[masked_phone]'\n    )\n    // Uzun numara dizilerini maskeleme\n    .replace(\n      /\\b\\d{8,}\\b/g,\n      '[masked_number]'\n    );\n}\n\nconst firstSource = sources[0] || {};\n\nconst category = firstSource.category || null;\nconst sectionTitle = firstSource.section_title || null;\n\nconst responseType = sources.length > 0 ? 'rag_answer' : 'static_or_out_of_scope';\n\nconst maskedQuestion = maskSensitiveText(question);\nconst maskedAnswer = maskSensitiveText(answer);\nconst sourcesJson = JSON.stringify(sources);\n\nconst insertQuery = `\nINSERT INTO chat_logs (\n  question,\n  answer,\n  sources,\n  category,\n  section_title,\n  response_type\n)\nVALUES (\n  '${sqlEscape(maskedQuestion)}',\n  '${sqlEscape(maskedAnswer)}',\n  '${sqlEscape(sourcesJson)}'::jsonb,\n  ${category ? `'${sqlEscape(category)}'` : 'NULL'},\n  ${sectionTitle ? `'${sqlEscape(sectionTitle)}'` : 'NULL'},\n  '${sqlEscape(responseType)}'\n)\nRETURNING id, created_at;\n`;\n\nreturn {\n  json: {\n    question,\n    answer,\n    sources,\n    category,\n    section_title: sectionTitle,\n    response_type: responseType,\n    insert_query: insertQuery\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2096,
+        0
+      ],
+      "id": "df15f15b-44f5-45db-9eb2-625d74198563",
+      "name": "Prepare Chat Log Insert"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "{{ $json.insert_query }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2304,
+        0
+      ],
+      "id": "c35baa1e-a7bb-4bd3-bd87-06eb650ee52e",
+      "name": "Insert Chat Log",
+      "credentials": {
+        "postgres": {
+          "id": "jShdzm8IEPIqSd41",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const chatData = $('Prepare Chat Log Insert').first().json;\n\nreturn {\n  json: {\n    question: chatData.question,\n    answer: chatData.answer,\n    sources: chatData.sources || []\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2512,
+        0
+      ],
+      "id": "dd579f12-d706-40d1-aedf-7e3223d6c59a",
+      "name": "Format Chat Response"
     }
   ],
   "pinData": {},
@@ -350,7 +399,7 @@
       "main": [
         [
           {
-            "node": "Respond to Webhook",
+            "node": "Prepare Chat Log Insert",
             "type": "main",
             "index": 0
           }
@@ -408,6 +457,39 @@
           }
         ]
       ]
+    },
+    "Prepare Chat Log Insert": {
+      "main": [
+        [
+          {
+            "node": "Insert Chat Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Chat Log": {
+      "main": [
+        [
+          {
+            "node": "Format Chat Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Chat Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
@@ -416,7 +498,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "729141a6-7f96-41db-b054-ba171ee0402a",
+  "versionId": "26a59061-4af0-4798-80c9-39208c3d8618",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "8ad5e91ca19f2aebbe2ce2f031589771f3e4e7c0049e38f9c59f6c20dd949760"
