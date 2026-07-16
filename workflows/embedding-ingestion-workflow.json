@@ -56,7 +56,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const items = $input.all();\nconst fileListItems = $('Create File List').all();\n\nconst output = [];\n\nif (!items.length) {\n  throw new Error('No input item found');\n}\n\nfor (let i = 0; i < items.length; i++) {\n  const item = items[i];\n  const fileMeta = fileListItems[i]?.json || {};\n\n  let fileContent = '';\n\n  if (item.json.data || item.json.content || item.json.text || item.json.fileContent) {\n    fileContent =\n      item.json.data ||\n      item.json.content ||\n      item.json.text ||\n      item.json.fileContent;\n  } else if (item.binary) {\n    const binaryKey = Object.keys(item.binary)[0];\n\n    if (!binaryKey) {\n      throw new Error(`Binary file found, but binary key is missing for item ${i}`);\n    }\n\n    // n8n binary dosya içeriğini text'e çevirmek için kullanılır\n    // @ts-ignore\n    const buffer = await this.helpers.getBinaryDataBuffer(i, binaryKey);\n\n    fileContent = buffer.toString('utf8');\n  } else {\n    throw new Error(`No text or binary file content found for item ${i}`);\n  }\n\n  const documentId = item.json.document_id || fileMeta.document_id;\n  const title = item.json.title || fileMeta.title;\n  const category = item.json.category || fileMeta.category;\n\n  if (!documentId || !title || !category) {\n    throw new Error(`Missing metadata for item ${i}. document_id, title or category not found.`);\n  }\n\n  const cleaned = fileContent\n    .replace(/\\r\\n/g, '\\n')\n    .replace(/\\n{3,}/g, '\\n\\n')\n    .trim();\n\n  if (!cleaned) {\n    throw new Error(`File content is empty after cleaning for document ${documentId}`);\n  }\n\n  let chunks = cleaned\n    .split(/(?=^##\\s+)/m)\n    .map(p => p.trim())\n    .filter(p => p.length > 0);\n\n  if (chunks.length <= 1) {\n    chunks = cleaned\n      .split(/\\n(?=-\\s|\\d+\\.\\s|###\\s|##\\s)/)\n      .map(p => p.trim())\n      .filter(p => p.length > 0);\n  }\n\n  if (chunks.length <= 1 && cleaned.length > 1000) {\n    chunks = [];\n\n    const maxLength = 800;\n\n    for (let start = 0; start < cleaned.length; start += maxLength) {\n      const chunk = cleaned.slice(start, start + maxLength).trim();\n\n      if (chunk.length > 0) {\n        chunks.push(chunk);\n      }\n    }\n  }\n\n  for (let index = 0; index < chunks.length; index++) {\n    output.push({\n      json: {\n        document_id: documentId,\n        title,\n        category,\n        chunk_index: index,\n        content: chunks[index]\n      }\n    });\n  }\n}\n\nreturn output;"
+        "jsCode": "const items = $input.all();\nconst fileListItems = $('Create File List').all();\nconst output = [];\n\nfunction cleanText(text) {\n  return String(text || '')\n    .replace(/\\r\\n/g, '\\n')\n    .replace(/\\n{3,}/g, '\\n\\n')\n    .trim();\n}\n\nfunction splitLongText(text, maxLength = 900) {\n  const chunks = [];\n  let remaining = cleanText(text);\n\n  while (remaining.length > maxLength) {\n    let splitIndex = remaining.lastIndexOf('\\n', maxLength);\n\n    if (splitIndex < 300) {\n      splitIndex = remaining.lastIndexOf('. ', maxLength);\n    }\n\n    if (splitIndex < 300) {\n      splitIndex = maxLength;\n    }\n\n    const part = remaining.slice(0, splitIndex).trim();\n\n    if (part) {\n      chunks.push(part);\n    }\n\n    remaining = remaining.slice(splitIndex).trim();\n  }\n\n  if (remaining) {\n    chunks.push(remaining);\n  }\n\n  return chunks;\n}\n\nfor (let itemIndex = 0; itemIndex < items.length; itemIndex++) {\n  const item = items[itemIndex];\n\n  const metadata =\n    item.json?.document_id\n      ? item.json\n      : fileListItems[itemIndex]?.json;\n\n  if (!metadata?.document_id) {\n    throw new Error(`Document metadata not found for item index ${itemIndex}`);\n  }\n\n  // n8n runtime provides this.helpers even if the editor marks it.\n  // @ts-ignore\n  const buffer = await this.helpers.getBinaryDataBuffer(itemIndex, 'data');\n\n  const fileContent = cleanText(buffer.toString('utf8'));\n\n  const documentId = metadata.document_id;\n  const title = metadata.title;\n  const category = metadata.category;\n\n  const lines = fileContent.split('\\n');\n\n  const sections = [];\n  let currentSectionTitle = null;\n  let currentLines = [];\n\n  for (const line of lines) {\n    const sectionMatch = line.match(/^##\\s+(.+)$/);\n\n    if (sectionMatch) {\n      if (currentSectionTitle && currentLines.length > 0) {\n        sections.push({\n          section_title: currentSectionTitle,\n          content: cleanText(currentLines.join('\\n'))\n        });\n      }\n\n      currentSectionTitle = sectionMatch[1].trim();\n      currentLines = [line];\n    } else if (currentSectionTitle) {\n      currentLines.push(line);\n    }\n  }\n\n  if (currentSectionTitle && currentLines.length > 0) {\n    sections.push({\n      section_title: currentSectionTitle,\n      content: cleanText(currentLines.join('\\n'))\n    });\n  }\n\n  if (sections.length === 0) {\n    sections.push({\n      section_title: 'Genel',\n      content: fileContent\n    });\n  }\n\n  let chunkIndex = 1;\n\n  for (const section of sections) {\n    const textParts = splitLongText(section.content);\n\n    for (const part of textParts) {\n      output.push({\n        json: {\n          document_id: documentId,\n          title,\n          category,\n          section_title: section.section_title,\n          chunk_index: chunkIndex,\n          content: part\n        }\n      });\n\n      chunkIndex++;\n    }\n  }\n}\n\nreturn output;"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -70,7 +70,7 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const embedding = $json.embeddings?.[0];\n\nif (!embedding) {\n  throw new Error('Embedding response not found');\n}\n\nconst chunk = $('Create Chunks').item.json;\n\nfunction sqlEscape(value) {\n  return String(value ?? '').replace(/'/g, \"''\");\n}\n\nconst documentId = chunk.document_id;\nconst title = chunk.title;\nconst category = chunk.category;\nconst chunkIndex = chunk.chunk_index;\nconst content = chunk.content;\nconst embeddingVector = `[${embedding.join(',')}]`;\n\nconst insertQuery = `\nINSERT INTO document_chunks (\n  document_id,\n  title,\n  category,\n  chunk_index,\n  content,\n  embedding\n)\nVALUES (\n  '${sqlEscape(documentId)}',\n  '${sqlEscape(title)}',\n  '${sqlEscape(category)}',\n  ${chunkIndex},\n  '${sqlEscape(content)}',\n  '${embeddingVector}'::vector\n);\n`;\n\nreturn {\n  json: {\n    document_id: documentId,\n    title,\n    category,\n    chunk_index: chunkIndex,\n    content,\n    embedding_vector: embeddingVector,\n    insert_query: insertQuery\n  }\n};"
+        "jsCode": "const chunkData = $('Create Chunks').item.json;\n\nconst embedding = $json.embeddings?.[0];\n\nif (!embedding) {\n  throw new Error('Embedding not found');\n}\n\nfunction sqlEscape(value) {\n  return String(value ?? '').replace(/'/g, \"''\");\n}\n\nconst embeddingVector = `[${embedding.join(',')}]`;\n\nconst insertQuery = `\nINSERT INTO document_chunks (\n  document_id,\n  title,\n  category,\n  section_title,\n  chunk_index,\n  content,\n  embedding\n)\nVALUES (\n  '${sqlEscape(chunkData.document_id)}',\n  '${sqlEscape(chunkData.title)}',\n  '${sqlEscape(chunkData.category)}',\n  '${sqlEscape(chunkData.section_title)}',\n  ${Number(chunkData.chunk_index)},\n  '${sqlEscape(chunkData.content)}',\n  '${embeddingVector}'::vector\n);\n`;\n\nreturn {\n  json: {\n    document_id: chunkData.document_id,\n    title: chunkData.title,\n    category: chunkData.category,\n    section_title: chunkData.section_title,\n    chunk_index: chunkData.chunk_index,\n    insert_query: insertQuery\n  }\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -80,27 +80,6 @@
       ],
       "id": "6e9d2707-af08-4fdf-a6bb-8c6cdc315ba8",
       "name": "Prepare Embedding Record"
-    },
-    {
-      "parameters": {
-        "operation": "executeQuery",
-        "query": "{{ $json.insert_query }}",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.6,
-      "position": [
-        1456,
-        0
-      ],
-      "id": "0a6ca8b0-4d41-4a17-a84a-9bd8e0a232aa",
-      "name": "Execute a SQL query",
-      "credentials": {
-        "postgres": {
-          "id": "jShdzm8IEPIqSd41",
-          "name": "Postgres account"
-        }
-      }
     },
     {
       "parameters": {
@@ -129,6 +108,27 @@
       ],
       "id": "5b772744-4c88-48ca-a4c9-43e6222f5e54",
       "name": "Clear Existing Chunks",
+      "credentials": {
+        "postgres": {
+          "id": "jShdzm8IEPIqSd41",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "{{ $json.insert_query }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1456,
+        0
+      ],
+      "id": "0a6ca8b0-4d41-4a17-a84a-9bd8e0a232aa",
+      "name": "Postgres Insert",
       "credentials": {
         "postgres": {
           "id": "jShdzm8IEPIqSd41",
@@ -187,7 +187,7 @@
       "main": [
         [
           {
-            "node": "Execute a SQL query",
+            "node": "Postgres Insert",
             "type": "main",
             "index": 0
           }
@@ -223,7 +223,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "d1ce8d4c-65d2-4f9d-ad1d-edce16eb121c",
+  "versionId": "abcf22c5-5ac7-49cc-9ded-4cdfead50350",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "8ad5e91ca19f2aebbe2ce2f031589771f3e4e7c0049e38f9c59f6c20dd949760"
