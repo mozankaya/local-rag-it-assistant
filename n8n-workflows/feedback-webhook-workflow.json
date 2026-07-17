@@ -1,0 +1,171 @@
+{
+  "name": "Feedback Webhook Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "feedback",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "8b8ac394-eb13-459c-be6f-19e0afab1144",
+      "name": "Webhook",
+      "webhookId": "62bd7712-3b07-4c2e-b9eb-e40f92e911b5"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const body = $json.body || {};\n\nconst question = String(body.question || '').trim();\nconst answer = String(body.answer || '').trim();\nconst feedback = String(body.feedback || '').trim();\nconst sources = Array.isArray(body.sources) ? body.sources : [];\n\nif (!question) {\n  throw new Error('Question is required.');\n}\n\nif (!answer) {\n  throw new Error('Answer is required.');\n}\n\nif (!['useful', 'not_useful'].includes(feedback)) {\n  throw new Error('Feedback must be either \"useful\" or \"not_useful\".');\n}\n\nreturn {\n  json: {\n    question,\n    answer,\n    feedback,\n    sources\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "5aa8d2a4-693c-4493-91a4-bac9ab84da18",
+      "name": "Validate Feedback"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const question = $json.question;\nconst answer = $json.answer;\nconst feedback = $json.feedback;\nconst sources = $json.sources || [];\n\nfunction sqlEscape(value) {\n  return String(value ?? '').replace(/'/g, \"''\");\n}\n\nconst sourcesJson = JSON.stringify(sources);\n\nconst insertQuery = `\nWITH inserted AS (\n  INSERT INTO feedback_logs (\n    question,\n    answer,\n    feedback,\n    sources\n  )\n  VALUES (\n    '${sqlEscape(question)}',\n    '${sqlEscape(answer)}',\n    '${sqlEscape(feedback)}',\n    '${sqlEscape(sourcesJson)}'::jsonb\n  )\n  RETURNING id, created_at\n)\nSELECT id, created_at\nFROM inserted;\n`;\n\nreturn {\n  json: {\n    question,\n    answer,\n    feedback,\n    sources,\n    insert_query: insertQuery\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "f81fe8fd-93c3-4080-81de-7647d03f1762",
+      "name": "Prepare Feedback Insert"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "{{ $json.insert_query }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        624,
+        0
+      ],
+      "id": "b385b648-d44f-44cd-857b-83a97c6b8807",
+      "name": "Insert Feedback",
+      "credentials": {
+        "postgres": {
+          "id": "jShdzm8IEPIqSd41",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const feedbackData = $('Validate Feedback').first().json;\n\nreturn {\n  json: {\n    status: 'success',\n    message: 'Feedback saved successfully.',\n    feedback: feedbackData.feedback\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        832,
+        0
+      ],
+      "id": "2255ffbf-ddcd-4dc4-b950-154e5cacfce9",
+      "name": "Format Feedback Response"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1040,
+        0
+      ],
+      "id": "809f1d39-0fd9-4141-8aea-df5b16b80e8f",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Validate Feedback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Feedback": {
+      "main": [
+        [
+          {
+            "node": "Prepare Feedback Insert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Feedback Insert": {
+      "main": [
+        [
+          {
+            "node": "Insert Feedback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Feedback": {
+      "main": [
+        [
+          {
+            "node": "Format Feedback Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Feedback Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "fdbf9754-8a4a-45f1-a847-02c7d62b9b6b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8ad5e91ca19f2aebbe2ce2f031589771f3e4e7c0049e38f9c59f6c20dd949760"
+  },
+  "nodeGroups": [],
+  "id": "ciSIihMVwJaQ2o2B",
+  "tags": []
+}
