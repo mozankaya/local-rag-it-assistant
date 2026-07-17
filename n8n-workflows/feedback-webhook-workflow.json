@@ -34,22 +34,89 @@
     },
     {
       "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "const question = $json.question;\nconst answer = $json.answer;\nconst feedback = $json.feedback;\nconst sources = $json.sources || [];\n\nfunction sqlEscape(value) {\n  return String(value ?? '').replace(/'/g, \"''\");\n}\n\nconst sourcesJson = JSON.stringify(sources);\n\nconst insertQuery = `\nWITH inserted AS (\n  INSERT INTO feedback_logs (\n    question,\n    answer,\n    feedback,\n    sources\n  )\n  VALUES (\n    '${sqlEscape(question)}',\n    '${sqlEscape(answer)}',\n    '${sqlEscape(feedback)}',\n    '${sqlEscape(sourcesJson)}'::jsonb\n  )\n  RETURNING id, created_at\n)\nSELECT id, created_at\nFROM inserted;\n`;\n\nreturn {\n  json: {\n    question,\n    answer,\n    feedback,\n    sources,\n    insert_query: insertQuery\n  }\n};"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        416,
-        0
-      ],
-      "id": "f81fe8fd-93c3-4080-81de-7647d03f1762",
-      "name": "Prepare Feedback Insert"
-    },
-    {
-      "parameters": {
-        "operation": "executeQuery",
-        "query": "{{ $json.insert_query }}",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "feedback_logs",
+          "mode": "list",
+          "cachedResultName": "feedback_logs"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "question": "={{ $json.question }}",
+            "answer": "={{ $json.answer }}",
+            "feedback": "={{ $json.feedback }}",
+            "sources": "={{ $json.sources_json }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "question",
+              "displayName": "question",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "answer",
+              "displayName": "answer",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "feedback",
+              "displayName": "feedback",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sources",
+              "displayName": "sources",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "object",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
@@ -95,6 +162,20 @@
       ],
       "id": "809f1d39-0fd9-4141-8aea-df5b16b80e8f",
       "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const question = String($json.question || '').trim();\nconst answer = String($json.answer || '').trim();\nconst feedback = String($json.feedback || '').trim();\nconst sources = Array.isArray($json.sources) ? $json.sources : [];\n\nif (!question) throw new Error('Question is required.');\nif (!answer) throw new Error('Answer is required.');\n\nif (!['useful', 'not_useful'].includes(feedback)) {\n  throw new Error('Feedback must be either \"useful\" or \"not_useful\".');\n}\n\nreturn {\n  json: {\n    question,\n    answer,\n    feedback,\n    sources,\n    sources_json: {\n      source_items: sources\n    }\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "f81fe8fd-93c3-4080-81de-7647d03f1762",
+      "name": "Prepare Feedback Data"
     }
   ],
   "pinData": {},
@@ -114,18 +195,7 @@
       "main": [
         [
           {
-            "node": "Prepare Feedback Insert",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Prepare Feedback Insert": {
-      "main": [
-        [
-          {
-            "node": "Insert Feedback",
+            "node": "Prepare Feedback Data",
             "type": "main",
             "index": 0
           }
@@ -153,14 +223,26 @@
           }
         ]
       ]
+    },
+    "Prepare Feedback Data": {
+      "main": [
+        [
+          {
+            "node": "Insert Feedback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
   "settings": {
     "executionOrder": "v1",
-    "binaryMode": "separate"
+    "binaryMode": "separate",
+    "availableInMCP": false
   },
-  "versionId": "fdbf9754-8a4a-45f1-a847-02c7d62b9b6b",
+  "versionId": "b8ea3977-6d47-4264-bf00-831bec4ac27a",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "8ad5e91ca19f2aebbe2ce2f031589771f3e4e7c0049e38f9c59f6c20dd949760"
