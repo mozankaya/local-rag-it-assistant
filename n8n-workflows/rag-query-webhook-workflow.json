@@ -34,7 +34,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const input = $input.first().json;\n\nconst question = String(input.question || '').trim();\n\nif (!question) {\n  throw new Error('Question is required.');\n}\n\nconst normalized = question\n  .toLocaleLowerCase('tr-TR')\n  .replace(/[!?.,:;]/g, '')\n  .replace(/\\s+/g, ' ')\n  .trim();\n\nconst greetingWords = [\n  'merhaba',\n  'selam',\n  'selamlar',\n  'iyi günler',\n  'günaydın',\n  'iyi akşamlar',\n  'iyi çalışmalar'\n];\n\nconst identityPatterns = [\n  'sen kimsin',\n  'kimsin',\n  'nesin',\n  'adın ne',\n  'kendini tanıt',\n  'kendini tanıtır mısın'\n];\n\nconst capabilityPatterns = [\n  'ne yapabiliyorsun',\n  'neler yapabiliyorsun',\n  'ne işe yarıyorsun',\n  'hangi konularda yardımcı olabilirsin',\n  'hangi konularda yardımcı oluyorsun',\n  'bana nasıl yardımcı olabilirsin',\n  'ne konuda yardımcı olabilirsin'\n];\n\nconst thanksPatterns = [\n  'teşekkürler',\n  'teşekkür ederim',\n  'sağ ol',\n  'sağol',\n  'eyvallah'\n];\n\nconst supportedTopicKeywords = [\n  'vpn','şifre','parola','hesap','kilit','kilitlendi','outlook','mail','e-posta','eposta',\n  'yazıcı','printer','çıktı','toner','donanım','bilgisayar','laptop','ekran','klavye','mouse',\n  'internet','wifi','wi-fi','ağ','bağlantı','ekipman','talep','yetki','yazılım','program','arıza','hata','yavaş',\n  'ortak','klasör','klasor','dosya','paylaşım','paylasim','erişim','erisim','paylaşımlı','paylasimli',\n  'network drive','ağ sürücüsü','ag surucusu','toplantı','toplanti','projeksiyon','hdmi','monitör','monitor'\n];\n\nfunction includesAny(patterns) {\n  return patterns.some((pattern) => normalized.includes(pattern));\n}\n\nlet staticAnswer = null;\n\nif (greetingWords.includes(normalized)) {\n  staticAnswer =\n    'Merhaba, ben İZELTAŞ IT Danışma Asistanı’yım. VPN, şifre, Outlook, yazıcı, donanım, ağ bağlantısı ve ekipman talepleri gibi IT konularında yardımcı olabilirim.';\n}\n\nif (!staticAnswer && includesAny(identityPatterns)) {\n  staticAnswer =\n    'Ben İZELTAŞ IT Danışma Asistanı’yım. Lokal LLM ve RAG yapısıyla, yüklenen IT destek dokümanlarına göre kullanıcılara yardımcı olmak için tasarlandım.';\n}\n\nif (!staticAnswer && includesAny(capabilityPatterns)) {\n  staticAnswer =\n    'VPN bağlantısı, şifre işlemleri, Outlook sorunları, yazıcı problemleri, donanım destekleri, ağ bağlantısı ve ekipman talepleri hakkında yardımcı olabilirim.';\n}\n\nif (!staticAnswer && includesAny(thanksPatterns)) {\n  staticAnswer =\n    'Rica ederim. IT süreçleriyle ilgili başka bir konuda da yardımcı olabilirim.';\n}\n\nconst isSupportedTopic = includesAny(supportedTopicKeywords);\n\nconst outOfScopeAnswer =\n  'Bu konuda yardımcı olamam. Ben yalnızca VPN, şifre işlemleri, Outlook, yazıcı, donanım, ağ bağlantısı, yazılım yetkisi ve ekipman talepleri gibi IT destek konularında yardımcı olabilirim.';\n\nreturn [\n  {\n    json: {\n      question,\n      is_static_response: Boolean(staticAnswer),\n      is_supported_topic: Boolean(isSupportedTopic),\n      answer: staticAnswer || outOfScopeAnswer,\n      sources: []\n    }\n  }\n];"
+        "jsCode": "const input = $input.first().json;\n\nconst question = String(\n  input.question || input.body?.question || ''\n).trim();\n\nif (!question) {\n  throw new Error('Question is required.');\n}\n\nconst normalized = question\n  .toLocaleLowerCase('tr-TR')\n  .replace(/[!?.,:;]/g, '')\n  .replace(/\\s+/g, ' ')\n  .trim();\n\nconst greetingWords = [\n  'merhaba',\n  'selam',\n  'selamlar',\n  'iyi günler',\n  'günaydın',\n  'iyi akşamlar',\n  'iyi çalışmalar'\n];\n\nconst identityPatterns = [\n  'sen kimsin',\n  'kimsin',\n  'nesin',\n  'adın ne',\n  'kendini tanıt',\n  'kendini tanıtır mısın'\n];\n\nconst capabilityPatterns = [\n  'ne yapabiliyorsun',\n  'neler yapabiliyorsun',\n  'ne işe yarıyorsun',\n  'hangi konularda yardımcı olabilirsin',\n  'hangi konularda yardımcı oluyorsun',\n  'bana nasıl yardımcı olabilirsin',\n  'ne konuda yardımcı olabilirsin'\n];\n\nconst thanksPatterns = [\n  'teşekkürler',\n  'teşekkür ederim',\n  'sağ ol',\n  'sağol',\n  'eyvallah'\n];\n\nconst clearlyOutOfScopePatterns = [\n  'yemek tarifi',\n  'tarif verir misin',\n  'ne yemek',\n  'hava durumu',\n  'bugün hava',\n  'maç sonucu',\n  'spor',\n  'film öner',\n  'dizi öner',\n  'müzik öner',\n  'şarkı öner',\n  'şiir yaz',\n  'hikaye yaz',\n  'fıkra anlat',\n  'şaka yap',\n  'borsa',\n  'kripto',\n  'bitcoin',\n  'tatil öner',\n  'otel öner',\n  'uçak bileti',\n  'matematik sorusu',\n  'denklem çöz',\n  'çeviri yap',\n  'ingilizceye çevir',\n  'python kodu',\n  'kod yazar mısın',\n  'programlama ödevi',\n  'javascript kodu',\n  'java kodu',\n  'c# kodu'\n];\n\nfunction includesAny(patterns) {\n  return patterns.some((pattern) => normalized.includes(pattern));\n}\n\nlet staticAnswer = null;\n\nif (greetingWords.includes(normalized)) {\n  staticAnswer =\n    'Merhaba, ben İZELTAŞ IT Danışma Asistanı’yım. VPN, şifre, Outlook, yazıcı, donanım, ağ bağlantısı ve ekipman talepleri gibi IT konularında yardımcı olabilirim.';\n}\n\nif (!staticAnswer && includesAny(identityPatterns)) {\n  staticAnswer =\n    'Ben İZELTAŞ IT Danışma Asistanı’yım. Lokal LLM ve RAG yapısıyla, yüklenen IT destek dokümanlarına göre kullanıcılara yardımcı olmak için tasarlandım.';\n}\n\nif (!staticAnswer && includesAny(capabilityPatterns)) {\n  staticAnswer =\n    'VPN bağlantısı, şifre işlemleri, Outlook sorunları, yazıcı problemleri, donanım destekleri, ağ bağlantısı, ortak klasör erişimi ve ekipman talepleri hakkında yardımcı olabilirim.';\n}\n\nif (!staticAnswer && includesAny(thanksPatterns)) {\n  staticAnswer =\n    'Rica ederim. IT süreçleriyle ilgili başka bir konuda da yardımcı olabilirim.';\n}\n\nconst isClearlyOutOfScope = includesAny(clearlyOutOfScopePatterns);\n\n// Yeni mantık:\n// Statik cevap yoksa ve bariz kapsam dışı değilse RAG'e gönder.\nconst isSupportedTopic = !staticAnswer && !isClearlyOutOfScope;\n\nconst outOfScopeAnswer =\n  'Bu konuda yardımcı olamam. Ben yalnızca VPN, şifre işlemleri, Outlook, yazıcı, donanım, ağ bağlantısı, ortak klasör erişimi, yazılım yetkisi ve ekipman talepleri gibi IT destek konularında yardımcı olabilirim.';\n\nreturn [\n  {\n    json: {\n      question,\n      is_static_response: Boolean(staticAnswer),\n      is_supported_topic: Boolean(isSupportedTopic),\n      answer: staticAnswer || outOfScopeAnswer,\n      sources: []\n    }\n  }\n];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -148,7 +148,7 @@
         "mode": "load",
         "tableName": "langchain_document_chunks",
         "prompt": "={{ $json.question }}",
-        "topK": 1,
+        "topK": 3,
         "options": {}
       },
       "type": "@n8n/n8n-nodes-langchain.vectorStorePGVector",
@@ -187,7 +187,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const items = $input.all();\nconst intentData = $('Detect Simple Intent').first().json;\n\nconst question = intentData.question;\n\nfunction parseMetadata(value) {\n  if (!value) return {};\n\n  if (typeof value === 'object') return value;\n\n  try {\n    return JSON.parse(value);\n  } catch {\n    return {};\n  }\n}\n\nfunction getContent(row) {\n  return String(\n    row.pageContent ||\n    row.content ||\n    row.text ||\n    row.document?.pageContent ||\n    row.document?.content ||\n    row.document?.text ||\n    row.json?.pageContent ||\n    row.json?.content ||\n    row.json?.text ||\n    ''\n  ).trim();\n}\n\nfunction getMetadata(row) {\n  return parseMetadata(\n    row.metadata ||\n    row.document?.metadata ||\n    row.json?.metadata ||\n    {}\n  );\n}\n\nconst documents = [];\n\nfor (const item of items) {\n  const row = item.json || {};\n\n  if (Array.isArray(row.documents)) {\n    for (const doc of row.documents) {\n      documents.push(doc);\n    }\n  } else if (Array.isArray(row.results)) {\n    for (const doc of row.results) {\n      documents.push(doc);\n    }\n  } else {\n    documents.push(row);\n  }\n}\n\nconst usefulDocuments = documents\n  .map((doc, index) => {\n    const content = getContent(doc);\n    const metadata = getMetadata(doc);\n\n    return {\n      content,\n      metadata,\n      index\n    };\n  })\n  .filter((doc) => doc.content.length > 20)\n  .slice(0, 2);\n\nconst context = usefulDocuments.length\n  ? usefulDocuments\n      .map((doc) => doc.content)\n      .join('\\n\\n')\n  : 'NO_RELEVANT_SOURCE';\n\nconst sources = usefulDocuments.map((doc, index) => {\n  const metadata = doc.metadata || {};\n\n  return {\n    document_id: metadata.document_id || null,\n    title: metadata.title || null,\n    category: metadata.category || null,\n    section_title: metadata.section_title || null,\n    chunk_index: metadata.chunk_index || index + 1\n  };\n});\n\nconst prompt = `\nYou are an IT support assistant for İZELTAŞ.\n\nYour task is to answer the user's question using ONLY the SOURCE TEXT.\n\nRules:\n- Answer in Turkish only.\n- Use only the SOURCE TEXT.\n- Do not add information that is not in the source.\n- Do not mention document names, metadata, chunks, sources, or IDs.\n- Write maximum 3 short bullet points.\n- Every bullet point must start with \"- \".\n- Use clear and practical Turkish.\n- Do not ask follow-up questions.\n- Do not use English or Chinese characters.\n\nIf SOURCE TEXT is NO_RELEVANT_SOURCE, answer exactly:\n- Bu konuda kaynak dokümanlarda yeterli bilgi bulamadım. IT destek ekibiyle iletişime geçebilirsiniz.\n\nSOURCE TEXT:\n${context}\n\nUSER QUESTION:\n${question}\n\nFinal Turkish answer:\n`;\n\nreturn [\n  {\n    json: {\n      question,\n      context,\n      prompt,\n      sources\n    }\n  }\n];"
+        "jsCode": "const items = $input.all();\nconst intentData = $('Detect Simple Intent').first().json;\n\nconst question = intentData.question;\n\n// ==== SCORE / DISTANCE AYARI ====\n// İlk testte false kalsın. Böylece score değerlerini görebiliriz.\n// Score değerleri netleşince true yapacağız.\nconst ENABLE_SCORE_THRESHOLD = true;\n\n// pgvector çoğu durumda distance/mesafe döndürür.\n// Bu durumda düşük değer daha alakalıdır.\nconst LOWER_SCORE_IS_BETTER = true;\n\n// Bu değer test sonuçlarına göre ayarlanacak.\n// Şimdilik örnek değer.\nconst SCORE_THRESHOLD = 0.40;\n\nfunction parseMetadata(value) {\n  if (!value) return {};\n\n  if (typeof value === 'object') return value;\n\n  try {\n    return JSON.parse(value);\n  } catch {\n    return {};\n  }\n}\n\nfunction getContent(row) {\n  return String(\n    row.pageContent ||\n    row.content ||\n    row.text ||\n    row.document?.pageContent ||\n    row.document?.content ||\n    row.document?.text ||\n    row.json?.pageContent ||\n    row.json?.content ||\n    row.json?.text ||\n    ''\n  ).trim();\n}\n\nfunction getMetadata(row) {\n  return parseMetadata(\n    row.metadata ||\n    row.document?.metadata ||\n    row.json?.metadata ||\n    {}\n  );\n}\n\nfunction getScore(row) {\n  const value =\n    row.score ??\n    row.distance ??\n    row.json?.score ??\n    row.json?.distance ??\n    row.document?.score ??\n    row.document?.distance ??\n    null;\n\n  if (value === null || value === undefined) {\n    return null;\n  }\n\n  const numberValue = Number(value);\n\n  return Number.isNaN(numberValue) ? null : numberValue;\n}\n\nfunction isScoreAccepted(score) {\n  if (!ENABLE_SCORE_THRESHOLD) {\n    return true;\n  }\n\n  if (score === null) {\n    return false;\n  }\n\n  if (LOWER_SCORE_IS_BETTER) {\n    return score <= SCORE_THRESHOLD;\n  }\n\n  return score >= SCORE_THRESHOLD;\n}\n\nconst documents = [];\n\nfor (const item of items) {\n  const row = item.json || {};\n\n  if (Array.isArray(row.documents)) {\n    for (const doc of row.documents) {\n      documents.push(doc);\n    }\n  } else if (Array.isArray(row.results)) {\n    for (const doc of row.results) {\n      documents.push(doc);\n    }\n  } else {\n    documents.push(row);\n  }\n}\n\nconst candidateDocuments = documents\n  .map((doc, index) => {\n    const content = getContent(doc);\n    const metadata = getMetadata(doc);\n    const score = getScore(doc);\n\n    return {\n      content,\n      metadata,\n      score,\n      index\n    };\n  })\n  .filter((doc) => doc.content.length > 20);\n\nconst usefulDocuments = candidateDocuments\n  .filter((doc) => isScoreAccepted(doc.score))\n  .slice(0, 1);\n\nconst context = usefulDocuments.length\n  ? usefulDocuments\n      .map((doc) => doc.content)\n      .join('\\n\\n')\n  : 'NO_RELEVANT_SOURCE';\n\nconst sources = usefulDocuments.map((doc, index) => {\n  const metadata = doc.metadata || {};\n\n  return {\n    document_id: metadata.document_id || null,\n    title: metadata.title || null,\n    category: metadata.category || null,\n    section_title: metadata.section_title || null,\n    chunk_index: metadata.chunk_index ?? index + 1,\n    source_file_name: metadata.source_file_name || null,\n    file_type: metadata.file_type || null,\n\n    // Geçici debug alanı.\n    // Threshold değerini belirledikten sonra bunu kaldırabiliriz.\n    score: doc.score\n  };\n});\n\nconst prompt = `\nYou are an internal IT support assistant for İZELTAŞ.\n\nAnswer the user's question using ONLY the provided source text.\n\nRules:\n- Answer in Turkish only.\n- Use only the SOURCE TEXT.\n- Do not add information that is not in the source.\n- Do not mention document names, file names, metadata, chunks, sources, or IDs.\n- Write maximum 3 short bullet points.\n- Every bullet point must start with \"- \".\n- Each bullet point should be a clear and practical action step.\n- Do not write an introduction.\n- Do not repeat the user's problem.\n- Do not ask follow-up questions.\n- Do not use English or Chinese characters.\n\nIf SOURCE TEXT is NO_RELEVANT_SOURCE, answer exactly:\n- Bu konuda kaynak dokümanlarda yeterli bilgi bulamadım. IT destek ekibiyle iletişime geçebilirsiniz.\n\nSOURCE TEXT:\n${context}\n\nUSER QUESTION:\n${question}\n\nFinal Turkish answer:\n`;\n\nreturn [\n  {\n    json: {\n      question,\n      context,\n      prompt,\n      sources\n    }\n  }\n];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -230,8 +230,8 @@
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.9,
       "position": [
-        1776,
-        32
+        1984,
+        48
       ],
       "id": "33ac829a-3a4d-4d7d-a5b9-b207b67a0c24",
       "name": "Generate Answer - LangChain"
@@ -239,13 +239,13 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const buildPromptOutput = $('Build Prompt').first().json;\n\nconst question = buildPromptOutput.question;\nconst sources = buildPromptOutput.sources || [];\n\nconst rawAnswer = String(\n  $json.text ||\n  $json.output ||\n  $json.response ||\n  $json.answer ||\n  $json.result ||\n  $json.data?.text ||\n  $json.data?.output ||\n  ''\n).trim();\n\nif (!rawAnswer) {\n  throw new Error('Model answer not found');\n}\n\nfunction normalizeBullets(answer) {\n  const lines = answer\n    .split('\\n')\n    .map((line) => line.trim())\n    .filter(Boolean);\n\n  let bulletLines = lines.filter((line) => /^[-•]\\s+/.test(line));\n\n  if (bulletLines.length === 0) {\n    const sentences = answer\n      .split(/(?<=[.!?])\\s+/)\n      .map((sentence) => sentence.trim())\n      .filter(Boolean);\n\n    bulletLines = sentences.map((sentence) => `- ${sentence}`);\n  }\n\n  return bulletLines\n    .slice(0, 3)\n    .map((line) => {\n      let text = line.replace(/^[-•]\\s+/, '').trim();\n\n      if (!/[.!?]$/.test(text)) {\n        text += '.';\n      }\n\n      return `- ${text}`;\n    })\n    .join('\\n');\n}\n\nconst answer = normalizeBullets(rawAnswer);\n\nreturn {\n  json: {\n    question,\n    answer,\n    sources\n  }\n};"
+        "jsCode": "const buildPromptOutput = $('Build Prompt').first().json;\n\nconst question = buildPromptOutput.question;\nconst sources = buildPromptOutput.sources || [];\nconst context = buildPromptOutput.context || '';\n\nconst noRelevantSourceAnswer =\n  '- Bu konuda kaynak dokümanlarda yeterli bilgi bulamadım. IT destek ekibiyle iletişime geçebilirsiniz.';\n\n// Score threshold sonucu kaynak kalmadıysa LLM cevabını kullanma.\nif (sources.length === 0 || context === 'NO_RELEVANT_SOURCE') {\n  return {\n    json: {\n      question,\n      answer: noRelevantSourceAnswer,\n      sources: []\n    }\n  };\n}\n\nconst rawAnswer = String(\n  $json.text ||\n  $json.output ||\n  $json.response ||\n  $json.answer ||\n  $json.result ||\n  $json.data?.text ||\n  $json.data?.output ||\n  ''\n).trim();\n\nfunction fixBasicFormatting(text) {\n  return String(text || '')\n    .replace(/:\\./g, '.')\n    .replace(/\\s+\\./g, '.')\n    .replace(/Kurulum tarafından/g, 'Kurum tarafından')\n    .replace(/kurulum tarafından/g, 'kurum tarafından')\n    .trim();\n}\n\nfunction isInvalidLine(text) {\n  const normalized = String(text || '')\n    .toLocaleLowerCase('tr-TR')\n    .trim();\n\n  const invalidPatterns = [\n    'source',\n    'kaynak metin',\n    'metadata',\n    'chunk',\n    'document_id',\n    'section title',\n    'bölüm başlığı',\n    'final answer',\n    'final cevap',\n    'aşağıdaki adımları',\n    'şu adımları',\n    'bu sorunu çözmek için',\n    'bu bölümde',\n    'cevap veriyorum',\n    'yönlendiriyorum'\n  ];\n\n  return invalidPatterns.some((pattern) => normalized.includes(pattern));\n}\n\nfunction normalizeBullets(answer) {\n  const cleaned = fixBasicFormatting(answer);\n\n  if (!cleaned) {\n    return '- Şu anda yanıt üretilemedi. Lütfen daha sonra tekrar deneyin veya IT destek ekibiyle iletişime geçin.';\n  }\n\n  const lines = cleaned\n    .split('\\n')\n    .map((line) => line.trim())\n    .filter(Boolean);\n\n  let bulletLines = lines.filter((line) => /^[-•]\\s+/.test(line));\n\n  if (bulletLines.length === 0) {\n    const sentences = cleaned\n      .split(/(?<=[.!?])\\s+/)\n      .map((sentence) => sentence.trim())\n      .filter(Boolean);\n\n    bulletLines = sentences.map((sentence) => `- ${sentence}`);\n  }\n\n  bulletLines = bulletLines\n    .map((line) => line.replace(/^[-•]\\s+/, '').trim())\n    .map(fixBasicFormatting)\n    .filter((line) => line.length > 0)\n    .filter((line) => !isInvalidLine(line));\n\n  if (bulletLines.length === 0) {\n    bulletLines = [\n      'Bu konuda kaynak dokümanlarda yeterli bilgi bulamadım. IT destek ekibiyle iletişime geçebilirsiniz.'\n    ];\n  }\n\n  return bulletLines\n    .slice(0, 3)\n    .map((line) => {\n      let text = fixBasicFormatting(line);\n\n      if (!/[.!?]$/.test(text)) {\n        text += '.';\n      }\n\n      return `- ${text}`;\n    })\n    .join('\\n');\n}\n\nconst answer = normalizeBullets(rawAnswer);\n\nreturn {\n  json: {\n    question,\n    answer,\n    sources\n  }\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2128,
-        32
+        2336,
+        144
       ],
       "id": "cb815feb-a170-483e-a521-398ef803809f",
       "name": "Format Answer"
@@ -259,7 +259,7 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        2960,
+        3168,
         32
       ],
       "id": "db925f28-a155-4a6c-a4d6-328fa22b2be9",
@@ -268,12 +268,12 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const question = String($json.question || '').trim();\nconst answer = String($json.answer || '').trim();\nconst sources = Array.isArray($json.sources) ? $json.sources : [];\n\nif (!question) throw new Error('Question is required for chat log.');\nif (!answer) throw new Error('Answer is required for chat log.');\n\nfunction sqlEscape(value) {\n  return String(value ?? '').replace(/'/g, \"''\");\n}\n\nfunction maskSensitiveText(value) {\n  return String(value ?? '')\n    .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}/gi, '[masked_email]')\n    .replace(/(\\+90|0)?\\s?5\\d{2}\\s?\\d{3}\\s?\\d{2}\\s?\\d{2}/g, '[masked_phone]')\n    .replace(/\\b\\d{8,}\\b/g, '[masked_number]');\n}\n\nconst firstSource = sources[0] || {};\n\nconst category = firstSource.category || null;\nconst sectionTitle = firstSource.section_title || null;\n\nlet responseType = 'rag_answer';\n\nif (sources.length === 0) {\n  responseType = 'static_or_out_of_scope';\n}\n\nconst maskedQuestion = maskSensitiveText(question);\nconst maskedAnswer = maskSensitiveText(answer);\nconst sourcesJson = JSON.stringify(sources);\n\nconst insertQuery = `\nINSERT INTO chat_logs (\n  question,\n  answer,\n  sources,\n  category,\n  section_title,\n  response_type\n)\nVALUES (\n  '${sqlEscape(maskedQuestion)}',\n  '${sqlEscape(maskedAnswer)}',\n  '${sqlEscape(sourcesJson)}'::jsonb,\n  ${category ? `'${sqlEscape(category)}'` : 'NULL'},\n  ${sectionTitle ? `'${sqlEscape(sectionTitle)}'` : 'NULL'},\n  '${sqlEscape(responseType)}'\n)\nRETURNING id, created_at;\n`;\n\nreturn {\n  json: {\n    question,\n    answer,\n    sources,\n    category,\n    section_title: sectionTitle,\n    response_type: responseType,\n    insert_query: insertQuery\n  }\n};"
+        "jsCode": "const question = String($json.question || '').trim();\nconst answer = String($json.answer || '').trim();\nconst sources = Array.isArray($json.sources) ? $json.sources : [];\n\nif (!question) throw new Error('Question is required for chat log.');\nif (!answer) throw new Error('Answer is required for chat log.');\n\nfunction sqlEscape(value) {\n  return String(value ?? '').replace(/'/g, \"''\");\n}\n\nfunction maskSensitiveText(value) {\n  return String(value ?? '')\n    .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}/gi, '[masked_email]')\n    .replace(/(\\+90|0)?\\s?5\\d{2}\\s?\\d{3}\\s?\\d{2}\\s?\\d{2}/g, '[masked_phone]')\n    .replace(/\\b\\d{8,}\\b/g, '[masked_number]');\n}\n\nconst firstSource = sources[0] || {};\n\nconst category = firstSource.category || null;\nconst sectionTitle = firstSource.section_title || null;\n\nconst responseType = $json.response_type || (sources.length > 0 ? 'rag_answer' : 'static_or_out_of_scope');\n\nconst maskedQuestion = maskSensitiveText(question);\nconst maskedAnswer = maskSensitiveText(answer);\nconst sourcesJson = JSON.stringify(sources);\n\nconst insertQuery = `\nINSERT INTO chat_logs (\n  question,\n  answer,\n  sources,\n  category,\n  section_title,\n  response_type\n)\nVALUES (\n  '${sqlEscape(maskedQuestion)}',\n  '${sqlEscape(maskedAnswer)}',\n  '${sqlEscape(sourcesJson)}'::jsonb,\n  ${category ? `'${sqlEscape(category)}'` : 'NULL'},\n  ${sectionTitle ? `'${sqlEscape(sectionTitle)}'` : 'NULL'},\n  '${sqlEscape(responseType)}'\n)\nRETURNING id, created_at;\n`;\n\nreturn {\n  json: {\n    question,\n    answer,\n    sources,\n    category,\n    section_title: sectionTitle,\n    response_type: responseType,\n    insert_query: insertQuery\n  }\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2336,
+        2544,
         32
       ],
       "id": "695aa610-c6b7-4d51-b05d-75338844c0be",
@@ -288,7 +288,7 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        2544,
+        2752,
         32
       ],
       "id": "0cc8eef1-930b-4d45-8211-b76dcd843b58",
@@ -308,11 +308,59 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2752,
+        2960,
         32
       ],
       "id": "6445a47a-5f9b-49ef-87f9-44d47906da93",
       "name": "Format Chat Response"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "0f5431ef-bba6-4fbf-aea0-f9aeffdf2771",
+              "leftValue": "={{ $json.context }}",
+              "rightValue": "NO_RELEVANT_SOURCE",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1776,
+        32
+      ],
+      "id": "4578aae4-34ca-4e76-bf92-63e6e03e96a1",
+      "name": "IF No Relevant Source"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const question = $json.question;\n\nreturn {\n  json: {\n    question,\n    answer: '- Bu konuda kaynak dokümanlarda yeterli bilgi bulamadım. IT destek ekibiyle iletişime geçebilirsiniz.',\n    sources: [],\n    response_type: 'no_relevant_source'\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2096,
+        -160
+      ],
+      "id": "2e3a44b2-99fc-4ff8-b13a-fde7bff7633f",
+      "name": "Prepare No Source Response"
     }
   ],
   "pinData": {},
@@ -412,7 +460,7 @@
       "main": [
         [
           {
-            "node": "Generate Answer - LangChain",
+            "node": "IF No Relevant Source",
             "type": "main",
             "index": 0
           }
@@ -484,6 +532,35 @@
           }
         ]
       ]
+    },
+    "IF No Relevant Source": {
+      "main": [
+        [
+          {
+            "node": "Prepare No Source Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Generate Answer - LangChain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare No Source Response": {
+      "main": [
+        [
+          {
+            "node": "Prepare Chat Log Insert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
@@ -491,7 +568,7 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "288e9623-2673-4573-8ee9-11a7143a9e77",
+  "versionId": "ec3b96d2-de74-4fed-96df-5e22887b7c91",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "8ad5e91ca19f2aebbe2ce2f031589771f3e4e7c0049e38f9c59f6c20dd949760"
