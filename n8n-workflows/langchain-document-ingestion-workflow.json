@@ -1,0 +1,278 @@
+{
+  "name": "LangChain Document Ingestion",
+  "nodes": [
+    {
+      "parameters": {
+        "fileSelector": "/home/node/.n8n-files/data/documents.json",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "178eb560-0096-4c3a-ae71-a25fec37f761",
+      "name": "Read Manifest"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "94f5412b-c1dc-4b8d-af7c-a520fbe22621",
+      "name": "Manual Trigger"
+    },
+    {
+      "parameters": {
+        "jsCode": "// @ts-ignore\nconst buffer = await this.helpers.getBinaryDataBuffer(0, 'data');\n\nconst documents = JSON.parse(buffer.toString('utf8'));\n\nif (!Array.isArray(documents)) {\n  throw new Error('documents.json must be an array.');\n}\n\nreturn documents.map((doc, index) => {\n  const requiredFields = ['document_id', 'title', 'category', 'file_name'];\n\n  for (const field of requiredFields) {\n    if (!doc[field]) {\n      throw new Error(`Missing field \"${field}\" in documents.json item ${index + 1}`);\n    }\n  }\n\n  return {\n    json: {\n      document_id: doc.document_id,\n      title: doc.title,\n      category: doc.category,\n      file_name: doc.file_name,\n      file_path: `/home/node/.n8n-files/data/mock-data/${doc.file_name}`\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "b79b4a0a-571a-4d7a-88c4-ff454efcbc2b",
+      "name": "Create File List"
+    },
+    {
+      "parameters": {
+        "fileSelector": "={{ $json.file_path }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        624,
+        0
+      ],
+      "id": "f97d17e4-63b4-47fb-9a91-e8174583a709",
+      "name": "Read Files from Disk"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst fileListItems = $('Create File List').all();\nconst output = [];\n\nfunction cleanText(text) {\n  return String(text || '')\n    .replace(/\\r\\n/g, '\\n')\n    .replace(/\\n{3,}/g, '\\n\\n')\n    .trim();\n}\n\nfor (let itemIndex = 0; itemIndex < items.length; itemIndex++) {\n  const metadata = fileListItems[itemIndex].json;\n\n  // @ts-ignore\n  const buffer = await this.helpers.getBinaryDataBuffer(itemIndex, 'data');\n  const fileContent = cleanText(buffer.toString('utf8'));\n\n  const lines = fileContent.split('\\n');\n\n  let currentSectionTitle = 'Genel';\n  let currentLines = [];\n  let chunkIndex = 1;\n\n  function pushSection() {\n    const content = cleanText(currentLines.join('\\n'));\n\n    if (!content) return;\n\n    output.push({\n      json: {\n        text: content,\n        metadata: {\n          document_id: metadata.document_id,\n          title: metadata.title,\n          category: metadata.category,\n          section_title: currentSectionTitle,\n          chunk_index: chunkIndex,\n          file_name: metadata.file_name\n        }\n      }\n    });\n\n    chunkIndex++;\n  }\n\n  for (const line of lines) {\n    const sectionMatch = line.match(/^##\\s+(.+)$/);\n\n    if (sectionMatch) {\n      pushSection();\n      currentSectionTitle = sectionMatch[1].trim();\n      currentLines = [line];\n    } else {\n      currentLines.push(line);\n    }\n  }\n\n  pushSection();\n}\n\nreturn output;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        832,
+        0
+      ],
+      "id": "f84b5cc5-8b03-457f-8da1-c31ef1f83321",
+      "name": "Prepare LangChain Documents"
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": "langchain_document_chunks",
+        "options": {
+          "collection": {
+            "values": {}
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePGVector",
+      "typeVersion": 1.3,
+      "position": [
+        1040,
+        0
+      ],
+      "id": "a25a74b7-4528-4be4-8561-a1f10d02fe2c",
+      "name": "Insert Documents to PGVector - LangChain",
+      "credentials": {
+        "postgres": {
+          "id": "jShdzm8IEPIqSd41",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonMode": "expressionData",
+        "jsonData": "={{ $json.text }}",
+        "textSplittingMode": "custom",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "document_id",
+                "value": "={{ $json.metadata.document_id }}"
+              },
+              {
+                "name": "title",
+                "value": "={{ $json.metadata.title }}"
+              },
+              {
+                "name": "category",
+                "value": "={{ $json.metadata.category }}"
+              },
+              {
+                "name": "section_title",
+                "value": "={{ $json.metadata.section_title }}"
+              },
+              {
+                "name": "file_name",
+                "value": "={{ $json.metadata.file_name }}"
+              },
+              {
+                "name": "chunk_index",
+                "value": "={{ $json.metadata.chunk_index }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        1184,
+        208
+      ],
+      "id": "70c35565-c83b-4571-90b7-ab78bc108e6b",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {
+        "chunkSize": 900,
+        "chunkOverlap": 100,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        1184,
+        384
+      ],
+      "id": "20b8d114-e65e-46d6-a121-f6833a11e2db",
+      "name": "Recursive Character Text Splitter"
+    },
+    {
+      "parameters": {
+        "model": "embeddinggemma:latest"
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOllama",
+      "typeVersion": 1,
+      "position": [
+        944,
+        208
+      ],
+      "id": "c6225190-0aec-4ebc-ab12-f88800d50573",
+      "name": "Embeddings Ollama",
+      "credentials": {
+        "ollamaApi": {
+          "id": "2lvtTgqp93db9Ksy",
+          "name": "Ollama account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Read Manifest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Manifest": {
+      "main": [
+        [
+          {
+            "node": "Create File List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create File List": {
+      "main": [
+        [
+          {
+            "node": "Read Files from Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Files from Disk": {
+      "main": [
+        [
+          {
+            "node": "Prepare LangChain Documents",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare LangChain Documents": {
+      "main": [
+        [
+          {
+            "node": "Insert Documents to PGVector - LangChain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Insert Documents to PGVector - LangChain",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recursive Character Text Splitter": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Default Data Loader",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Ollama": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Insert Documents to PGVector - LangChain",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "e79a8322-e8a6-40a1-b42b-dd3e27902289",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8ad5e91ca19f2aebbe2ce2f031589771f3e4e7c0049e38f9c59f6c20dd949760"
+  },
+  "nodeGroups": [],
+  "id": "m6MF03EEkwhVwhBs",
+  "tags": []
+}

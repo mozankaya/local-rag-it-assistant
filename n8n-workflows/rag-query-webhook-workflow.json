@@ -1,0 +1,502 @@
+{
+  "name": "RAG Query Webhook Workflow - Full LangChain Test",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "rag-query",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "08f087df-6686-4804-bb65-105619ab3247",
+      "name": "Webhook",
+      "webhookId": "58ba8295-e933-4a79-8ddf-bab27ed9196f"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const body = $json.body || {};\n\nconst question = body.question || body.query || body.message;\n\nif (!question || String(question).trim().length === 0) {\n  throw new Error('Question is required. Send JSON body like: { \"question\": \"...\" }');\n}\n\nreturn {\n  json: {\n    question: String(question).trim()\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "159a2d0c-0798-4962-ac9b-599673dfda39",
+      "name": "Get User Question"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\n\nconst question = String(input.question || '').trim();\n\nif (!question) {\n  throw new Error('Question is required.');\n}\n\nconst normalized = question\n  .toLocaleLowerCase('tr-TR')\n  .replace(/[!?.,:;]/g, '')\n  .replace(/\\s+/g, ' ')\n  .trim();\n\nconst greetingWords = [\n  'merhaba',\n  'selam',\n  'selamlar',\n  'iyi günler',\n  'günaydın',\n  'iyi akşamlar',\n  'iyi çalışmalar'\n];\n\nconst identityPatterns = [\n  'sen kimsin',\n  'kimsin',\n  'nesin',\n  'adın ne',\n  'kendini tanıt',\n  'kendini tanıtır mısın'\n];\n\nconst capabilityPatterns = [\n  'ne yapabiliyorsun',\n  'neler yapabiliyorsun',\n  'ne işe yarıyorsun',\n  'hangi konularda yardımcı olabilirsin',\n  'hangi konularda yardımcı oluyorsun',\n  'bana nasıl yardımcı olabilirsin',\n  'ne konuda yardımcı olabilirsin'\n];\n\nconst thanksPatterns = [\n  'teşekkürler',\n  'teşekkür ederim',\n  'sağ ol',\n  'sağol',\n  'eyvallah'\n];\n\nconst supportedTopicKeywords = [\n  'vpn',\n  'şifre',\n  'parola',\n  'hesap',\n  'kilit',\n  'kilitlendi',\n  'outlook',\n  'mail',\n  'e-posta',\n  'eposta',\n  'yazıcı',\n  'printer',\n  'çıktı',\n  'toner',\n  'donanım',\n  'bilgisayar',\n  'laptop',\n  'ekran',\n  'klavye',\n  'mouse',\n  'internet',\n  'wifi',\n  'wi-fi',\n  'ağ',\n  'bağlantı',\n  'ekipman',\n  'talep',\n  'yetki',\n  'yazılım',\n  'program',\n  'arıza',\n  'hata',\n  'yavaş'\n];\n\nfunction includesAny(patterns) {\n  return patterns.some((pattern) => normalized.includes(pattern));\n}\n\nlet staticAnswer = null;\n\nif (greetingWords.includes(normalized)) {\n  staticAnswer =\n    'Merhaba, ben İZELTAŞ IT Danışma Asistanı’yım. VPN, şifre, Outlook, yazıcı, donanım, ağ bağlantısı ve ekipman talepleri gibi IT konularında yardımcı olabilirim.';\n}\n\nif (!staticAnswer && includesAny(identityPatterns)) {\n  staticAnswer =\n    'Ben İZELTAŞ IT Danışma Asistanı’yım. Lokal LLM ve RAG yapısıyla, yüklenen IT destek dokümanlarına göre kullanıcılara yardımcı olmak için tasarlandım.';\n}\n\nif (!staticAnswer && includesAny(capabilityPatterns)) {\n  staticAnswer =\n    'VPN bağlantısı, şifre işlemleri, Outlook sorunları, yazıcı problemleri, donanım destekleri, ağ bağlantısı ve ekipman talepleri hakkında yardımcı olabilirim.';\n}\n\nif (!staticAnswer && includesAny(thanksPatterns)) {\n  staticAnswer =\n    'Rica ederim. IT süreçleriyle ilgili başka bir konuda da yardımcı olabilirim.';\n}\n\nconst isSupportedTopic = includesAny(supportedTopicKeywords);\n\nconst outOfScopeAnswer =\n  'Bu konuda yardımcı olamam. Ben yalnızca VPN, şifre işlemleri, Outlook, yazıcı, donanım, ağ bağlantısı, yazılım yetkisi ve ekipman talepleri gibi IT destek konularında yardımcı olabilirim.';\n\nreturn [\n  {\n    json: {\n      question,\n      is_static_response: Boolean(staticAnswer),\n      is_supported_topic: Boolean(isSupportedTopic),\n      answer: staticAnswer || outOfScopeAnswer,\n      sources: []\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "71a7f0ce-4414-4a82-a0aa-05229634a4e6",
+      "name": "Detect Simple Intent"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "0ad1815a-0045-4f8b-b561-325eaf13f2a6",
+              "leftValue": "={{ $json.is_static_response }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        624,
+        0
+      ],
+      "id": "cce06eb6-9f47-4b0c-8ce2-1128b562a26d",
+      "name": "IF Static Response"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ \n  {\n    question: $json.question,\n    answer: $json.answer,\n    sources: []\n  }\n}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        880,
+        -144
+      ],
+      "id": "dac562a2-262f-493c-b0fc-66217e437a38",
+      "name": "Respond Static Answer"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "b6727d03-6b06-41b3-a2c7-c523d1779200",
+              "leftValue": "={{ $json.is_supported_topic }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        864,
+        128
+      ],
+      "id": "26fc94fa-1553-4a73-bbb7-ad96c75e7585",
+      "name": "IF Supported Topic"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ \n  {\n    question: $json.question,\n    answer: $json.answer,\n    sources: []\n  }\n}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1104,
+        432
+      ],
+      "id": "31464824-450f-4c85-ab7c-676dd4862779",
+      "name": "Respond Out of Scope Answer"
+    },
+    {
+      "parameters": {
+        "mode": "load",
+        "tableName": "langchain_document_chunks",
+        "prompt": "={{ $json.question }}",
+        "topK": 1,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePGVector",
+      "typeVersion": 1.3,
+      "position": [
+        1216,
+        32
+      ],
+      "id": "def2d8f5-8f42-4237-98f5-986ba51655bf",
+      "name": "Get Similar Documents",
+      "credentials": {
+        "postgres": {
+          "id": "jShdzm8IEPIqSd41",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "embeddinggemma:latest"
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOllama",
+      "typeVersion": 1,
+      "position": [
+        1248,
+        240
+      ],
+      "id": "44c40ced-dc66-42aa-b5a5-18809944de72",
+      "name": "Embeddings Ollama",
+      "credentials": {
+        "ollamaApi": {
+          "id": "2lvtTgqp93db9Ksy",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst intentData = $('Detect Simple Intent').first().json;\n\nconst question = intentData.question;\n\nfunction parseMetadata(value) {\n  if (!value) return {};\n\n  if (typeof value === 'object') return value;\n\n  try {\n    return JSON.parse(value);\n  } catch {\n    return {};\n  }\n}\n\nfunction getContent(row) {\n  return String(\n    row.pageContent ||\n    row.content ||\n    row.text ||\n    row.document?.pageContent ||\n    row.document?.content ||\n    row.document?.text ||\n    row.json?.pageContent ||\n    row.json?.content ||\n    row.json?.text ||\n    ''\n  ).trim();\n}\n\nfunction getMetadata(row) {\n  return parseMetadata(\n    row.metadata ||\n    row.document?.metadata ||\n    row.json?.metadata ||\n    {}\n  );\n}\n\nconst documents = [];\n\nfor (const item of items) {\n  const row = item.json || {};\n\n  if (Array.isArray(row.documents)) {\n    for (const doc of row.documents) {\n      documents.push(doc);\n    }\n  } else if (Array.isArray(row.results)) {\n    for (const doc of row.results) {\n      documents.push(doc);\n    }\n  } else {\n    documents.push(row);\n  }\n}\n\nconst usefulDocuments = documents\n  .map((doc, index) => {\n    const content = getContent(doc);\n    const metadata = getMetadata(doc);\n\n    return {\n      content,\n      metadata,\n      index\n    };\n  })\n  .filter((doc) => doc.content.length > 20)\n  .slice(0, 2);\n\nconst context = usefulDocuments.length\n  ? usefulDocuments\n      .map((doc) => doc.content)\n      .join('\\n\\n')\n  : 'NO_RELEVANT_SOURCE';\n\nconst sources = usefulDocuments.map((doc, index) => {\n  const metadata = doc.metadata || {};\n\n  return {\n    document_id: metadata.document_id || null,\n    title: metadata.title || null,\n    category: metadata.category || null,\n    section_title: metadata.section_title || null,\n    chunk_index: metadata.chunk_index || index + 1\n  };\n});\n\nconst prompt = `\nYou are an IT support assistant for İZELTAŞ.\n\nYour task is to answer the user's question using ONLY the SOURCE TEXT.\n\nRules:\n- Answer in Turkish only.\n- Use only the SOURCE TEXT.\n- Do not add information that is not in the source.\n- Do not mention document names, metadata, chunks, sources, or IDs.\n- Write maximum 3 short bullet points.\n- Every bullet point must start with \"- \".\n- Use clear and practical Turkish.\n- Do not ask follow-up questions.\n- Do not use English or Chinese characters.\n\nIf SOURCE TEXT is NO_RELEVANT_SOURCE, answer exactly:\n- Bu konuda kaynak dokümanlarda yeterli bilgi bulamadım. IT destek ekibiyle iletişime geçebilirsiniz.\n\nSOURCE TEXT:\n${context}\n\nUSER QUESTION:\n${question}\n\nFinal Turkish answer:\n`;\n\nreturn [\n  {\n    json: {\n      question,\n      context,\n      prompt,\n      sources\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1568,
+        32
+      ],
+      "id": "e0a2baf9-93d5-4fd0-a280-138a2481cb62",
+      "name": "Build Prompt"
+    },
+    {
+      "parameters": {
+        "model": "qwen2.5:3b",
+        "options": {
+          "temperature": 0.1,
+          "topP": 0.7
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        1920,
+        240
+      ],
+      "id": "39ccf32e-bffc-417b-8191-77e9c21db994",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "2lvtTgqp93db9Ksy",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.prompt }}",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1776,
+        32
+      ],
+      "id": "33ac829a-3a4d-4d7d-a5b9-b207b67a0c24",
+      "name": "Generate Answer - LangChain"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const buildPromptOutput = $('Build Prompt').first().json;\n\nconst question = buildPromptOutput.question;\nconst sources = buildPromptOutput.sources || [];\n\nconst rawAnswer = String(\n  $json.text ||\n  $json.output ||\n  $json.response ||\n  $json.answer ||\n  $json.result ||\n  $json.data?.text ||\n  $json.data?.output ||\n  ''\n).trim();\n\nif (!rawAnswer) {\n  throw new Error('Model answer not found');\n}\n\nfunction normalizeBullets(answer) {\n  const lines = answer\n    .split('\\n')\n    .map((line) => line.trim())\n    .filter(Boolean);\n\n  let bulletLines = lines.filter((line) => /^[-•]\\s+/.test(line));\n\n  if (bulletLines.length === 0) {\n    const sentences = answer\n      .split(/(?<=[.!?])\\s+/)\n      .map((sentence) => sentence.trim())\n      .filter(Boolean);\n\n    bulletLines = sentences.map((sentence) => `- ${sentence}`);\n  }\n\n  return bulletLines\n    .slice(0, 3)\n    .map((line) => {\n      let text = line.replace(/^[-•]\\s+/, '').trim();\n\n      if (!/[.!?]$/.test(text)) {\n        text += '.';\n      }\n\n      return `- ${text}`;\n    })\n    .join('\\n');\n}\n\nconst answer = normalizeBullets(rawAnswer);\n\nreturn {\n  json: {\n    question,\n    answer,\n    sources\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2128,
+        32
+      ],
+      "id": "cb815feb-a170-483e-a521-398ef803809f",
+      "name": "Format Answer"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2960,
+        32
+      ],
+      "id": "db925f28-a155-4a6c-a4d6-328fa22b2be9",
+      "name": "Respond Full LangChain Answer"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const question = String($json.question || '').trim();\nconst answer = String($json.answer || '').trim();\nconst sources = Array.isArray($json.sources) ? $json.sources : [];\n\nif (!question) throw new Error('Question is required for chat log.');\nif (!answer) throw new Error('Answer is required for chat log.');\n\nfunction sqlEscape(value) {\n  return String(value ?? '').replace(/'/g, \"''\");\n}\n\nfunction maskSensitiveText(value) {\n  return String(value ?? '')\n    .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}/gi, '[masked_email]')\n    .replace(/(\\+90|0)?\\s?5\\d{2}\\s?\\d{3}\\s?\\d{2}\\s?\\d{2}/g, '[masked_phone]')\n    .replace(/\\b\\d{8,}\\b/g, '[masked_number]');\n}\n\nconst firstSource = sources[0] || {};\n\nconst category = firstSource.category || null;\nconst sectionTitle = firstSource.section_title || null;\n\nlet responseType = 'rag_answer';\n\nif (sources.length === 0) {\n  responseType = 'static_or_out_of_scope';\n}\n\nconst maskedQuestion = maskSensitiveText(question);\nconst maskedAnswer = maskSensitiveText(answer);\nconst sourcesJson = JSON.stringify(sources);\n\nconst insertQuery = `\nINSERT INTO chat_logs (\n  question,\n  answer,\n  sources,\n  category,\n  section_title,\n  response_type\n)\nVALUES (\n  '${sqlEscape(maskedQuestion)}',\n  '${sqlEscape(maskedAnswer)}',\n  '${sqlEscape(sourcesJson)}'::jsonb,\n  ${category ? `'${sqlEscape(category)}'` : 'NULL'},\n  ${sectionTitle ? `'${sqlEscape(sectionTitle)}'` : 'NULL'},\n  '${sqlEscape(responseType)}'\n)\nRETURNING id, created_at;\n`;\n\nreturn {\n  json: {\n    question,\n    answer,\n    sources,\n    category,\n    section_title: sectionTitle,\n    response_type: responseType,\n    insert_query: insertQuery\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2336,
+        32
+      ],
+      "id": "695aa610-c6b7-4d51-b05d-75338844c0be",
+      "name": "Prepare Chat Log Insert"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "{{ $json.insert_query }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2544,
+        32
+      ],
+      "id": "0cc8eef1-930b-4d45-8211-b76dcd843b58",
+      "name": "Insert Chat Log",
+      "credentials": {
+        "postgres": {
+          "id": "jShdzm8IEPIqSd41",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const chatData = $('Prepare Chat Log Insert').first().json;\n\nreturn {\n  json: {\n    question: chatData.question,\n    answer: chatData.answer,\n    sources: chatData.sources || []\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2752,
+        32
+      ],
+      "id": "6445a47a-5f9b-49ef-87f9-44d47906da93",
+      "name": "Format Chat Response"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get User Question",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get User Question": {
+      "main": [
+        [
+          {
+            "node": "Detect Simple Intent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detect Simple Intent": {
+      "main": [
+        [
+          {
+            "node": "IF Static Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Static Response": {
+      "main": [
+        [
+          {
+            "node": "Respond Static Answer",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "IF Supported Topic",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Supported Topic": {
+      "main": [
+        [
+          {
+            "node": "Get Similar Documents",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Out of Scope Answer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Ollama": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Get Similar Documents",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Similar Documents": {
+      "main": [
+        [
+          {
+            "node": "Build Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Prompt": {
+      "main": [
+        [
+          {
+            "node": "Generate Answer - LangChain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generate Answer - LangChain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Answer - LangChain": {
+      "main": [
+        [
+          {
+            "node": "Format Answer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Answer": {
+      "main": [
+        [
+          {
+            "node": "Prepare Chat Log Insert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Chat Log Insert": {
+      "main": [
+        [
+          {
+            "node": "Insert Chat Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Chat Log": {
+      "main": [
+        [
+          {
+            "node": "Format Chat Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Chat Response": {
+      "main": [
+        [
+          {
+            "node": "Respond Full LangChain Answer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "a973d52d-550d-463f-b31c-aaddcc8e33a4",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8ad5e91ca19f2aebbe2ce2f031589771f3e4e7c0049e38f9c59f6c20dd949760"
+  },
+  "nodeGroups": [],
+  "id": "wCuxU2K9gVlGCDuK",
+  "tags": []
+}
