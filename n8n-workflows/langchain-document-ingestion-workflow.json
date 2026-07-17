@@ -9,7 +9,7 @@
       "type": "n8n-nodes-base.readWriteFile",
       "typeVersion": 1.1,
       "position": [
-        208,
+        416,
         0
       ],
       "id": "178eb560-0096-4c3a-ae71-a25fec37f761",
@@ -33,7 +33,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        416,
+        624,
         0
       ],
       "id": "b79b4a0a-571a-4d7a-88c4-ff454efcbc2b",
@@ -47,7 +47,7 @@
       "type": "n8n-nodes-base.readWriteFile",
       "typeVersion": 1.1,
       "position": [
-        624,
+        832,
         0
       ],
       "id": "f97d17e4-63b4-47fb-9a91-e8174583a709",
@@ -60,7 +60,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        832,
+        1040,
         0
       ],
       "id": "f84b5cc5-8b03-457f-8da1-c31ef1f83321",
@@ -79,7 +79,7 @@
       "type": "@n8n/n8n-nodes-langchain.vectorStorePGVector",
       "typeVersion": 1.3,
       "position": [
-        1040,
+        1248,
         0
       ],
       "id": "a25a74b7-4528-4be4-8561-a1f10d02fe2c",
@@ -146,7 +146,7 @@
       "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
       "typeVersion": 1.1,
       "position": [
-        1184,
+        1392,
         208
       ],
       "id": "70c35565-c83b-4571-90b7-ab78bc108e6b",
@@ -161,7 +161,7 @@
       "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
       "typeVersion": 1,
       "position": [
-        1184,
+        1392,
         384
       ],
       "id": "20b8d114-e65e-46d6-a121-f6833a11e2db",
@@ -174,7 +174,7 @@
       "type": "@n8n/n8n-nodes-langchain.embeddingsOllama",
       "typeVersion": 1,
       "position": [
-        944,
+        1152,
         208
       ],
       "id": "c6225190-0aec-4ebc-ab12-f88800d50573",
@@ -185,6 +185,27 @@
           "name": "Ollama account"
         }
       }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "TRUNCATE TABLE langchain_document_chunks RESTART IDENTITY;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        208,
+        0
+      ],
+      "id": "2d87435e-acb5-4fb4-a2b9-4de4d20d1553",
+      "name": "Clear Existing LangChain Chunks",
+      "credentials": {
+        "postgres": {
+          "id": "jShdzm8IEPIqSd41",
+          "name": "Postgres account"
+        }
+      }
     }
   ],
   "pinData": {},
@@ -193,7 +214,7 @@
       "main": [
         [
           {
-            "node": "Read Manifest",
+            "node": "Clear Existing LangChain Chunks",
             "type": "main",
             "index": 0
           }
@@ -276,6 +297,17 @@
           }
         ]
       ]
+    },
+    "Clear Existing LangChain Chunks": {
+      "main": [
+        [
+          {
+            "node": "Read Manifest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
@@ -283,7 +315,7 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "e8cb31c7-4d4b-4048-b90e-bdcfd102734c",
+  "versionId": "9d7c663b-683c-468e-bec2-bf26fe6aa400",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "8ad5e91ca19f2aebbe2ce2f031589771f3e4e7c0049e38f9c59f6c20dd949760"
