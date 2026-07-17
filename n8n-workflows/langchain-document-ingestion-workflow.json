@@ -1,5 +1,5 @@
 {
-  "name": "LangChain Document Ingestion",
+  "name": "LangChain Document Ingestion Workflow",
   "nodes": [
     {
       "parameters": {

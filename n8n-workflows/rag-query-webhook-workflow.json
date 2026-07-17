@@ -1,5 +1,5 @@
 {
-  "name": "RAG Query Webhook Workflow - Full LangChain Test",
+  "name": "RAG Query Webhook Workflow",
   "nodes": [
     {
       "parameters": {
