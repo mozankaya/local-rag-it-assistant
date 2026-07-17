@@ -130,21 +130,6 @@
     },
     {
       "parameters": {
-        "respondWith": "json",
-        "responseBody": "={{ \n  {\n    question: $json.question,\n    answer: $json.answer,\n    sources: []\n  }\n}}",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.respondToWebhook",
-      "typeVersion": 1.5,
-      "position": [
-        1104,
-        432
-      ],
-      "id": "31464824-450f-4c85-ab7c-676dd4862779",
-      "name": "Respond Out of Scope Answer"
-    },
-    {
-      "parameters": {
         "mode": "load",
         "tableName": "langchain_document_chunks",
         "prompt": "={{ $json.question }}",
@@ -173,8 +158,8 @@
       "type": "@n8n/n8n-nodes-langchain.embeddingsOllama",
       "typeVersion": 1,
       "position": [
-        1248,
-        240
+        1408,
+        176
       ],
       "id": "44c40ced-dc66-42aa-b5a5-18809944de72",
       "name": "Embeddings Ollama",
@@ -209,8 +194,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        1920,
-        240
+        2064,
+        208
       ],
       "id": "39ccf32e-bffc-417b-8191-77e9c21db994",
       "name": "Ollama Chat Model",
@@ -245,8 +230,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2336,
-        144
+        2272,
+        48
       ],
       "id": "cb815feb-a170-483e-a521-398ef803809f",
       "name": "Format Answer"
@@ -268,22 +253,109 @@
     },
     {
       "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "const question = String($json.question || '').trim();\nconst answer = String($json.answer || '').trim();\nconst sources = Array.isArray($json.sources) ? $json.sources : [];\n\nif (!question) throw new Error('Question is required for chat log.');\nif (!answer) throw new Error('Answer is required for chat log.');\n\nfunction sqlEscape(value) {\n  return String(value ?? '').replace(/'/g, \"''\");\n}\n\nfunction maskSensitiveText(value) {\n  return String(value ?? '')\n    .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}/gi, '[masked_email]')\n    .replace(/(\\+90|0)?\\s?5\\d{2}\\s?\\d{3}\\s?\\d{2}\\s?\\d{2}/g, '[masked_phone]')\n    .replace(/\\b\\d{8,}\\b/g, '[masked_number]');\n}\n\nconst firstSource = sources[0] || {};\n\nconst category = firstSource.category || null;\nconst sectionTitle = firstSource.section_title || null;\n\nconst responseType = $json.response_type || (sources.length > 0 ? 'rag_answer' : 'static_or_out_of_scope');\n\nconst maskedQuestion = maskSensitiveText(question);\nconst maskedAnswer = maskSensitiveText(answer);\nconst sourcesJson = JSON.stringify(sources);\n\nconst insertQuery = `\nINSERT INTO chat_logs (\n  question,\n  answer,\n  sources,\n  category,\n  section_title,\n  response_type\n)\nVALUES (\n  '${sqlEscape(maskedQuestion)}',\n  '${sqlEscape(maskedAnswer)}',\n  '${sqlEscape(sourcesJson)}'::jsonb,\n  ${category ? `'${sqlEscape(category)}'` : 'NULL'},\n  ${sectionTitle ? `'${sqlEscape(sectionTitle)}'` : 'NULL'},\n  '${sqlEscape(responseType)}'\n)\nRETURNING id, created_at;\n`;\n\nreturn {\n  json: {\n    question,\n    answer,\n    sources,\n    category,\n    section_title: sectionTitle,\n    response_type: responseType,\n    insert_query: insertQuery\n  }\n};"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        2544,
-        32
-      ],
-      "id": "695aa610-c6b7-4d51-b05d-75338844c0be",
-      "name": "Prepare Chat Log Insert"
-    },
-    {
-      "parameters": {
-        "operation": "executeQuery",
-        "query": "{{ $json.insert_query }}",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "chat_logs",
+          "mode": "list",
+          "cachedResultName": "chat_logs"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "question": "={{ $json.question_masked }}",
+            "answer": "={{ $json.answer_masked }}",
+            "sources": "={{ $json.sources_json }}",
+            "category": "={{ $json.category }}",
+            "section_title": "={{ $json.section_title }}",
+            "response_type": "={{ $json.response_type }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "question",
+              "displayName": "question",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "answer",
+              "displayName": "answer",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sources",
+              "displayName": "sources",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "object",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "category",
+              "displayName": "category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "section_title",
+              "displayName": "section_title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "response_type",
+              "displayName": "response_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
@@ -304,7 +376,7 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const chatData = $('Prepare Chat Log Insert').first().json;\n\nreturn {\n  json: {\n    question: chatData.question,\n    answer: chatData.answer,\n    sources: chatData.sources || []\n  }\n};"
+        "jsCode": "const chatData = $('Prepare Chat Log Data').first().json;\n\nreturn {\n  json: {\n    question: chatData.question,\n    answer: chatData.answer,\n    sources: chatData.sources || []\n  }\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -362,6 +434,33 @@
       ],
       "id": "2e3a44b2-99fc-4ff8-b13a-fde7bff7633f",
       "name": "Prepare No Source Response"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const question = String($json.question || '').trim();\nconst answer = String($json.answer || '').trim();\nconst sources = Array.isArray($json.sources) ? $json.sources : [];\n\nif (!question) throw new Error('Question is required for chat log.');\nif (!answer) throw new Error('Answer is required for chat log.');\n\nfunction maskSensitiveText(value) {\n  return String(value ?? '')\n    .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}/gi, '[masked_email]')\n    .replace(/(\\+90|0)?\\s?5\\d{2}\\s?\\d{3}\\s?\\d{2}\\s?\\d{2}/g, '[masked_phone]')\n    .replace(/\\b\\d{8,}\\b/g, '[masked_number]');\n}\n\nconst firstSource = sources[0] || {};\n\nconst category = firstSource.category || null;\nconst sectionTitle = firstSource.section_title || null;\n\nconst responseType =\n  $json.response_type ||\n  (sources.length > 0 ? 'rag_answer' : 'unknown');\n\nconst maskedQuestion = maskSensitiveText(question);\nconst maskedAnswer = maskSensitiveText(answer);\n\nreturn {\n  json: {\n    question,\n    answer,\n    sources,\n\n    question_masked: maskedQuestion,\n    answer_masked: maskedAnswer,\n\n    // JSONB alanı için array'i object içine alıyoruz.\n    // \"items\" kelimesini kullanmuyoruz çünkü n8n bunu legacy değişken gibi algılayabiliyor.\n    sources_json: {\n      source_items: sources\n    },\n\n    category,\n    section_title: sectionTitle,\n    response_type: responseType\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2544,
+        32
+      ],
+      "id": "695aa610-c6b7-4d51-b05d-75338844c0be",
+      "name": "Prepare Chat Log Data"
+    },
+    {
+      "parameters": {
+        "jsCode": "const intentData = $('Detect Simple Intent').first().json;\n\nreturn {\n  json: {\n    question: intentData.question,\n    answer: intentData.answer,\n    sources: [],\n    response_type: \"out_of_scope\"\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2016,
+        528
+      ],
+      "id": "3e479788-40b2-43ef-ad1b-e802ec4013a7",
+      "name": "Prepare Out of Scope Response"
     }
   ],
   "pinData": {},
@@ -428,7 +527,7 @@
         ],
         [
           {
-            "node": "Respond Out of Scope Answer",
+            "node": "Prepare Out of Scope Response",
             "type": "main",
             "index": 0
           }
@@ -494,18 +593,7 @@
       "main": [
         [
           {
-            "node": "Prepare Chat Log Insert",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Prepare Chat Log Insert": {
-      "main": [
-        [
-          {
-            "node": "Insert Chat Log",
+            "node": "Prepare Chat Log Data",
             "type": "main",
             "index": 0
           }
@@ -556,7 +644,29 @@
       "main": [
         [
           {
-            "node": "Prepare Chat Log Insert",
+            "node": "Prepare Chat Log Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Chat Log Data": {
+      "main": [
+        [
+          {
+            "node": "Insert Chat Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Out of Scope Response": {
+      "main": [
+        [
+          {
+            "node": "Prepare Chat Log Data",
             "type": "main",
             "index": 0
           }
@@ -569,7 +679,7 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "cf9108f7-6d72-4f7b-bab9-4857b07e1e8d",
+  "versionId": "f0680399-78e6-4946-9523-5e33246fc9ec",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "8ad5e91ca19f2aebbe2ce2f031589771f3e4e7c0049e38f9c59f6c20dd949760"
