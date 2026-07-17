@@ -28,7 +28,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// @ts-ignore\nconst buffer = await this.helpers.getBinaryDataBuffer(0, 'data');\n\nconst documents = JSON.parse(buffer.toString('utf8'));\n\nif (!Array.isArray(documents)) {\n  throw new Error('documents.json must be an array.');\n}\n\nreturn documents.map((doc, index) => {\n  const requiredFields = ['document_id', 'title', 'category', 'file_name'];\n\n  for (const field of requiredFields) {\n    if (!doc[field]) {\n      throw new Error(`Missing field \"${field}\" in documents.json item ${index + 1}`);\n    }\n  }\n\n  return {\n    json: {\n      document_id: doc.document_id,\n      title: doc.title,\n      category: doc.category,\n      file_name: doc.file_name,\n      file_path: `/home/node/.n8n-files/data/mock-data/${doc.file_name}`\n    }\n  };\n});"
+        "jsCode": "// @ts-ignore\nconst buffer = await this.helpers.getBinaryDataBuffer(0, 'data');\n\nconst manifestText = buffer.toString('utf8');\nlet documents;\n\ntry {\n  documents = JSON.parse(manifestText);\n} catch (error) {\n  throw new Error('documents.json could not be parsed. Please check JSON syntax.');\n}\n\nif (!Array.isArray(documents)) {\n  throw new Error('documents.json must contain an array of document definitions.');\n}\n\nconst requiredFields = ['document_id', 'title', 'category', 'file_name'];\n\nreturn documents.map((document, index) => {\n  for (const field of requiredFields) {\n    if (!document[field]) {\n      throw new Error(`Missing required field \"${field}\" in documents.json item ${index + 1}`);\n    }\n  }\n\n  const relativeFilePath = document.file_path\n    ? String(document.file_path).replace(/^data\\//, '')\n    : `mock-data/${document.file_name}`;\n\n  return {\n    json: {\n      document_id: document.document_id,\n      title: document.title,\n      category: document.category,\n      file_name: document.file_name,\n      file_type: document.file_type || null,\n      source_file_name: document.source_file_name || document.file_name,\n      content_hash: document.content_hash || null,\n      last_updated: document.last_updated || null,\n      file_path: `/home/node/.n8n-files/data/${relativeFilePath}`\n    }\n  };\n});"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -55,7 +55,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const items = $input.all();\nconst fileListItems = $('Create File List').all();\nconst output = [];\n\nfunction cleanText(text) {\n  return String(text || '')\n    .replace(/\\r\\n/g, '\\n')\n    .replace(/\\n{3,}/g, '\\n\\n')\n    .trim();\n}\n\nfor (let itemIndex = 0; itemIndex < items.length; itemIndex++) {\n  const metadata = fileListItems[itemIndex].json;\n\n  // @ts-ignore\n  const buffer = await this.helpers.getBinaryDataBuffer(itemIndex, 'data');\n  const fileContent = cleanText(buffer.toString('utf8'));\n\n  const lines = fileContent.split('\\n');\n\n  let currentSectionTitle = 'Genel';\n  let currentLines = [];\n  let chunkIndex = 1;\n\n  function pushSection() {\n    const content = cleanText(currentLines.join('\\n'));\n\n    if (!content) return;\n\n    output.push({\n      json: {\n        text: content,\n        metadata: {\n          document_id: metadata.document_id,\n          title: metadata.title,\n          category: metadata.category,\n          section_title: currentSectionTitle,\n          chunk_index: chunkIndex,\n          file_name: metadata.file_name\n        }\n      }\n    });\n\n    chunkIndex++;\n  }\n\n  for (const line of lines) {\n    const sectionMatch = line.match(/^##\\s+(.+)$/);\n\n    if (sectionMatch) {\n      pushSection();\n      currentSectionTitle = sectionMatch[1].trim();\n      currentLines = [line];\n    } else {\n      currentLines.push(line);\n    }\n  }\n\n  pushSection();\n}\n\nreturn output;"
+        "jsCode": "const items = $input.all();\nconst fileListItems = $('Create File List').all();\nconst output = [];\n\nfunction cleanText(text) {\n  return String(text || '')\n    .replace(/\\r\\n/g, '\\n')\n    .replace(/\\n{3,}/g, '\\n\\n')\n    .trim();\n}\n\nfor (let itemIndex = 0; itemIndex < items.length; itemIndex++) {\n  const metadata = fileListItems[itemIndex]?.json;\n\n  if (!metadata?.document_id) {\n    throw new Error(`Document metadata not found for item index ${itemIndex}`);\n  }\n\n  // @ts-ignore\n  const buffer = await this.helpers.getBinaryDataBuffer(itemIndex, 'data');\n  const fileContent = cleanText(buffer.toString('utf8'));\n\n  const lines = fileContent.split('\\n');\n\n  let currentSectionTitle = 'Genel';\n  let currentLines = [];\n  let chunkIndex = 1;\n\n  function pushSection() {\n    const content = cleanText(currentLines.join('\\n'));\n\n    if (!content) return;\n\n    output.push({\n      json: {\n        text: content,\n        metadata: {\n          document_id: metadata.document_id,\n          title: metadata.title,\n          category: metadata.category,\n          section_title: currentSectionTitle,\n          chunk_index: chunkIndex,\n          file_name: metadata.file_name,\n          source_file_name: metadata.source_file_name || metadata.file_name,\n          file_type: metadata.file_type || null,\n          content_hash: metadata.content_hash || null,\n          last_updated: metadata.last_updated || null\n        }\n      }\n    });\n\n    chunkIndex++;\n  }\n\n  for (const line of lines) {\n    const sectionMatch = line.match(/^##\\s+(.+)$/);\n\n    if (sectionMatch) {\n      pushSection();\n      currentSectionTitle = sectionMatch[1].trim();\n      currentLines = [line];\n    } else {\n      currentLines.push(line);\n    }\n  }\n\n  pushSection();\n}\n\nreturn output;"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -122,6 +122,22 @@
               {
                 "name": "chunk_index",
                 "value": "={{ $json.metadata.chunk_index }}"
+              },
+              {
+                "name": "source_file_name",
+                "value": "={{ $json.metadata.source_file_name }}"
+              },
+              {
+                "name": "file_type",
+                "value": "={{ $json.metadata.file_type }}"
+              },
+              {
+                "name": "content_hash",
+                "value": "={{ $json.metadata.content_hash }}"
+              },
+              {
+                "name": "last_updated",
+                "value": "={{ $json.metadata.last_updated }}"
               }
             ]
           }
@@ -267,7 +283,7 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "e79a8322-e8a6-40a1-b42b-dd3e27902289",
+  "versionId": "e8cb31c7-4d4b-4048-b90e-bdcfd102734c",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "8ad5e91ca19f2aebbe2ce2f031589771f3e4e7c0049e38f9c59f6c20dd949760"
