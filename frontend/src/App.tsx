@@ -1,5 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import {
+  clearAccessToken,
+  getAccessToken,
+  getCurrentUser,
+  type CurrentUserResponse,
+} from "./api/authApi";
 import ChatBox from "./components/ChatBox";
+import LoginPage from "./components/LoginPage";
 import "./App.css";
 
 const quickTopics = [
@@ -30,12 +37,38 @@ const quickTopics = [
 ];
 
 function App() {
+  const [currentUser, setCurrentUser] = useState<CurrentUserResponse | null>(
+    null,
+  );
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [quickQuestion, setQuickQuestion] = useState<{
     id: number;
     question: string;
   } | null>(null);
-
   const [resetSignal, setResetSignal] = useState(0);
+
+  useEffect(() => {
+    async function checkExistingSession() {
+      const token = getAccessToken();
+
+      if (!token) {
+        setIsCheckingAuth(false);
+        return;
+      }
+
+      try {
+        const user = await getCurrentUser();
+        setCurrentUser(user);
+      } catch {
+        clearAccessToken();
+        setCurrentUser(null);
+      } finally {
+        setIsCheckingAuth(false);
+      }
+    }
+
+    void checkExistingSession();
+  }, []);
 
   function handleQuickTopic(question: string) {
     setQuickQuestion({
@@ -47,6 +80,26 @@ function App() {
   function handleNewChat() {
     setResetSignal((previous) => previous + 1);
     setQuickQuestion(null);
+  }
+
+  function handleLogout() {
+    clearAccessToken();
+    setCurrentUser(null);
+    setResetSignal((previous) => previous + 1);
+    setQuickQuestion(null);
+  }
+
+  if (isCheckingAuth) {
+    return (
+      <div className="auth-loading">
+        <div className="login-icon">IT</div>
+        <p>Oturum kontrol ediliyor...</p>
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    return <LoginPage onLoginSuccess={setCurrentUser} />;
   }
 
   return (
@@ -64,7 +117,18 @@ function App() {
         <div className="topbar-right">
           <span className="status-dot" />
           <span>Çevrimiçi</span>
-          <div className="user-chip">Demo Kullanıcı</div>
+
+          <div className="user-chip">
+            {currentUser.full_name} · {currentUser.role}
+          </div>
+
+          <button
+            className="logout-button"
+            type="button"
+            onClick={handleLogout}
+          >
+            Çıkış
+          </button>
         </div>
       </header>
 
@@ -107,8 +171,8 @@ function App() {
 
           <div className="support-info">
             <p>Yardım ve destek için:</p>
-            <strong>itdestek@izeltas.com.tr</strong>
-            <span>0232 472 13 75</span>
+            <strong>itdestek@izeltas.com</strong>
+            <span>0232 XXX XX XX</span>
           </div>
         </aside>
 
