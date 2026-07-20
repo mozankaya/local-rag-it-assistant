@@ -1,361 +1,288 @@
 import { useEffect, useRef, useState } from "react";
 import type { SyntheticEvent } from "react";
-import { askQuestion, sendFeedback } from "../api/chatApi";
-import type { FeedbackValue, Source } from "../api/chatApi";
+import {
+  askQuestion,
+  sendFeedback,
+  type ChatResponse,
+  type Source,
+} from "../api/chatApi";
 
-type FeedbackStatus = "idle" | "sending" | "sent" | "error";
-
-type Message = {
-  id: string;
+interface Message {
+  id: number;
   role: "user" | "assistant";
-  content: string;
-  question?: string;
+  text: string;
   sources?: Source[];
-  feedback?: FeedbackValue;
-  feedbackStatus?: FeedbackStatus;
-};
-
-const quickQuestions = [
-  {
-    label: "VPN",
-    question: "VPN bağlantısı kuramıyorum, ne yapmalıyım?",
-  },
-  {
-    label: "Şifre",
-    question: "Şifremi unuttum, nasıl sıfırlayabilirim?",
-  },
-  {
-    label: "Yazıcı",
-    question: "Yazıcıdan çıktı alamıyorum, ne yapmalıyım?",
-  },
-  {
-    label: "Outlook",
-    question: "Outlook e-posta göndermiyor, ne yapmalıyım?",
-  },
-  {
-    label: "Donanım",
-    question: "Bilgisayarım çok yavaş, ne yapmalıyım?",
-  },
-];
-
-function createMessageId(prefix: string) {
-  return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  question?: string;
 }
 
-function formatFeedbackText(feedback?: FeedbackValue) {
-  if (feedback === "useful") return "Faydalı";
-  if (feedback === "not_useful") return "Faydasız";
-  return "";
+interface ChatBoxProps {
+  quickQuestion: {
+    id: number;
+    question: string;
+  } | null;
+  resetSignal: number;
+}
+
+const starterQuestions = [
+  "VPN bağlantısı kuramıyorum, ne yapmalıyım?",
+  "Şifremi unuttum, nasıl sıfırlayabilirim?",
+  "Outlook mail göndermiyor, ne yapmalıyım?",
+];
+
+function createInitialMessages(): Message[] {
+  return [
+    {
+      id: 1,
+      role: "assistant",
+      text: "Merhaba, ben İZELTAŞ IT Danışma Asistanı’yım. VPN, şifre, Outlook, yazıcı, donanım ve ağ bağlantısı gibi IT konularında yardımcı olabilirim.",
+      sources: [],
+    },
+  ];
 }
 
 function formatSourceTitle(source: Source) {
-  return source.section_title
-    ? `${source.title} / ${source.section_title}`
-    : source.title;
+  if (source.section_title) {
+    return `${source.title || "Kaynak"} / ${source.section_title}`;
+  }
+
+  return source.title || source.document_id || "Kaynak";
 }
 
 function formatSourceMeta(source: Source) {
-  return source.section_title
-    ? `${source.category} / chunk ${source.chunk_index}`
-    : `${source.category} / chunk ${source.chunk_index}`;
+  const parts = [];
+
+  if (source.category) parts.push(source.category);
+  if (source.file_type) parts.push(source.file_type.toUpperCase());
+  if (source.chunk_index) parts.push(`chunk ${source.chunk_index}`);
+
+  return parts.join(" · ");
 }
 
-export default function ChatBox() {
-  const messageListRef = useRef<HTMLDivElement | null>(null);
-  const [inputValue, setInputValue] = useState("");
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "welcome-message",
-      role: "assistant",
-      content:
-        "Merhaba. IT süreçleri, VPN, şifre, Outlook, yazıcı, donanım ve ağ bağlantısı gibi konularda yardımcı olabilirim.",
-    },
-  ]);
+function ChatBox({ quickQuestion, resetSignal }: ChatBoxProps) {
+  const [messages, setMessages] = useState<Message[]>(createInitialMessages);
+  const [question, setQuestion] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [feedbackStatus, setFeedbackStatus] = useState<Record<number, string>>(
+    {},
+  );
 
-  useEffect(() => {
-    const messageList = messageListRef.current;
+  const nextIdRef = useRef(2);
+  const lastQuickQuestionIdRef = useRef<number | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
-    if (!messageList) {
-      return;
-    }
+  async function sendQuestion(questionText: string) {
+    const cleanedQuestion = questionText.trim();
 
-    messageList.scrollTo({
-      top: messageList.scrollHeight,
-      behavior: "smooth",
-    });
-  }, [messages, isLoading]);
-
-  async function submitQuestion(questionText?: string) {
-    const trimmedQuestion = (questionText ?? inputValue).trim();
-
-    if (!trimmedQuestion || isLoading) {
-      return;
-    }
-
-    setInputValue("");
-    setErrorMessage(null);
+    if (!cleanedQuestion || isLoading) return;
 
     const userMessage: Message = {
-      id: createMessageId("user"),
+      id: nextIdRef.current++,
       role: "user",
-      content: trimmedQuestion,
+      text: cleanedQuestion,
     };
 
     setMessages((previous) => [...previous, userMessage]);
+    setQuestion("");
     setIsLoading(true);
 
     try {
-      const result = await askQuestion(trimmedQuestion);
+      const response: ChatResponse = await askQuestion(cleanedQuestion);
 
       const assistantMessage: Message = {
-        id: createMessageId("assistant"),
+        id: nextIdRef.current++,
         role: "assistant",
-        content: result.answer,
-        question: trimmedQuestion,
-        sources: result.sources || [],
-        feedbackStatus: "idle",
+        text: response.answer,
+        sources: response.sources || [],
+        question: response.question || cleanedQuestion,
       };
 
       setMessages((previous) => [...previous, assistantMessage]);
     } catch {
-      setErrorMessage(
-        "Cevap alınırken bir hata oluştu. n8n workflow, Ollama servisi veya webhook URL ayarlarını kontrol edin.",
-      );
-
-      const assistantErrorMessage: Message = {
-        id: createMessageId("assistant-error"),
+      const errorMessage: Message = {
+        id: nextIdRef.current++,
         role: "assistant",
-        content:
-          "Şu anda cevap alınamadı. Lütfen sistem servislerinin çalıştığını kontrol edin.",
+        text: "Chatbot servisine şu anda ulaşılamıyor. Lütfen daha sonra tekrar deneyin.",
+        sources: [],
       };
 
-      setMessages((previous) => [...previous, assistantErrorMessage]);
+      setMessages((previous) => [...previous, errorMessage]);
     } finally {
       setIsLoading(false);
     }
   }
 
-  function handleSubmit(event: SyntheticEvent<HTMLFormElement>) {
-    event.preventDefault();
-    void submitQuestion();
+  async function handleSubmit(event?: SyntheticEvent<HTMLFormElement>) {
+    event?.preventDefault();
+    await sendQuestion(question);
   }
 
-  async function handleFeedback(messageId: string, feedback: FeedbackValue) {
-    const message = messages.find((item) => item.id === messageId);
+  async function handleStarterQuestion(value: string) {
+    await sendQuestion(value);
+  }
 
-    if (!message || message.role !== "assistant" || !message.question) {
-      return;
-    }
-
-    setMessages((previous) =>
-      previous.map((item) =>
-        item.id === messageId
-          ? {
-              ...item,
-              feedbackStatus: "sending",
-            }
-          : item,
-      ),
-    );
+  async function handleFeedback(
+    message: Message,
+    feedback: "useful" | "not_useful",
+  ) {
+    if (!message.question) return;
 
     try {
       await sendFeedback({
         question: message.question,
-        answer: message.content,
+        answer: message.text,
         feedback,
-        sources: message.sources,
+        sources: message.sources || [],
       });
 
-      setMessages((previous) =>
-        previous.map((item) =>
-          item.id === messageId
-            ? {
-                ...item,
-                feedback,
-                feedbackStatus: "sent",
-              }
-            : item,
-        ),
-      );
+      setFeedbackStatus((previous) => ({
+        ...previous,
+        [message.id]:
+          feedback === "useful"
+            ? "Faydalı olarak kaydedildi."
+            : "Faydasız olarak kaydedildi.",
+      }));
     } catch {
-      setMessages((previous) =>
-        previous.map((item) =>
-          item.id === messageId
-            ? {
-                ...item,
-                feedbackStatus: "error",
-              }
-            : item,
-        ),
-      );
+      setFeedbackStatus((previous) => ({
+        ...previous,
+        [message.id]: "Geri bildirim gönderilemedi.",
+      }));
     }
   }
 
+  useEffect(() => {
+    setMessages(createInitialMessages());
+    setQuestion("");
+    setFeedbackStatus({});
+    nextIdRef.current = 2;
+  }, [resetSignal]);
+
+  useEffect(() => {
+    if (!quickQuestion) return;
+
+    if (lastQuickQuestionIdRef.current === quickQuestion.id) return;
+
+    lastQuickQuestionIdRef.current = quickQuestion.id;
+    void sendQuestion(quickQuestion.question);
+  }, [quickQuestion]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "end",
+    });
+  }, [messages, isLoading]);
+
   return (
-    <section className="chat-layout">
-      <section className="chat-panel">
-        <header className="chat-header">
-          <div className="chat-header-content">
-            <p className="eyebrow">Local LLM & RAG</p>
-            <h1>İZELTAŞ IT DANIŞMA ASİSTANI</h1>
+    <div className="chat-box">
+      <div className="starter-row">
+        {starterQuestions.map((starterQuestion) => (
+          <button
+            key={starterQuestion}
+            type="button"
+            onClick={() => handleStarterQuestion(starterQuestion)}
+          >
+            {starterQuestion}
+          </button>
+        ))}
+      </div>
 
-            <p className="chat-description">
-              Bu arayüz, lokal çalışan RAG tabanlı IT destek asistanının demo
-              ekranıdır. Cevaplar mock IT dokümanlarından alınan kaynaklara göre
-              oluşturulur.
-            </p>
+      <div className="messages">
+        {messages.map((message) => (
+          <div
+            key={message.id}
+            className={`message-row ${
+              message.role === "user"
+                ? "message-row-user"
+                : "message-row-assistant"
+            }`}
+          >
+            {message.role === "assistant" && (
+              <div className="message-avatar">IT</div>
+            )}
 
-            <div className="quick-question-section">
-              <h2>Hazır Sorular</h2>
-              <div className="quick-question-list">
-                {quickQuestions.map((item) => (
+            <div className={`message-bubble ${message.role}`}>
+              <p>{message.text}</p>
+
+              {message.sources && message.sources.length > 0 && (
+                <div className="sources-section">
+                  <h4>Kaynaklar</h4>
+
+                  <div className="source-cards">
+                    {message.sources.map((source, index) => (
+                      <div
+                        className="source-card"
+                        key={`${source.document_id}-${index}`}
+                      >
+                        <span className="source-icon">▣</span>
+                        <div>
+                          <strong>{formatSourceTitle(source)}</strong>
+                          <small>{formatSourceMeta(source)}</small>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {message.role === "assistant" && message.question && (
+                <div className="feedback-area">
+                  <span>Bu yanıt yardımcı oldu mu?</span>
+
                   <button
-                    key={item.label}
                     type="button"
-                    className="quick-question-button"
-                    disabled={isLoading}
-                    onClick={() => void submitQuestion(item.question)}
+                    onClick={() => handleFeedback(message, "useful")}
                   >
-                    {item.label}
+                    Evet
                   </button>
-                ))}
-              </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleFeedback(message, "not_useful")}
+                  >
+                    Hayır
+                  </button>
+
+                  {feedbackStatus[message.id] && (
+                    <small>{feedbackStatus[message.id]}</small>
+                  )}
+                </div>
+              )}
             </div>
           </div>
+        ))}
 
-          <div className="connection-badge">
-            <span className="connection-dot"></span>
-            Lokal prototip
+        {isLoading && (
+          <div className="message-row message-row-assistant">
+            <div className="message-avatar">IT</div>
+            <div className="message-bubble assistant">
+              <p>Yanıt hazırlanıyor...</p>
+            </div>
           </div>
-        </header>
+        )}
 
-        <div className="message-list" ref={messageListRef}>
-          {messages.map((message) => (
-            <article
-              key={message.id}
-              className={`message-row ${
-                message.role === "user" ? "user-row" : "assistant-row"
-              }`}
-            >
-              <div className={`message-bubble ${message.role}`}>
-                <div className="message-label">
-                  {message.role === "user" ? "Siz" : "Asistan"}
-                </div>
+        <div ref={messagesEndRef} />
+      </div>
 
-                <div className="message-content">
-                  {message.content
-                    .split("\n")
-                    .map((line, lineIndex) =>
-                      line.trim() ? <p key={lineIndex}>{line}</p> : null,
-                    )}
-                </div>
+      <form className="chat-input-form" onSubmit={handleSubmit}>
+        <textarea
+          value={question}
+          onChange={(event) => setQuestion(event.target.value)}
+          placeholder="Mesajınızı buraya yazın..."
+          rows={2}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && !event.shiftKey) {
+              event.preventDefault();
+              void sendQuestion(question);
+            }
+          }}
+        />
 
-                {message.role === "assistant" &&
-                  message.sources &&
-                  message.sources.length > 0 && (
-                    <div className="source-tooltip-wrapper">
-                      <button className="source-chip" type="button">
-                        ⓘ Kaynaklar ({message.sources.length})
-                      </button>
-
-                      <div className="source-tooltip">
-                        {message.sources.map((source, sourceIndex) => (
-                          <div
-                            key={`${source.document_id}-${source.chunk_index}-${sourceIndex}`}
-                            className="source-tooltip-item"
-                          >
-                            <strong>{formatSourceTitle(source)}</strong>
-                            <span>{formatSourceMeta(source)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                {message.role === "assistant" && message.question && (
-                  <div className="feedback-area">
-                    {message.feedbackStatus === "sent" ? (
-                      <span className="feedback-saved">
-                        Geri bildiriminiz kaydedildi:{" "}
-                        {formatFeedbackText(message.feedback)}
-                      </span>
-                    ) : (
-                      <>
-                        <button
-                          type="button"
-                          className="feedback-button"
-                          disabled={message.feedbackStatus === "sending"}
-                          onClick={() =>
-                            void handleFeedback(message.id, "useful")
-                          }
-                        >
-                          👍 Faydalı
-                        </button>
-
-                        <button
-                          type="button"
-                          className="feedback-button"
-                          disabled={message.feedbackStatus === "sending"}
-                          onClick={() =>
-                            void handleFeedback(message.id, "not_useful")
-                          }
-                        >
-                          👎 Faydasız
-                        </button>
-                      </>
-                    )}
-
-                    {message.feedbackStatus === "sending" && (
-                      <span className="feedback-info">
-                        Geri bildirim kaydediliyor...
-                      </span>
-                    )}
-
-                    {message.feedbackStatus === "error" && (
-                      <span className="feedback-error">
-                        Geri bildirim kaydedilemedi.
-                      </span>
-                    )}
-                  </div>
-                )}
-              </div>
-            </article>
-          ))}
-
-          {isLoading && (
-            <article className="message-row assistant-row">
-              <div className="message-bubble assistant loading-bubble">
-                <div className="message-label">Asistan</div>
-                <div
-                  className="typing-indicator"
-                  aria-label="Cevap hazırlanıyor"
-                >
-                  <span></span>
-                  <span></span>
-                  <span></span>
-                </div>
-              </div>
-            </article>
-          )}
-        </div>
-
-        {errorMessage && <div className="error-banner">{errorMessage}</div>}
-
-        <form className="chat-form" onSubmit={handleSubmit}>
-          <input
-            type="text"
-            value={inputValue}
-            disabled={isLoading}
-            placeholder="Örn: VPN bağlantısı kuramıyorum..."
-            onChange={(event) => setInputValue(event.target.value)}
-          />
-          <button type="submit" disabled={isLoading || !inputValue.trim()}>
-            Gönder
-          </button>
-        </form>
-      </section>
-    </section>
+        <button type="submit" disabled={isLoading || !question.trim()}>
+          Gönder
+        </button>
+      </form>
+    </div>
   );
 }
+
+export default ChatBox;

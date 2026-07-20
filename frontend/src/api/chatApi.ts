@@ -3,11 +3,13 @@ export type ChatRequest = {
 };
 
 export interface Source {
-  document_id: string;
-  title: string;
-  category: string;
-  section_title?: string;
-  chunk_index: number;
+  document_id?: string | null;
+  title?: string | null;
+  category?: string | null;
+  section_title?: string | null;
+  chunk_index?: number | string | null;
+  source_file_name?: string | null;
+  file_type?: string | null;
 }
 
 export type ChatResponse = {
@@ -27,12 +29,27 @@ export type FeedbackRequest = {
 
 export type FeedbackResponse = {
   status: string;
-  message: string;
-  feedback: FeedbackValue;
+  message?: string | null;
+  feedback?: FeedbackValue;
 };
 
 const CHAT_API_URL = import.meta.env.VITE_RAG_API_URL as string;
 const FEEDBACK_API_URL = import.meta.env.VITE_FEEDBACK_API_URL as string;
+
+function getAuthHeaders(): HeadersInit {
+  const token = localStorage.getItem("access_token");
+
+  if (!token) {
+    return {
+      "Content-Type": "application/json",
+    };
+  }
+
+  return {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`,
+  };
+}
 
 export async function askQuestion(question: string): Promise<ChatResponse> {
   if (!CHAT_API_URL) {
@@ -41,9 +58,7 @@ export async function askQuestion(question: string): Promise<ChatResponse> {
 
   const response = await fetch(CHAT_API_URL, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: getAuthHeaders(),
     body: JSON.stringify({ question } satisfies ChatRequest),
   });
 
@@ -63,9 +78,7 @@ export async function sendFeedback(
 
   const response = await fetch(FEEDBACK_API_URL, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: getAuthHeaders(),
     body: JSON.stringify(feedbackRequest),
   });
 
