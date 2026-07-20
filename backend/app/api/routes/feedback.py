@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 
+from app.api.routes.auth import get_current_user
 from app.core.config import Settings, get_settings
+from app.models.user import User
 from app.schemas.feedback import FeedbackRequest, FeedbackResponse
 from app.services.n8n_client import N8nClientError, post_to_n8n
 
@@ -11,6 +13,7 @@ router = APIRouter(tags=["Feedback"])
 @router.post("/feedback", response_model=FeedbackResponse)
 async def feedback(
     request: FeedbackRequest,
+    current_user: User = Depends(get_current_user),
     settings: Settings = Depends(get_settings),
 ) -> FeedbackResponse:
     payload = request.model_dump()

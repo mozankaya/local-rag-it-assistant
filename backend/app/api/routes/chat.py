@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 
+from app.api.routes.auth import get_current_user
 from app.core.config import Settings, get_settings
+from app.models.user import User
 from app.schemas.chat import ChatRequest, ChatResponse
 from app.services.n8n_client import N8nClientError, post_to_n8n
 
@@ -11,6 +13,7 @@ router = APIRouter(tags=["Chat"])
 @router.post("/chat", response_model=ChatResponse)
 async def chat(
     request: ChatRequest,
+    current_user: User = Depends(get_current_user),
     settings: Settings = Depends(get_settings),
 ) -> ChatResponse:
     if len(request.question) > settings.max_question_length:
