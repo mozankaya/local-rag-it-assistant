@@ -204,22 +204,33 @@ function ChatBox({ quickQuestion, resetSignal }: ChatBoxProps) {
               <p>{message.text}</p>
 
               {message.sources && message.sources.length > 0 && (
-                <div className="sources-section">
-                  <h4>Kaynaklar</h4>
+                <div className="source-tooltip-wrapper">
+                  <button
+                    className="source-tooltip-trigger"
+                    type="button"
+                    aria-label="Kaynakları göster"
+                  >
+                    ⓘ Kaynak
+                  </button>
 
-                  <div className="source-cards">
-                    {message.sources.map((source, index) => (
-                      <div
-                        className="source-card"
-                        key={`${source.document_id}-${index}`}
-                      >
-                        <span className="source-icon">▣</span>
-                        <div>
-                          <strong>{formatSourceTitle(source)}</strong>
-                          <small>{formatSourceMeta(source)}</small>
+                  <div className="source-tooltip-panel">
+                    <h4>Kaynaklar</h4>
+
+                    <div className="source-tooltip-list">
+                      {message.sources.map((source, index) => (
+                        <div
+                          className="source-tooltip-item"
+                          key={`${source.document_id}-${index}`}
+                        >
+                          <span className="source-icon">▣</span>
+
+                          <div>
+                            <strong>{formatSourceTitle(source)}</strong>
+                            <small>{formatSourceMeta(source)}</small>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 </div>
               )}
