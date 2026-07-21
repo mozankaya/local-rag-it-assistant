@@ -3,8 +3,8 @@
 <!--
 source_file_name: hardware-support.md
 source_file_type: md
-content_hash: f97dab936d9a02f30be4616a8538f9fb5b3103205fa77d8288659af81e962276
-processed_at: 2026-07-21T07:39:56
+content_hash: d1ac99de0cde69ccf3b239821bce932393c914823c85dc3df6cbec39577f86a6
+processed_at: 2026-07-21T10:35:03
 -->
 
 # Donanım Destek İşlemleri
@@ -46,3 +46,17 @@ Klavye veya mouse çalışmıyorsa aşağıdaki adımları izleyin:
 - Kablosuz cihaz kullanıyorsanız pil durumunu kontrol edin.
 - Cihazı çıkarıp tekrar takın.
 - Sorun devam ederse IT destek ekibine başvurun.
+
+## Donanım destek talebi oluşturma
+
+Kullanıcı bilgisayar, monitör, klavye, mouse, dock station veya benzeri donanımlarla ilgili destek ihtiyacı yaşadığında IT destek talebi oluşturmalıdır.
+
+Donanım destek talebinde aşağıdaki bilgiler belirtilmelidir:
+
+- Kullanıcının adı ve soyadı
+- Kullanılan cihaz türü
+- Cihazda yaşanan sorun
+- Varsa cihaz seri numarası veya envanter bilgisi
+- Sorunun ne zaman başladığı
+
+Donanım arızalarında kullanıcı kendi başına fiziksel müdahale yapmamalı, cihaz değişimi veya tamir süreci için IT destek ekibinin yönlendirmesini beklemelidir.

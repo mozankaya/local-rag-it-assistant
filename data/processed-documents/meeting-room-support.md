@@ -4,7 +4,7 @@
 source_file_name: meeting-room-support.md
 source_file_type: md
 content_hash: 1ef7403a59fcbfd24862e1b0fb8e03fcd0bf67d070cc238ccc448a84ae063c24
-processed_at: 2026-07-21T07:39:56
+processed_at: 2026-07-21T10:35:03
 -->
 
 # Toplantı Odası ve Teknik Ekipman Desteği

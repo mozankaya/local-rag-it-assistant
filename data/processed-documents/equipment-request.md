@@ -3,46 +3,46 @@
 <!--
 source_file_name: equipment-request.md
 source_file_type: md
-content_hash: 010531abdebaa0d58c681bc081e5b2607c20b02944ba6dba05e884395deba3ec
-processed_at: 2026-07-21T07:39:56
+content_hash: 350f313e1371f33446a3f7954b0d8d9a8b1e932d29c6f7eecf34724be551cb22
+processed_at: 2026-07-21T10:35:03
 -->
 
-# Ekipman ve Yetki Talepleri
+# Ekipman Talepleri ve Ekipman Arıza Bildirimi
 
-Bu doküman, ekipman, yazılım ve erişim yetkisi talepleri için hazırlanmıştır.
+Bu doküman, yeni ekipman talebi oluşturma, ekipman onay süreci ve ekipman arızası bildirme adımları için hazırlanmıştır.
 
-## Yeni ekipman talebi
+Yazılım kurulumu, uygulama erişimi ve yazılım yetkisi gibi konular ayrı olarak Yazılım ve Uygulama Yetki Talepleri dokümanında değerlendirilir.
 
-Yeni ekipman talebi oluşturmak istiyorsanız aşağıdaki bilgileri hazırlayın:
+## Ekipman talebi nasıl oluşturulur?
 
-- Talep edilen ekipman türünü belirtin.
-- Ekipmanın kullanım amacını açıklayın.
-- Talebin acil mi normal mi olduğunu belirtin.
-- Talebi ilgili yönetici veya IT destek süreci üzerinden iletin.
+Ekipman talebi; yeni bilgisayar, monitör, klavye, mouse, kulaklık, dock station veya benzeri fiziksel donanım ihtiyaçları için oluşturulur.
 
-## Yazılım kurulumu talebi
+Ekipman talebi oluşturmak isteyen kullanıcı, IT destek talep formunda gerekli alanları doldurarak talebini göndermelidir.
 
-Bilgisayarınıza yazılım kurulmasını istiyorsanız aşağıdaki bilgileri hazırlayın:
+Kullanıcı, IT destek talep formunda talep edilen ekipman türünü, ekipmanın hangi iş amacıyla kullanılacağını, kullanıcı adı ve bağlı olunan birim bilgisini doldurmalıdır.
 
-- Kurulması istenen yazılım adını belirtin.
-- Yazılımın hangi iş amacıyla kullanılacağını açıklayın.
-- Lisans veya yetki gereksinimini belirtin.
-- Talebi IT destek ekibine iletin.
+Talepte ayrıca aciliyet durumu, varsa mevcut cihaz veya envanter bilgisi ve talebi onaylayacak yönetici veya birim bilgisi eklenmelidir.
 
-## Yazılım yetkisi talebi
+Gerekli alanlar doldurulduktan sonra ekipman talebi ilgili yönetici onayı veya IT destek süreci üzerinden gönderilmelidir.
 
-Bir yazılım veya sisteme yetki talep ediyorsanız aşağıdaki bilgileri hazırlayın:
+IT destek ekibi, ekipman talebini ihtiyaç, stok durumu, kullanım amacı ve onay sürecine göre değerlendirir.
 
-- Yetki istenen uygulama veya sistem adını belirtin.
-- Hangi işlem için yetki istediğinizi açıklayın.
-- Talep edilen yetki seviyesini belirtin.
-- Talebi ilgili onay sürecine yönlendirin.
+Talep uygun görülürse ekipman temini, teslimi veya kullanıcıya gerekli yönlendirme yapılır.
 
 ## Ekipman arızası bildirimi
 
-Ekipman arızası bildirmek istiyorsanız aşağıdaki bilgileri hazırlayın:
+Ekipman arızası bildirmek isteyen kullanıcı, IT destek talep formunda aşağıdaki bilgileri doldurmalıdır:
 
-- Arızalı ekipmanın türünü ve varsa envanter bilgisini belirtin.
-- Yaşanan sorunu kısa ve net şekilde açıklayın.
-- Hata mesajı veya ekran görüntüsü varsa IT destek ekibine iletin.
-- Sorun iş sürekliliğini etkiliyorsa aciliyet durumunu belirtin.
+- Arızalı ekipmanın türü
+- Varsa cihazın envanter veya seri numarası
+- Yaşanan sorunun kısa ve net açıklaması
+- Varsa hata mesajı veya ekran görüntüsü
+- Talebin aciliyet durumu
+
+Kullanıcılar arızalı ekipmana kendi başına fiziksel müdahalede bulunmamalı, cihaz değişimi veya tamir süreci için IT destek ekibinin yönlendirmesini beklemelidir.
+
+## Genel IT talebi oluşturma
+
+IT destek talebi oluştururken talebin konusu, kullanım amacı, etkilenen cihaz veya uygulama ve aciliyet durumu açıkça belirtilmelidir.
+
+Yazılım kurulumu veya uygulama yetkisi gibi talepler, detaylı değerlendirme için Yazılım ve Uygulama Yetki Talepleri sürecine yönlendirilir.
