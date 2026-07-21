@@ -4,7 +4,7 @@
 source_file_name: hardware-support.md
 source_file_type: md
 content_hash: f97dab936d9a02f30be4616a8538f9fb5b3103205fa77d8288659af81e962276
-processed_at: 2026-07-17T13:52:04
+processed_at: 2026-07-21T07:39:56
 -->
 
 # Donanım Destek İşlemleri

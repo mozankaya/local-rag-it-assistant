@@ -4,7 +4,7 @@
 source_file_name: equipment-request.md
 source_file_type: md
 content_hash: 010531abdebaa0d58c681bc081e5b2607c20b02944ba6dba05e884395deba3ec
-processed_at: 2026-07-17T13:52:04
+processed_at: 2026-07-21T07:39:56
 -->
 
 # Ekipman ve Yetki Talepleri

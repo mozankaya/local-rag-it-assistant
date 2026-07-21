@@ -4,7 +4,7 @@
 source_file_name: password-and-account.md
 source_file_type: md
 content_hash: 0cfefd1ce3560c427c4183bfc60619920241fae969411fde5172aab87af5ba01
-processed_at: 2026-07-17T13:52:04
+processed_at: 2026-07-21T07:39:56
 -->
 
 # Şifre ve Hesap İşlemleri

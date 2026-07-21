@@ -4,7 +4,7 @@
 source_file_name: printer-support.md
 source_file_type: md
 content_hash: 4b75f001ab452bd77b02f5bd8beefd611a3eb1ac786dffad2c88774ee0afbb13
-processed_at: 2026-07-17T13:52:04
+processed_at: 2026-07-21T07:39:56
 -->
 
 # Yazıcı Destek İşlemleri
