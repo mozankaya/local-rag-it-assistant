@@ -19,90 +19,105 @@ TEST_CASES = [
         "expected_document_id": "vpn-remote-access",
         "expected_keywords": ["internet", "vpn", "şifre"],
         "case_type": "rag",
+        "expected_response_type": "rag_answer",
     },
     {
         "question": "Şifremi unuttum, nasıl sıfırlayabilirim?",
         "expected_document_id": "password-and-account",
         "expected_keywords": ["şifre", "sıfırla"],
         "case_type": "rag",
+        "expected_response_type": "rag_answer",
     },
     {
         "question": "Outlook mail göndermiyor, ne yapmalıyım?",
         "expected_document_id": "email-outlook",
         "expected_keywords": ["outlook", "internet", "adres"],
         "case_type": "rag",
+        "expected_response_type": "rag_answer",
     },
     {
         "question": "Yazıcıdan çıktı alamıyorum, ne yapmalıyım?",
         "expected_document_id": "printer-support",
         "expected_keywords": ["yazıcı", "kağıt", "bağlantı"],
         "case_type": "rag",
+        "expected_response_type": "rag_answer",
     },
     {
         "question": "İnternet bağlantım yok, ne yapmalıyım?",
         "expected_document_id": "network-connection",
         "expected_keywords": ["internet", "ağ", "bağlantı"],
         "case_type": "rag",
+        "expected_response_type": "rag_answer",
     },
     {
         "question": "Donanım desteği talebi nasıl oluşturabilirim?",
         "expected_document_id": "hardware-support",
         "expected_keywords": ["donanım", "talep", "destek"],
         "case_type": "rag",
+        "expected_response_type": "rag_answer",
     },
     {
         "question": "Ekipman talebi nasıl oluşturabilirim?",
         "expected_document_id": "equipment-request",
         "expected_keywords": ["ekipman", "talep", "onay"],
         "case_type": "rag",
+        "expected_response_type": "rag_answer",
     },
     {
         "question": "Ortak klasöre erişemiyorum, ne yapmalıyım?",
         "expected_document_id": "shared-folder-access",
         "expected_keywords": ["ortak", "klasör", "vpn", "yetki"],
         "case_type": "rag",
+        "expected_response_type": "rag_answer",
     },
     {
         "question": "Ortak klasör için yetki talebi nasıl oluşturulur?",
         "expected_document_id": "shared-folder-access",
         "expected_keywords": ["klasör", "yetki", "yönetici", "onay"],
         "case_type": "rag",
+        "expected_response_type": "rag_answer",
     },
     {
         "question": "Yeni bir yazılım kurulumu için nasıl talep oluşturabilirim?",
         "expected_document_id": "software-access",
         "expected_keywords": ["yazılım", "kurulum", "lisans", "talep"],
         "case_type": "rag",
+        "expected_response_type": "rag_answer",
     },
     {
         "question": "Kurumsal uygulama yetkisi almak için ne yapmalıyım?",
         "expected_document_id": "software-access",
         "expected_keywords": ["uygulama", "yetki", "görev", "erişim"],
         "case_type": "rag",
+        "expected_response_type": "rag_answer",
     },
     {
         "question": "Çok faktörlü doğrulama bildirimi gelmiyor, ne yapmalıyım?",
         "expected_document_id": "security-and-mfa",
         "expected_keywords": ["doğrulama", "bildirim", "telefon", "kod"],
         "case_type": "rag",
+        "expected_response_type": "rag_answer",
     },
     {
         "question": "Şüpheli bir e-posta aldım, ne yapmalıyım?",
         "expected_document_id": "security-and-mfa",
         "expected_keywords": ["şüpheli", "e-posta", "bağlantı", "ek"],
         "case_type": "rag",
+        "expected_response_type": "rag_answer",
     },
     {
         "question": "Toplantı odasındaki ekran çalışmıyor, ne yapmalıyım?",
         "expected_document_id": "meeting-room-support",
         "expected_keywords": ["toplantı", "ekran", "giriş", "hdmi"],
         "case_type": "rag",
+        "expected_response_type": "rag_answer",
     },
     {
         "question": "Kamera veya mikrofon çalışmıyor, ne yapmalıyım?",
         "expected_document_id": "meeting-room-support",
         "expected_keywords": ["kamera", "mikrofon", "cihaz", "izin"],
         "case_type": "rag",
+        "expected_response_type": "rag_answer",
     },
 
     # Kaynak bulunmaması beklenen ama IT'ye yakın soru
@@ -111,6 +126,7 @@ TEST_CASES = [
         "expected_document_id": "",
         "expected_keywords": ["kaynak", "bilgi", "IT"],
         "case_type": "no_relevant_source",
+        "expected_response_type": "no_relevant_source",
     },
 
     # Kapsam dışı soru
@@ -119,6 +135,7 @@ TEST_CASES = [
         "expected_document_id": "",
         "expected_keywords": ["yardımcı olamam", "IT"],
         "case_type": "out_of_scope",
+        "expected_response_type": "out_of_scope",
     },
 
     # Static cevap
@@ -127,6 +144,7 @@ TEST_CASES = [
         "expected_document_id": "",
         "expected_keywords": ["merhaba", "yardımcı"],
         "case_type": "static",
+        "expected_response_type": "static_response",
     },
 ]
 
@@ -168,10 +186,18 @@ def ask_question(token: str, question: str) -> tuple[dict, float]:
     return response.json(), elapsed_seconds
 
 
-def contains_expected_keywords(answer: str, keywords: list[str]) -> bool:
+def get_keyword_hit_count(answer: str, keywords: list[str]) -> int:
     normalized_answer = answer.lower()
 
-    return any(keyword.lower() in normalized_answer for keyword in keywords)
+    return sum(
+        1
+        for keyword in keywords
+        if keyword.lower() in normalized_answer
+    )
+
+
+def contains_expected_keywords(answer: str, keywords: list[str]) -> bool:
+    return get_keyword_hit_count(answer, keywords) > 0
 
 
 def get_first_source_document_id(sources: list[dict]) -> str:
@@ -180,6 +206,21 @@ def get_first_source_document_id(sources: list[dict]) -> str:
 
     first_source = sources[0]
     return str(first_source.get("document_id") or "")
+
+
+def get_first_source_score(sources: list[dict]) -> str:
+    if not sources:
+        return ""
+
+    first_source = sources[0]
+
+    score = (
+        first_source.get("score")
+        or first_source.get("distance")
+        or first_source.get("_distance")
+    )
+
+    return str(score) if score is not None else ""
 
 
 def evaluate_source_match(
@@ -210,8 +251,15 @@ def write_summary(results: list[dict], output_path: Path) -> Path:
     source_match_count = sum(
         1 for result in successful_results if result["source_match"] == "True"
     )
+
     keyword_match_count = sum(
         1 for result in successful_results if result["keyword_match"] == "True"
+    )
+
+    response_type_match_count = sum(
+        1
+        for result in successful_results
+        if result["response_type_match"] == "True"
     )
 
     average_response_time = (
@@ -234,6 +282,7 @@ def write_summary(results: list[dict], output_path: Path) -> Path:
                 "error_count",
                 "source_match_count",
                 "keyword_match_count",
+                "response_type_match_count",
                 "average_response_time_seconds",
                 "min_response_time_seconds",
                 "max_response_time_seconds",
@@ -248,6 +297,7 @@ def write_summary(results: list[dict], output_path: Path) -> Path:
                 "error_count": error_count,
                 "source_match_count": source_match_count,
                 "keyword_match_count": keyword_match_count,
+                "response_type_match_count": response_type_match_count,
                 "average_response_time_seconds": average_response_time,
                 "min_response_time_seconds": min_response_time,
                 "max_response_time_seconds": max_response_time,
@@ -267,6 +317,7 @@ def evaluate(model_name: str, repeat_count: int) -> tuple[Path, Path]:
         expected_document_id = test_case["expected_document_id"]
         expected_keywords = test_case["expected_keywords"]
         case_type = test_case["case_type"]
+        expected_response_type = test_case["expected_response_type"]
 
         for run_index in range(1, repeat_count + 1):
             print(f"Testing [{model_name}] run {run_index}: {question}")
@@ -277,17 +328,23 @@ def evaluate(model_name: str, repeat_count: int) -> tuple[Path, Path]:
                 answer = str(response_data.get("answer") or "")
                 sources = response_data.get("sources") or []
 
+                response_type = str(response_data.get("response_type") or "")
+                response_type_match = response_type == expected_response_type
+
                 first_source_document_id = get_first_source_document_id(sources)
+                first_source_score = get_first_source_score(sources)
 
                 source_match = evaluate_source_match(
                     expected_document_id=expected_document_id,
                     first_source_document_id=first_source_document_id,
                 )
 
-                keyword_match = contains_expected_keywords(
+                keyword_hit_count = get_keyword_hit_count(
                     answer=answer,
                     keywords=expected_keywords,
                 )
+
+                keyword_match = keyword_hit_count > 0
 
                 results.append(
                     {
@@ -296,12 +353,18 @@ def evaluate(model_name: str, repeat_count: int) -> tuple[Path, Path]:
                         "case_type": case_type,
                         "question": question,
                         "answer": answer,
+                        "response_type": response_type,
+                        "expected_response_type": expected_response_type,
+                        "response_type_match": str(response_type_match),
                         "response_time_seconds": round(elapsed_seconds, 3),
                         "source_count": len(sources),
                         "first_source_document_id": first_source_document_id,
                         "expected_document_id": expected_document_id,
                         "source_match": str(source_match),
+                        "first_source_score": first_source_score,
                         "keyword_match": str(keyword_match),
+                        "keyword_hit_count": keyword_hit_count,
+                        "expected_keywords": ", ".join(expected_keywords),
                         "answer_length": len(answer),
                         "status": "success",
                         "error": "",
@@ -318,12 +381,18 @@ def evaluate(model_name: str, repeat_count: int) -> tuple[Path, Path]:
                         "case_type": case_type,
                         "question": question,
                         "answer": "",
+                        "response_type": "",
+                        "expected_response_type": expected_response_type,
+                        "response_type_match": "False",
                         "response_time_seconds": "",
                         "source_count": "",
                         "first_source_document_id": "",
                         "expected_document_id": expected_document_id,
                         "source_match": "False",
+                        "first_source_score": "",
                         "keyword_match": "False",
+                        "keyword_hit_count": 0,
+                        "expected_keywords": ", ".join(expected_keywords),
                         "answer_length": 0,
                         "status": "error",
                         "error": str(error),
@@ -332,8 +401,8 @@ def evaluate(model_name: str, repeat_count: int) -> tuple[Path, Path]:
                     }
                 )
 
-    PROJECT_ROOT = Path(__file__).resolve().parents[1]
-    output_dir = PROJECT_ROOT / "docs" / "evaluation"
+    project_root = Path(__file__).resolve().parents[1]
+    output_dir = project_root / "docs" / "evaluation"
     output_dir.mkdir(parents=True, exist_ok=True)
 
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -346,12 +415,18 @@ def evaluate(model_name: str, repeat_count: int) -> tuple[Path, Path]:
         "case_type",
         "question",
         "answer",
+        "response_type",
+        "expected_response_type",
+        "response_type_match",
         "response_time_seconds",
         "source_count",
         "first_source_document_id",
         "expected_document_id",
         "source_match",
+        "first_source_score",
         "keyword_match",
+        "keyword_hit_count",
+        "expected_keywords",
         "answer_length",
         "status",
         "error",

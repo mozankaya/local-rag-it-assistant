@@ -10,12 +10,14 @@ export interface Source {
   chunk_index?: number | string | null;
   source_file_name?: string | null;
   file_type?: string | null;
+  score?: number | string | null;
 }
 
 export type ChatResponse = {
   question: string;
   answer: string;
   sources?: Source[];
+  response_type?: string | null;
 };
 
 export type FeedbackValue = "useful" | "not_useful";
