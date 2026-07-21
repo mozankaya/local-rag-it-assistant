@@ -1,0 +1,49 @@
+﻿model,run,case_type,question,answer,response_type,expected_response_type,response_type_match,response_time_seconds,source_count,first_source_document_id,expected_document_id,source_match,first_source_score,keyword_match,keyword_hit_count,expected_keywords,answer_length,status,error,manual_quality_score,manual_notes
+qwen2.5:7b-top2,1,rag,"VPN bağlantısı kuramıyorum, ne yapmalıyım?","- Bilgisayarınızın internete bağlı olduğunu kontrol edin.
+- VPN kullanıcı adı ve şifrenizi doğru girdiğinizden emin olun.
+- Çok faktörlü doğrulama kullanılıyorsa telefona gelen onay bildirimini kontrol edin.",rag_answer,rag_answer,True,22.292,2,vpn-remote-access,vpn-remote-access,True,0.17903608838474805,True,3,"internet, vpn, şifre",207,success,,,
+qwen2.5:7b-top2,1,rag,"Şifremi unuttum, nasıl sıfırlayabilirim?","- Kurum tarafından belirlenen şifre sıfırlama bağlantısını kullanın.
+- Yeni şifre oluştururken kurumun şifre kurallarına uyun.
+- Şifre sıfırlama bağlantısı çalışmıyorsa IT destek ekibine başvurun.",rag_answer,rag_answer,True,7.931,2,password-and-account,password-and-account,True,0.22400579786092756,True,2,"şifre, sıfırla",196,success,,,
+qwen2.5:7b-top2,1,rag,"Outlook mail göndermiyor, ne yapmalıyım?","- Alıcı e-posta adresinin doğru yazıldığını kontrol edin.
+- İnternet bağlantınızın aktif olduğunu kontrol edin.
+- Outlook uygulamasını kapatıp tekrar açın.",rag_answer,rag_answer,True,4.629,2,email-outlook,email-outlook,True,0.20145380496976495,True,2,"outlook, internet, adres",155,success,,,
+qwen2.5:7b-top2,1,rag,"Yazıcıdan çıktı alamıyorum, ne yapmalıyım?","- Bilgisayarınızın ve yazıcınızın aynı ağda olduğunu kontrol edin.
+- Doğru yazıcının seçili olduğundan emin olun.
+- Yazıcıda kağıt ve toner durumunu kontrol edin.",rag_answer,rag_answer,True,5.895,2,printer-support,printer-support,True,0.26899304306751237,True,2,"yazıcı, kağıt, bağlantı",162,success,,,
+qwen2.5:7b-top2,1,rag,"İnternet bağlantım yok, ne yapmalıyım?","- Bilgisayarınızın Wi-Fi veya Ethernet bağlantısını kontrol edin.
+- Ağ bağlantı durumunu kontrol edin.
+- Bilgisayarınızı yeniden başlatın.",rag_answer,rag_answer,True,3.574,2,network-connection,network-connection,True,0.20273951259379863,True,2,"internet, ağ, bağlantı",138,success,,,
+qwen2.5:7b-top2,1,rag,Donanım desteği talebi nasıl oluşturabilirim?,"- Kullanıcının adı ve soyadı doldurun.
+- Kullanılan cihaz türü doldurun.
+- Cihazda yaşanan sorunu doldurun.",rag_answer,rag_answer,True,5.17,2,hardware-support,hardware-support,True,0.32522787602093683,False,0,"donanım, talep, destek",107,success,,,
+qwen2.5:7b-top2,1,rag,Ekipman talebi nasıl oluşturabilirim?,"- Kullanıcı adı ve bağlı olunan birim bilgisi doldurun.
+- Talep edilen ekipman türünü ve kullanım amacıyla bilgi verin.
+- Aciliyet durumu, mevcut cihaz veya envanter bilgisi (varsa) ve onaylayacak yönetici veya birim bilgisini ekleyin.",rag_answer,rag_answer,True,5.525,1,equipment-request,equipment-request,True,0.41547526397858703,True,3,"ekipman, talep, onay",235,success,,,
+qwen2.5:7b-top2,1,rag,"Ortak klasöre erişemiyorum, ne yapmalıyım?","- Bilgisayarın şirket ağına bağlanıp bağlandığı kontrol edin.
+- Bağlantı sorunları varsa, VPN bağlantısını açın.
+- Erişim hatası devam ederse, yetkilerinizi kontrol edin ve gerekirse IT destek talebi oluşturun.",rag_answer,rag_answer,True,4.852,2,shared-folder-access,shared-folder-access,True,0.24434186349566545,True,2,"ortak, klasör, vpn, yetki",210,success,,,
+qwen2.5:7b-top2,1,rag,Ortak klasör için yetki talebi nasıl oluşturulur?,"- Kullanıcının adı ve soyadı doldurun.
+- Erişim istenen klasör adı doldurun.
+- Talep edilen yetki tipi belirtin.",rag_answer,rag_answer,True,4.832,2,shared-folder-access,shared-folder-access,True,0.24766303584951244,True,2,"klasör, yetki, yönetici, onay",112,success,,,
+qwen2.5:7b-top2,1,rag,Yeni bir yazılım kurulumu için nasıl talep oluşturabilirim?,"- Kurulması istenen yazılımın adını belirtin.
+- Yazılımın kullanım amacı girin.
+- Kullanıcı bilgilerinizi doldurun (ad, soyad, bağlı olduğu birim).",rag_answer,rag_answer,True,5.41,2,software-access,software-access,True,0.3346630540272808,True,1,"yazılım, kurulum, lisans, talep",147,success,,,
+qwen2.5:7b-top2,1,rag,Kurumsal uygulama yetkisi almak için ne yapmalıyım?,"- Kullanıcının görevi belirtilmelidir.
+- Hangi uygulamaya erişmek istediğine dair bilgi verilmelidir.
+- İhtiyaç duyulan yetki seviyesi açıkça belirtilmelidir.",rag_answer,rag_answer,True,4.144,1,software-access,software-access,True,0.3989266033462152,True,3,"uygulama, yetki, görev, erişim",158,success,,,
+qwen2.5:7b-top2,1,rag,"Çok faktörlü doğrulama bildirimi gelmiyor, ne yapmalıyım?","- Telefonunuzun internet bağlantısını kontrol edin.
+- Doğrulama uygulamasının bildirim iznini kontrol edin.
+- Manuel kod ekranını kontrol edin.",rag_answer,rag_answer,True,4.085,2,security-and-mfa,security-and-mfa,True,0.24019083497628657,True,4,"doğrulama, bildirim, telefon, kod",143,success,,,
+qwen2.5:7b-top2,1,rag,"Şüpheli bir e-posta aldım, ne yapmalıyım?","- Şüpheli e-postayı IT destek veya bilgi güvenliği ekibine bildirin.
+- Gönderen adresi, bağlantı adresi ve dosya eki kontrol edin.
+- Olağan dışı istekleri de gözden geçirin.",rag_answer,rag_answer,True,4.088,1,security-and-mfa,security-and-mfa,True,0.2673984724525279,True,4,"şüpheli, e-posta, bağlantı, ek",173,success,,,
+qwen2.5:7b-top2,1,rag,"Toplantı odasındaki ekran çalışmıyor, ne yapmalıyım?","- Ekranın açık olduğundan ve doğru giriş kaynağının seçildiğinden kontrol edin.
+- HDMI veya kablosuz bağlantı kullanılıyorsa cihaz bağlantısı kontrol edin.
+- Sorun devam ederse toplantı odası adı ve hata açıklamasıyla IT destek talebi oluşturun.",rag_answer,rag_answer,True,4.726,2,meeting-room-support,meeting-room-support,True,0.16741590262123374,True,4,"toplantı, ekran, giriş, hdmi",245,success,,,
+qwen2.5:7b-top2,1,rag,"Kamera veya mikrofon çalışmıyor, ne yapmalıyım?","- Cihazın seçildiği kontrol edin.
+- USB bağlantısı ve uygulama izinleri kontrol edin.
+- Sorun devam ederse IT destek ekibine bildirin.",rag_answer,rag_answer,True,3.914,2,meeting-room-support,meeting-room-support,True,0.22676633680642355,True,2,"kamera, mikrofon, cihaz, izin",134,success,,,
+qwen2.5:7b-top2,1,no_relevant_source,"SAP sevkiyat ekranı çalışmıyor, ne yapmalıyım?",- Bu konuda kaynak dokümanlarda yeterli bilgi bulamadım. IT destek ekibiyle iletişime geçebilirsiniz.,no_relevant_source,no_relevant_source,True,2.517,0,,,True,,True,3,"kaynak, bilgi, IT",101,success,,,
+qwen2.5:7b-top2,1,out_of_scope,Bana yemek tarifi verir misin?,"Bu konuda yardımcı olamam. Ben yalnızca VPN, şifre işlemleri, Outlook, yazıcı, donanım, ağ bağlantısı, ortak klasör erişimi, yazılım yetkisi ve ekipman talepleri gibi IT destek konularında yardımcı olabilirim.",out_of_scope,out_of_scope,True,1.126,0,,,True,,True,2,"yardımcı olamam, IT",209,success,,,
+qwen2.5:7b-top2,1,static,Merhaba,"Merhaba, ben İZELTAŞ IT Danışma Asistanı’yım. VPN, şifre, Outlook, yazıcı, donanım, ağ bağlantısı ve ekipman talepleri gibi IT konularında yardımcı olabilirim.",static_response,static_response,True,1.059,0,,,True,,True,2,"merhaba, yardımcı",159,success,,,
