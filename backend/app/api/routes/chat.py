@@ -41,6 +41,7 @@ async def chat(
 
     answer = n8n_response.get("answer")
     sources = n8n_response.get("sources", [])
+    response_type = n8n_response.get("response_type")
 
     if not answer:
         raise HTTPException(
@@ -55,4 +56,5 @@ async def chat(
         question=n8n_response.get("question", request.question),
         answer=answer,
         sources=sources,
+        response_type=response_type,
     )

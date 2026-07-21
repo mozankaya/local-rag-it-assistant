@@ -11,6 +11,7 @@ class Source(BaseModel):
     chunk_index: int | str | None = None
     source_file_name: str | None = None
     file_type: str | None = None
+    score: float | str | None = None
 
 
 class ChatRequest(BaseModel):
@@ -31,6 +32,7 @@ class ChatResponse(BaseModel):
     question: str
     answer: str
     sources: list[Source] = []
+    response_type: str | None = None
 
 
 class N8nChatResponse(BaseModel):
