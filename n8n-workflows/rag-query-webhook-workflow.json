@@ -185,7 +185,7 @@
     },
     {
       "parameters": {
-        "model": "qwen2.5:7b",
+        "model": "qwen2.5:3b",
         "options": {
           "temperature": 0.1,
           "topP": 0.7
@@ -680,7 +680,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "f5e79545-74bf-45f4-a629-5a5ff6f6c616",
+  "versionId": "04ed5337-03ce-42d4-b8a4-3f293bb6dac8",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "8ad5e91ca19f2aebbe2ce2f031589771f3e4e7c0049e38f9c59f6c20dd949760"
