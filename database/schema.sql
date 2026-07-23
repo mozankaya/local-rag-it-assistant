@@ -1,14 +1,22 @@
-CREATE TABLE IF NOT EXISTS document_chunks (
+CREATE EXTENSION IF NOT EXISTS vector;
+
+-- LangChain / n8n PGVector Store tarafından kullanılan aktif RAG doküman tablosu.
+-- Bu tablo n8n workflow tarafından da oluşturulabilir; burada temiz kurulum için tutulur.
+CREATE TABLE IF NOT EXISTS langchain_document_chunks (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    content TEXT,
+    metadata JSONB,
+    embedding vector(768)
+);
+
+CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
-    document_id TEXT NOT NULL,
-    title TEXT NOT NULL,
-    category TEXT,
-    section_title TEXT,
-    chunk_index INTEGER NOT NULL,
-    content TEXT NOT NULL,
-    embedding vector(768),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    email TEXT NOT NULL UNIQUE,
+    full_name TEXT NOT NULL,
+    hashed_password TEXT NOT NULL,
+    role TEXT NOT NULL DEFAULT 'user',
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS chat_logs (
@@ -22,6 +30,15 @@ CREATE TABLE IF NOT EXISTS chat_logs (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS feedback_logs (
+    id SERIAL PRIMARY KEY,
+    question TEXT NOT NULL,
+    answer TEXT NOT NULL,
+    feedback TEXT NOT NULL CHECK (feedback IN ('useful', 'not_useful')),
+    sources JSONB,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE INDEX IF NOT EXISTS idx_chat_logs_created_at
 ON chat_logs (created_at);
 
@@ -30,3 +47,18 @@ ON chat_logs (category);
 
 CREATE INDEX IF NOT EXISTS idx_chat_logs_section_title
 ON chat_logs (section_title);
+
+CREATE INDEX IF NOT EXISTS idx_chat_logs_response_type
+ON chat_logs (response_type);
+
+CREATE INDEX IF NOT EXISTS idx_feedback_logs_created_at
+ON feedback_logs (created_at);
+
+CREATE INDEX IF NOT EXISTS idx_feedback_logs_feedback
+ON feedback_logs (feedback);
+
+CREATE INDEX IF NOT EXISTS idx_users_email
+ON users (email);
+
+CREATE INDEX IF NOT EXISTS idx_users_role
+ON users (role);
