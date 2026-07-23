@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { SyntheticEvent } from "react";
 import {
   askQuestion,
@@ -20,7 +20,6 @@ interface ChatBoxProps {
     id: number;
     question: string;
   } | null;
-  resetSignal: number;
 }
 
 const starterQuestions = [
@@ -58,7 +57,7 @@ function formatSourceMeta(source: Source) {
   return parts.join(" · ");
 }
 
-function ChatBox({ quickQuestion, resetSignal }: ChatBoxProps) {
+function ChatBox({ quickQuestion }: ChatBoxProps) {
   const [messages, setMessages] = useState<Message[]>(createInitialMessages);
   const [question, setQuestion] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -70,7 +69,7 @@ function ChatBox({ quickQuestion, resetSignal }: ChatBoxProps) {
   const lastQuickQuestionIdRef = useRef<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
-  async function sendQuestion(questionText: string) {
+  const sendQuestion = useCallback(async (questionText: string) => {
     const cleanedQuestion = questionText.trim();
 
     if (!cleanedQuestion || isLoading) return;
@@ -109,7 +108,7 @@ function ChatBox({ quickQuestion, resetSignal }: ChatBoxProps) {
     } finally {
       setIsLoading(false);
     }
-  }
+  }, [isLoading]);
 
   async function handleSubmit(event?: SyntheticEvent<HTMLFormElement>) {
     event?.preventDefault();
@@ -150,20 +149,13 @@ function ChatBox({ quickQuestion, resetSignal }: ChatBoxProps) {
   }
 
   useEffect(() => {
-    setMessages(createInitialMessages());
-    setQuestion("");
-    setFeedbackStatus({});
-    nextIdRef.current = 2;
-  }, [resetSignal]);
-
-  useEffect(() => {
     if (!quickQuestion) return;
 
     if (lastQuickQuestionIdRef.current === quickQuestion.id) return;
 
     lastQuickQuestionIdRef.current = quickQuestion.id;
     void sendQuestion(quickQuestion.question);
-  }, [quickQuestion]);
+  }, [quickQuestion, sendQuestion]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({

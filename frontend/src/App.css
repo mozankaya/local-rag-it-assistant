@@ -681,6 +681,20 @@ button {
   font-weight: 700;
 }
 
+.admin-button {
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(227, 6, 19, 0.65);
+  background: rgba(227, 6, 19, 0.12);
+  color: #ffffff;
+  font-weight: 800;
+}
+
+.admin-button:hover {
+  border-color: var(--red);
+  background: rgba(227, 6, 19, 0.22);
+}
+
 .logout-button:hover {
   border-color: var(--red);
 }

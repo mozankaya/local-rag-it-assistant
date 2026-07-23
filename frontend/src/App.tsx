@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   clearAccessToken,
   getAccessToken,
@@ -7,6 +7,7 @@ import {
 } from "./api/authApi";
 import ChatBox from "./components/ChatBox";
 import LoginPage from "./components/LoginPage";
+import AdminDashboardPage from "./components/admin/AdminDashboardPage";
 import "./App.css";
 
 const quickTopics = [
@@ -46,6 +47,18 @@ function App() {
     question: string;
   } | null>(null);
   const [resetSignal, setResetSignal] = useState(0);
+  const [pathname, setPathname] = useState(window.location.pathname);
+  const quickQuestionIdRef = useRef(0);
+
+  const navigate = useCallback((path: string, replace = false) => {
+    if (replace) {
+      window.history.replaceState({}, "", path);
+    } else {
+      window.history.pushState({}, "", path);
+    }
+
+    setPathname(path);
+  }, []);
 
   useEffect(() => {
     async function checkExistingSession() {
@@ -70,9 +83,32 @@ function App() {
     void checkExistingSession();
   }, []);
 
+  useEffect(() => {
+    function handlePopState() {
+      setPathname(window.location.pathname);
+    }
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  useEffect(() => {
+    if (!currentUser || !pathname.startsWith("/admin")) return;
+
+    if (currentUser.role !== "admin") {
+      window.location.replace("/");
+      return;
+    }
+
+    if (pathname !== "/admin/dashboard") {
+      window.location.replace("/admin/dashboard");
+    }
+  }, [currentUser, pathname]);
+
   function handleQuickTopic(question: string) {
+    quickQuestionIdRef.current += 1;
     setQuickQuestion({
-      id: Date.now(),
+      id: quickQuestionIdRef.current,
       question,
     });
   }
@@ -82,12 +118,17 @@ function App() {
     setQuickQuestion(null);
   }
 
-  function handleLogout() {
+  const handleLogout = useCallback(() => {
     clearAccessToken();
     setCurrentUser(null);
     setResetSignal((previous) => previous + 1);
     setQuickQuestion(null);
-  }
+    navigate("/", true);
+  }, [navigate]);
+
+  const handleGoToChat = useCallback(() => {
+    navigate("/");
+  }, [navigate]);
 
   if (isCheckingAuth) {
     return (
@@ -100,6 +141,16 @@ function App() {
 
   if (!currentUser) {
     return <LoginPage onLoginSuccess={setCurrentUser} />;
+  }
+
+  if (currentUser.role === "admin" && pathname === "/admin/dashboard") {
+    return (
+      <AdminDashboardPage
+        user={currentUser}
+        onGoToChat={handleGoToChat}
+        onLogout={handleLogout}
+      />
+    );
   }
 
   return (
@@ -121,6 +172,16 @@ function App() {
           <div className="user-chip">
             {currentUser.full_name} · {currentUser.role}
           </div>
+
+          {currentUser.role === "admin" && (
+            <button
+              className="admin-button"
+              type="button"
+              onClick={() => navigate("/admin/dashboard")}
+            >
+              Admin Panel
+            </button>
+          )}
 
           <button
             className="logout-button"
@@ -192,7 +253,7 @@ function App() {
             </button>
           </div>
 
-          <ChatBox quickQuestion={quickQuestion} resetSignal={resetSignal} />
+          <ChatBox key={resetSignal} quickQuestion={quickQuestion} />
         </section>
       </main>
     </div>
