@@ -9,6 +9,7 @@ import ChatBox from "./components/ChatBox";
 import LoginPage from "./components/LoginPage";
 import AdminDashboardPage from "./components/admin/AdminDashboardPage";
 import AdminReviewItemsPage from "./components/admin/AdminReviewItemsPage";
+import AdminUsersPage from "./components/admin/AdminUsersPage";
 import "./App.css";
 
 const quickTopics = [
@@ -102,7 +103,8 @@ function App() {
     }
 
     const isKnownAdminRoute = pathname === "/admin/dashboard"
-      || pathname === "/admin/review-items";
+      || pathname === "/admin/review-items"
+      || pathname === "/admin/users";
 
     if (!isKnownAdminRoute) {
       window.location.replace("/admin/dashboard");
@@ -142,6 +144,10 @@ function App() {
     navigate("/admin/review-items");
   }, [navigate]);
 
+  const handleGoToUsers = useCallback(() => {
+    navigate("/admin/users");
+  }, [navigate]);
+
   if (isCheckingAuth) {
     return (
       <div className="auth-loading">
@@ -161,6 +167,7 @@ function App() {
         user={currentUser}
         onGoToDashboard={handleGoToDashboard}
         onGoToReviewItems={handleGoToReviewItems}
+        onGoToUsers={handleGoToUsers}
         onGoToChat={handleGoToChat}
         onLogout={handleLogout}
       />
@@ -173,6 +180,20 @@ function App() {
         user={currentUser}
         onGoToDashboard={handleGoToDashboard}
         onGoToReviewItems={handleGoToReviewItems}
+        onGoToUsers={handleGoToUsers}
+        onGoToChat={handleGoToChat}
+        onLogout={handleLogout}
+      />
+    );
+  }
+
+  if (currentUser.role === "admin" && pathname === "/admin/users") {
+    return (
+      <AdminUsersPage
+        user={currentUser}
+        onGoToDashboard={handleGoToDashboard}
+        onGoToReviewItems={handleGoToReviewItems}
+        onGoToUsers={handleGoToUsers}
         onGoToChat={handleGoToChat}
         onLogout={handleLogout}
       />

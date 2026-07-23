@@ -4,11 +4,12 @@ import type { CurrentUserResponse } from "../../api/authApi";
 interface AdminLayoutProps {
   user: CurrentUserResponse;
   children: ReactNode;
-  activePage: "dashboard" | "review-items";
+  activePage: "dashboard" | "review-items" | "users";
   pageTitle: string;
   pageDescription?: string;
   onGoToDashboard: () => void;
   onGoToReviewItems: () => void;
+  onGoToUsers: () => void;
   onGoToChat: () => void;
   onLogout: () => void;
 }
@@ -21,6 +22,7 @@ function AdminLayout({
   pageDescription,
   onGoToDashboard,
   onGoToReviewItems,
+  onGoToUsers,
   onGoToChat,
   onLogout,
 }: AdminLayoutProps) {
@@ -51,6 +53,14 @@ function AdminLayout({
           >
             <span aria-hidden="true">!</span>
             İnceleme Kuyruğu
+          </button>
+          <button
+            className={`admin-nav-item ${activePage === "users" ? "active" : ""}`}
+            type="button"
+            onClick={onGoToUsers}
+          >
+            <span aria-hidden="true">◎</span>
+            Kullanıcı Yönetimi
           </button>
           <button className="admin-nav-item" type="button" onClick={onGoToChat}>
             <span aria-hidden="true">◇</span>

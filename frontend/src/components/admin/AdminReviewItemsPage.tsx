@@ -13,6 +13,7 @@ interface AdminReviewItemsPageProps {
   user: CurrentUserResponse;
   onGoToDashboard: () => void;
   onGoToReviewItems: () => void;
+  onGoToUsers: () => void;
   onGoToChat: () => void;
   onLogout: () => void;
 }
@@ -29,6 +30,7 @@ function AdminReviewItemsPage({
   user,
   onGoToDashboard,
   onGoToReviewItems,
+  onGoToUsers,
   onGoToChat,
   onLogout,
 }: AdminReviewItemsPageProps) {
@@ -136,6 +138,7 @@ function AdminReviewItemsPage({
       pageDescription="Kaynak bulunamayan, hatalı veya faydasız işaretlenen cevaplar"
       onGoToDashboard={onGoToDashboard}
       onGoToReviewItems={onGoToReviewItems}
+      onGoToUsers={onGoToUsers}
       onGoToChat={onGoToChat}
       onLogout={onLogout}
     >
