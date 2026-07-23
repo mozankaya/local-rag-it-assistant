@@ -1,4 +1,7 @@
-from fastapi import APIRouter, Depends, Query
+from pathlib import Path
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.responses import FileResponse
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -18,9 +21,41 @@ router = APIRouter(
 )
 
 
+SOURCE_DOCUMENTS_DIR = (
+    Path(__file__).resolve().parents[4] / "data" / "source-documents"
+)
+
+
 def get_scalar_value(db: Session, query: str, params: dict | None = None) -> int:
     result = db.execute(text(query), params or {}).scalar()
     return int(result or 0)
+
+
+def find_source_document_path(
+    source_file_name: str,
+    category: str | None = None,
+) -> Path | None:
+    safe_file_name = Path(source_file_name).name
+
+    if not safe_file_name:
+        return None
+
+    source_root = SOURCE_DOCUMENTS_DIR.resolve()
+
+    if category and category != "unknown":
+        category_candidate = (source_root / category / safe_file_name).resolve()
+
+        if category_candidate.is_file() and category_candidate.is_relative_to(source_root):
+            return category_candidate
+
+    for file_path in source_root.rglob("*"):
+        if file_path.is_file() and file_path.name == safe_file_name:
+            resolved_path = file_path.resolve()
+
+            if resolved_path.is_relative_to(source_root):
+                return resolved_path
+
+    return None
 
 
 @router.get("", response_model=PaginatedAdminDocumentsResponse)
@@ -195,3 +230,59 @@ def list_document_categories(
         )
         for row in rows
     ]
+    
+    
+@router.get("/{document_id}/download")
+def download_document(
+    document_id: str,
+    db: Session = Depends(get_db),
+    _current_admin: User = Depends(require_admin),
+):
+    row = db.execute(
+        text(
+            """
+            SELECT
+                COALESCE(
+                    metadata->>'source_file_name',
+                    metadata->>'file_name'
+                ) AS source_file_name,
+                COALESCE(metadata->>'category', 'unknown') AS category
+            FROM langchain_document_chunks
+            WHERE metadata->>'document_id' = :document_id
+            LIMIT 1
+            """
+        ),
+        {"document_id": document_id},
+    ).mappings().first()
+
+    if not row:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Doküman bulunamadı.",
+        )
+
+    source_file_name = row["source_file_name"]
+    category = row["category"]
+
+    if not source_file_name:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Doküman kaynak dosya bilgisi bulunamadı.",
+        )
+
+    file_path = find_source_document_path(
+        source_file_name=source_file_name,
+        category=category,
+    )
+
+    if not file_path:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Orijinal doküman dosyası bulunamadı.",
+        )
+
+    return FileResponse(
+        path=file_path,
+        filename=file_path.name,
+        media_type="application/octet-stream",
+    )
