@@ -141,11 +141,11 @@
   background: rgba(9, 10, 12, 0.7);
 }
 
-.admin-topbar p,
 .admin-topbar h1,
 .admin-panel-header h2,
 .admin-panel-header p { margin: 0; }
-.admin-topbar p {
+.admin-page-eyebrow {
+  display: block;
   margin-bottom: 4px;
   color: var(--admin-red);
   font-size: 12px;
@@ -154,6 +154,11 @@
   text-transform: uppercase;
 }
 .admin-topbar h1 { font-size: clamp(24px, 3vw, 34px); letter-spacing: -0.04em; }
+.admin-page-description {
+  margin: 6px 0 0;
+  color: var(--admin-muted);
+  font-size: 13px;
+}
 .admin-chat-link { background: var(--admin-surface); }
 
 .admin-content {
@@ -259,6 +264,31 @@
 }
 
 .recent-panel { margin-top: 18px; }
+.review-page-content .recent-panel { margin-top: 0; }
+.review-filter-bar {
+  padding: 16px 22px;
+  display: flex;
+  gap: 9px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--admin-border);
+  background: rgba(255, 255, 255, 0.015);
+}
+.review-filter-button {
+  padding: 8px 11px;
+  border: 1px solid var(--admin-border);
+  border-radius: 9px;
+  color: #bfc1c7;
+  background: rgba(255, 255, 255, 0.025);
+  font-size: 12px;
+  font-weight: 700;
+}
+.review-filter-button:hover,
+.review-filter-button.active {
+  color: #fff;
+  border-color: rgba(227, 6, 19, 0.6);
+  background: var(--admin-red-soft);
+}
+.review-filter-button:disabled { opacity: 0.6; cursor: wait; }
 .recent-question-list { display: grid; }
 .recent-question {
   padding: 18px 22px;
@@ -356,7 +386,8 @@
   font-weight: 800;
 }
 .load-more-button:hover:not(:disabled) { background: rgba(227, 6, 19, 0.23); border-color: var(--admin-red); }
-.load-more-button:disabled { opacity: 0.55; cursor: wait; }
+.load-more-button:disabled { opacity: 0.55; cursor: not-allowed; }
+.load-more-button[aria-busy="true"] { cursor: wait; }
 
 .admin-loading,
 .admin-error,
@@ -371,6 +402,26 @@
 .admin-loading span {
   width: 18px;
   height: 18px;
+  border: 2px solid var(--admin-border);
+  border-top-color: var(--admin-red);
+  border-radius: 50%;
+  animation: admin-spin 700ms linear infinite;
+}
+.admin-filter-loading {
+  margin: 22px;
+  padding: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 1px solid var(--admin-border);
+  border-radius: 14px;
+  color: var(--admin-muted);
+  background: rgba(255, 255, 255, 0.015);
+}
+.admin-filter-loading span {
+  width: 16px;
+  height: 16px;
   border: 2px solid var(--admin-border);
   border-top-color: var(--admin-red);
   border-radius: 50%;

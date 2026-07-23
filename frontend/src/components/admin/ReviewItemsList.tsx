@@ -1,12 +1,27 @@
 import type { ReviewItem } from "../../api/adminApi";
 
+export type ReviewFilter =
+  | "all"
+  | "no_relevant_source"
+  | "not_useful"
+  | "llm_error";
+
 interface ReviewItemsListProps {
   items: ReviewItem[];
   total: number;
+  activeFilter: ReviewFilter;
   hasMore: boolean;
   isLoadingMore: boolean;
+  onFilterChange: (filter: ReviewFilter) => void;
   onLoadMore: () => void;
 }
+
+const filterOptions: Array<{ value: ReviewFilter; label: string }> = [
+  { value: "all", label: "Tümü" },
+  { value: "no_relevant_source", label: "Kaynak bulunamadı" },
+  { value: "not_useful", label: "Faydasız feedback" },
+  { value: "llm_error", label: "LLM hatası" },
+];
 
 const reviewReasonLabels: Record<string, string> = {
   not_useful: "Faydasız feedback",
@@ -45,22 +60,46 @@ function formatDate(value: string) {
 function ReviewItemsList({
   items,
   total,
+  activeFilter,
   hasMore,
   isLoadingMore,
+  onFilterChange,
   onLoadMore,
 }: ReviewItemsListProps) {
   return (
     <article className="admin-panel recent-panel">
       <div className="admin-panel-header">
         <div>
-          <h2>İncelenmesi Gereken Kayıtlar</h2>
-          <p>Olumsuz feedback ve teknik sorun içeren yanıtlar</p>
+          <h2>İnceleme kayıtları</h2>
+          <p>Yüklenen kayıtları inceleme nedenine göre filtreleyin</p>
         </div>
         <span className="admin-total-pill">{total} kayıt</span>
       </div>
 
+      <div className="review-filter-bar" aria-label="İnceleme kayıtlarını filtrele">
+        {filterOptions.map((option) => (
+          <button
+            className={`review-filter-button ${activeFilter === option.value ? "active" : ""}`}
+            type="button"
+            key={option.value}
+            aria-pressed={activeFilter === option.value}
+            disabled={isLoadingMore}
+            onClick={() => onFilterChange(option.value)}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+
       {items.length === 0 ? (
-        <p className="admin-empty">İncelenmesi gereken kayıt bulunmuyor.</p>
+        isLoadingMore ? (
+          <div className="admin-filter-loading" role="status">
+            <span />
+            Uygun kayıtlar aranıyor...
+          </div>
+        ) : (
+          <p className="admin-empty">Bu filtreye uygun kayıt bulunmuyor.</p>
+        )
       ) : (
         <div className="recent-question-list">
           {items.map((item) => (
@@ -111,6 +150,7 @@ function ReviewItemsList({
           type="button"
           onClick={onLoadMore}
           disabled={isLoadingMore}
+          aria-busy={isLoadingMore}
         >
           {isLoadingMore ? "Yükleniyor..." : "Daha fazla göster"}
         </button>

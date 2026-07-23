@@ -108,11 +108,19 @@ export function getFeedbackSummary() {
   return adminRequest<FeedbackSummary>("/feedback-summary");
 }
 
-export function getReviewItems(limit = 20, offset = 0) {
+export function getReviewItems(
+  limit = 10,
+  offset = 0,
+  reviewReason?: ReviewReason,
+) {
   const query = new URLSearchParams({
     limit: String(limit),
     offset: String(offset),
   });
+
+  if (reviewReason) {
+    query.set("review_reason", reviewReason);
+  }
 
   return adminRequest<PaginatedReviewItems>(
     `/review-items?${query.toString()}`,

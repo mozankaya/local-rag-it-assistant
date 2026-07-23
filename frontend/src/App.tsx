@@ -8,6 +8,7 @@ import {
 import ChatBox from "./components/ChatBox";
 import LoginPage from "./components/LoginPage";
 import AdminDashboardPage from "./components/admin/AdminDashboardPage";
+import AdminReviewItemsPage from "./components/admin/AdminReviewItemsPage";
 import "./App.css";
 
 const quickTopics = [
@@ -100,7 +101,10 @@ function App() {
       return;
     }
 
-    if (pathname !== "/admin/dashboard") {
+    const isKnownAdminRoute = pathname === "/admin/dashboard"
+      || pathname === "/admin/review-items";
+
+    if (!isKnownAdminRoute) {
       window.location.replace("/admin/dashboard");
     }
   }, [currentUser, pathname]);
@@ -130,6 +134,14 @@ function App() {
     navigate("/");
   }, [navigate]);
 
+  const handleGoToDashboard = useCallback(() => {
+    navigate("/admin/dashboard");
+  }, [navigate]);
+
+  const handleGoToReviewItems = useCallback(() => {
+    navigate("/admin/review-items");
+  }, [navigate]);
+
   if (isCheckingAuth) {
     return (
       <div className="auth-loading">
@@ -147,6 +159,20 @@ function App() {
     return (
       <AdminDashboardPage
         user={currentUser}
+        onGoToDashboard={handleGoToDashboard}
+        onGoToReviewItems={handleGoToReviewItems}
+        onGoToChat={handleGoToChat}
+        onLogout={handleLogout}
+      />
+    );
+  }
+
+  if (currentUser.role === "admin" && pathname === "/admin/review-items") {
+    return (
+      <AdminReviewItemsPage
+        user={currentUser}
+        onGoToDashboard={handleGoToDashboard}
+        onGoToReviewItems={handleGoToReviewItems}
         onGoToChat={handleGoToChat}
         onLogout={handleLogout}
       />
