@@ -78,3 +78,26 @@ export function getAdminDocuments(
 export function getDocumentCategories() {
   return authorizedGet<DocumentCategory[]>("/admin/documents/categories");
 }
+
+export async function downloadAdminDocument(documentId: string): Promise<Blob> {
+  const token = getAccessToken();
+
+  if (!API_URL || !token) {
+    throw new Error("API URL or access token is missing.");
+  }
+
+  const response = await fetch(
+    `${API_URL}/admin/documents/${encodeURIComponent(documentId)}/download`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    },
+  );
+
+  if (!response.ok) {
+    throw new AdminDocumentsApiError(response.status);
+  }
+
+  return response.blob();
+}

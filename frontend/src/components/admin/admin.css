@@ -767,6 +767,36 @@
   color: #e5e6e9;
   background: rgba(255, 255, 255, 0.045);
 }
+
+.document-download-button {
+  min-width: 92px;
+  padding: 8px 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid rgba(227, 6, 19, 0.4);
+  border-radius: 8px;
+  color: #fff;
+  background: var(--admin-red-soft);
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.document-download-button:hover:not(:disabled) {
+  border-color: var(--admin-red);
+  background: rgba(227, 6, 19, 0.22);
+}
+
+.document-download-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.document-download-button[aria-busy="true"] {
+  cursor: wait;
+}
 .recent-question-list { display: grid; }
 .recent-question {
   padding: 18px 22px;

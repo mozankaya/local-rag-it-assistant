@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import {
   AdminDocumentsApiError,
+  downloadAdminDocument,
   getAdminDocuments,
   getDocumentCategories,
   type AdminDocument,
@@ -45,6 +46,8 @@ function AdminDocumentsPage({
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [downloadingDocumentId, setDownloadingDocumentId] = useState("");
 
   useEffect(() => {
     let isCancelled = false;
@@ -118,6 +121,7 @@ function AdminDocumentsPage({
 
   function prepareForNewQuery() {
     setError("");
+    setSuccess("");
     setDocuments([]);
     setTotal(0);
     setHasMore(false);
@@ -176,6 +180,47 @@ function AdminDocumentsPage({
     }
   }
 
+  async function handleDownload(document: AdminDocument) {
+    if (downloadingDocumentId) return;
+
+    setError("");
+    setSuccess("");
+    setDownloadingDocumentId(document.document_id);
+
+    try {
+      const blob = await downloadAdminDocument(document.document_id);
+      const sourceName = document.source_file_name
+        ?.split(/[\\/]/)
+        .pop()
+        ?.trim();
+      const fileName = sourceName || document.document_id;
+      const objectUrl = URL.createObjectURL(blob);
+      const downloadLink = window.document.createElement("a");
+
+      downloadLink.href = objectUrl;
+      downloadLink.download = fileName;
+      window.document.body.appendChild(downloadLink);
+      downloadLink.click();
+      downloadLink.remove();
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+
+      setSuccess(`${fileName} indirme işlemi başlatıldı.`);
+    } catch (requestError) {
+      if (requestError instanceof AdminDocumentsApiError && requestError.status === 401) {
+        onLogout();
+        return;
+      }
+      if (requestError instanceof AdminDocumentsApiError && requestError.status === 403) {
+        onGoToChat();
+        return;
+      }
+
+      setError("Doküman indirilemedi. Lütfen tekrar deneyin.");
+    } finally {
+      setDownloadingDocumentId("");
+    }
+  }
+
   return (
     <AdminLayout
       user={user}
@@ -224,6 +269,7 @@ function AdminDocumentsPage({
           </form>
 
           {error && <div className="admin-form-error document-list-message" role="alert">{error}</div>}
+          {success && <div className="admin-success document-list-message" role="status">{success}</div>}
 
           {isLoading ? (
             <div className="admin-loading documents-loading" role="status">
@@ -231,7 +277,11 @@ function AdminDocumentsPage({
               Dokümanlar yükleniyor...
             </div>
           ) : (
-            <DocumentsTable documents={documents} />
+            <DocumentsTable
+              documents={documents}
+              downloadingDocumentId={downloadingDocumentId}
+              onDownload={handleDownload}
+            />
           )}
 
           {hasMore && !isLoading && (

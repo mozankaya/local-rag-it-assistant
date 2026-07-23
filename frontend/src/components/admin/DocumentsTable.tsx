@@ -2,6 +2,8 @@ import type { AdminDocument } from "../../api/adminDocumentsApi";
 
 interface DocumentsTableProps {
   documents: AdminDocument[];
+  downloadingDocumentId: string;
+  onDownload: (document: AdminDocument) => void;
 }
 
 function displayValue(value?: string | null) {
@@ -23,7 +25,11 @@ function formatDate(value?: string | null) {
   }).format(date);
 }
 
-function DocumentsTable({ documents }: DocumentsTableProps) {
+function DocumentsTable({
+  documents,
+  downloadingDocumentId,
+  onDownload,
+}: DocumentsTableProps) {
   if (documents.length === 0) {
     return <p className="admin-empty">Doküman bulunamadı.</p>;
   }
@@ -40,11 +46,15 @@ function DocumentsTable({ documents }: DocumentsTableProps) {
             <th>Kaynak dosya adı</th>
             <th>Chunk sayısı</th>
             <th>Son güncelleme</th>
+            <th>İşlemler</th>
           </tr>
         </thead>
         <tbody>
-          {documents.map((document) => (
-            <tr key={document.document_id}>
+          {documents.map((document) => {
+            const isDownloading = downloadingDocumentId === document.document_id;
+
+            return (
+            <tr key={`${document.document_id}-${document.source_file_name ?? ""}`}>
               <td>
                 <div className="document-title-cell">
                   <span aria-hidden="true">▤</span>
@@ -69,8 +79,21 @@ function DocumentsTable({ documents }: DocumentsTableProps) {
                 <strong className="document-chunk-count">{document.chunk_count}</strong>
               </td>
               <td className="document-date">{formatDate(document.last_updated)}</td>
+              <td>
+                <button
+                  className="document-download-button"
+                  type="button"
+                  disabled={Boolean(downloadingDocumentId)}
+                  aria-busy={isDownloading}
+                  onClick={() => onDownload(document)}
+                >
+                  <span aria-hidden="true">↓</span>
+                  {isDownloading ? "İndiriliyor..." : "İndir"}
+                </button>
+              </td>
             </tr>
-          ))}
+            );
+          })}
         </tbody>
       </table>
     </div>
