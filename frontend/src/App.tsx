@@ -10,6 +10,7 @@ import LoginPage from "./components/LoginPage";
 import AdminDashboardPage from "./components/admin/AdminDashboardPage";
 import AdminReviewItemsPage from "./components/admin/AdminReviewItemsPage";
 import AdminUsersPage from "./components/admin/AdminUsersPage";
+import AdminDocumentsPage from "./components/admin/AdminDocumentsPage";
 import "./App.css";
 
 const quickTopics = [
@@ -104,7 +105,8 @@ function App() {
 
     const isKnownAdminRoute = pathname === "/admin/dashboard"
       || pathname === "/admin/review-items"
-      || pathname === "/admin/users";
+      || pathname === "/admin/users"
+      || pathname === "/admin/documents";
 
     if (!isKnownAdminRoute) {
       window.location.replace("/admin/dashboard");
@@ -148,6 +150,10 @@ function App() {
     navigate("/admin/users");
   }, [navigate]);
 
+  const handleGoToDocuments = useCallback(() => {
+    navigate("/admin/documents");
+  }, [navigate]);
+
   if (isCheckingAuth) {
     return (
       <div className="auth-loading">
@@ -168,6 +174,7 @@ function App() {
         onGoToDashboard={handleGoToDashboard}
         onGoToReviewItems={handleGoToReviewItems}
         onGoToUsers={handleGoToUsers}
+        onGoToDocuments={handleGoToDocuments}
         onGoToChat={handleGoToChat}
         onLogout={handleLogout}
       />
@@ -181,6 +188,7 @@ function App() {
         onGoToDashboard={handleGoToDashboard}
         onGoToReviewItems={handleGoToReviewItems}
         onGoToUsers={handleGoToUsers}
+        onGoToDocuments={handleGoToDocuments}
         onGoToChat={handleGoToChat}
         onLogout={handleLogout}
       />
@@ -194,6 +202,21 @@ function App() {
         onGoToDashboard={handleGoToDashboard}
         onGoToReviewItems={handleGoToReviewItems}
         onGoToUsers={handleGoToUsers}
+        onGoToDocuments={handleGoToDocuments}
+        onGoToChat={handleGoToChat}
+        onLogout={handleLogout}
+      />
+    );
+  }
+
+  if (currentUser.role === "admin" && pathname === "/admin/documents") {
+    return (
+      <AdminDocumentsPage
+        user={currentUser}
+        onGoToDashboard={handleGoToDashboard}
+        onGoToReviewItems={handleGoToReviewItems}
+        onGoToUsers={handleGoToUsers}
+        onGoToDocuments={handleGoToDocuments}
         onGoToChat={handleGoToChat}
         onLogout={handleLogout}
       />
