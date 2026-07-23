@@ -270,34 +270,68 @@ def get_recent_questions(
 
 @router.get("/review-items", response_model=PaginatedReviewItemsResponse)
 def get_review_items(
-    limit: int = Query(default=20, ge=1, le=50),
+    limit: int = Query(default=10, ge=1, le=50),
     offset: int = Query(default=0, ge=0),
+    review_reason: Literal[
+        "no_relevant_source",
+        "not_useful",
+        "llm_error",
+    ]
+    | None = Query(default=None),
     db: Session = Depends(get_db),
     _current_admin: User = Depends(require_admin),
 ):
+    query_params = {
+        "limit": limit,
+        "offset": offset,
+        "review_reason": review_reason,
+    }
+
     total = get_scalar_value(
         db,
         """
-        SELECT COUNT(*)
-        FROM (
-            SELECT id
+        WITH review_items AS (
+            SELECT
+                'chat_log' AS item_type,
+                id AS item_id,
+                response_type AS review_reason,
+                question,
+                LEFT(answer, 300) AS answer_preview,
+                NULL::text AS feedback,
+                response_type,
+                category,
+                section_title,
+                created_at
             FROM chat_logs
             WHERE response_type IN ('no_relevant_source', 'llm_error')
 
             UNION ALL
 
-            SELECT id
+            SELECT
+                'feedback' AS item_type,
+                id AS item_id,
+                'not_useful' AS review_reason,
+                question,
+                LEFT(answer, 300) AS answer_preview,
+                feedback,
+                NULL::text AS response_type,
+                NULL::text AS category,
+                NULL::text AS section_title,
+                created_at
             FROM feedback_logs
             WHERE feedback = 'not_useful'
-        ) AS review_items
+        )
+        SELECT COUNT(*)
+        FROM review_items
+        WHERE (:review_reason IS NULL OR review_reason = :review_reason)
         """,
+        {"review_reason": review_reason},
     )
 
     rows = db.execute(
         text(
             """
-            SELECT *
-            FROM (
+            WITH review_items AS (
                 SELECT
                     'chat_log' AS item_type,
                     id AS item_id,
@@ -317,6 +351,13 @@ def get_review_items(
                 SELECT
                     'feedback' AS item_type,
                     id AS item_id,
+no_relevant_source', 'llm_error')
+
+                UNION ALL
+
+                SELECT
+                    'feedback' AS item_type,
+                    id AS item_id,
                     'not_useful' AS review_reason,
                     question,
                     LEFT(answer, 300) AS answer_preview,
@@ -327,15 +368,15 @@ def get_review_items(
                     created_at
                 FROM feedback_logs
                 WHERE feedback = 'not_useful'
-            ) AS review_items
+            )
+            SELECT *
+            FROM review_items
+            WHERE (:review_reason IS NULL OR review_reason = :review_reason)
             ORDER BY created_at DESC
             LIMIT :limit OFFSET :offset
             """
         ),
-        {
-            "limit": limit,
-            "offset": offset,
-        },
+        query_params,
     ).mappings().all()
 
     items = [
