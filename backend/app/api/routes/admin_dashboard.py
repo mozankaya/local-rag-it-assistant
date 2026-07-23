@@ -12,6 +12,8 @@ from app.schemas.admin_dashboard import (
     PaginatedRecentQuestionsResponse,
     RecentQuestionResponse,
     ResponseTypeCount,
+    PaginatedReviewItemsResponse,
+    ReviewItemResponse,
 )
 
 
@@ -255,6 +257,102 @@ def get_recent_questions(
     ]
 
     return PaginatedRecentQuestionsResponse(
+        items=items,
+        total=total,
+        limit=limit,
+        offset=offset,
+        has_more=offset + limit < total,
+    )
+    
+
+
+@router.get("/review-items", response_model=PaginatedReviewItemsResponse)
+def get_review_items(
+    limit: int = Query(default=20, ge=1, le=50),
+    offset: int = Query(default=0, ge=0),
+    db: Session = Depends(get_db),
+    _current_admin: User = Depends(require_admin),
+):
+    total = get_scalar_value(
+        db,
+        """
+        SELECT COUNT(*)
+        FROM (
+            SELECT id
+            FROM chat_logs
+            WHERE response_type IN ('no_relevant_source', 'llm_error')
+
+            UNION ALL
+
+            SELECT id
+            FROM feedback_logs
+            WHERE feedback = 'not_useful'
+        ) AS review_items
+        """,
+    )
+
+    rows = db.execute(
+        text(
+            """
+            SELECT *
+            FROM (
+                SELECT
+                    'chat_log' AS item_type,
+                    id AS item_id,
+                    response_type AS review_reason,
+                    question,
+                    LEFT(answer, 300) AS answer_preview,
+                    NULL::text AS feedback,
+                    response_type,
+                    category,
+                    section_title,
+                    created_at
+                FROM chat_logs
+                WHERE response_type IN ('no_relevant_source', 'llm_error')
+
+                UNION ALL
+
+                SELECT
+                    'feedback' AS item_type,
+                    id AS item_id,
+                    'not_useful' AS review_reason,
+                    question,
+                    LEFT(answer, 300) AS answer_preview,
+                    feedback,
+                    NULL::text AS response_type,
+                    NULL::text AS category,
+                    NULL::text AS section_title,
+                    created_at
+                FROM feedback_logs
+                WHERE feedback = 'not_useful'
+            ) AS review_items
+            ORDER BY created_at DESC
+            LIMIT :limit OFFSET :offset
+            """
+        ),
+        {
+            "limit": limit,
+            "offset": offset,
+        },
+    ).mappings().all()
+
+    items = [
+        ReviewItemResponse(
+            item_type=row["item_type"],
+            item_id=row["item_id"],
+            review_reason=row["review_reason"],
+            question=row["question"],
+            answer_preview=row["answer_preview"],
+            feedback=row["feedback"],
+            response_type=row["response_type"],
+            category=row["category"],
+            section_title=row["section_title"],
+            created_at=row["created_at"],
+        )
+        for row in rows
+    ]
+
+    return PaginatedReviewItemsResponse(
         items=items,
         total=total,
         limit=limit,

@@ -50,3 +50,24 @@ class PaginatedRecentQuestionsResponse(BaseModel):
     limit: int
     offset: int
     has_more: bool
+    
+    
+class ReviewItemResponse(BaseModel):
+    item_type: str
+    item_id: int
+    review_reason: str
+    question: str
+    answer_preview: Optional[str] = None
+    feedback: Optional[str] = None
+    response_type: Optional[str] = None
+    category: Optional[str] = None
+    section_title: Optional[str] = None
+    created_at: Optional[datetime] = None
+
+
+class PaginatedReviewItemsResponse(BaseModel):
+    items: list[ReviewItemResponse]
+    total: int
+    limit: int
+    offset: int
+    has_more: bool
