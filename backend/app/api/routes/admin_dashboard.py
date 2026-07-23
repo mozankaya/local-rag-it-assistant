@@ -281,12 +281,6 @@ def get_review_items(
     db: Session = Depends(get_db),
     _current_admin: User = Depends(require_admin),
 ):
-    query_params = {
-        "limit": limit,
-        "offset": offset,
-        "review_reason": review_reason,
-    }
-
     total = get_scalar_value(
         db,
         """
@@ -323,7 +317,10 @@ def get_review_items(
         )
         SELECT COUNT(*)
         FROM review_items
-        WHERE (:review_reason IS NULL OR review_reason = :review_reason)
+        WHERE (
+            CAST(:review_reason AS text) IS NULL
+            OR review_reason = :review_reason
+        )
         """,
         {"review_reason": review_reason},
     )
@@ -351,13 +348,6 @@ def get_review_items(
                 SELECT
                     'feedback' AS item_type,
                     id AS item_id,
-no_relevant_source', 'llm_error')
-
-                UNION ALL
-
-                SELECT
-                    'feedback' AS item_type,
-                    id AS item_id,
                     'not_useful' AS review_reason,
                     question,
                     LEFT(answer, 300) AS answer_preview,
@@ -371,12 +361,19 @@ no_relevant_source', 'llm_error')
             )
             SELECT *
             FROM review_items
-            WHERE (:review_reason IS NULL OR review_reason = :review_reason)
+            WHERE (
+                CAST(:review_reason AS text) IS NULL
+                OR review_reason = :review_reason
+            )
             ORDER BY created_at DESC
             LIMIT :limit OFFSET :offset
             """
         ),
-        query_params,
+        {
+            "limit": limit,
+            "offset": offset,
+            "review_reason": review_reason,
+        },
     ).mappings().all()
 
     items = [
