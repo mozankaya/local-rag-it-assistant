@@ -96,6 +96,21 @@ def find_processed_document_path(document_id: str) -> Path | None:
 
     return None
 
+def remove_empty_directory(directory_path: Path, root_directory: Path) -> None:
+    resolved_directory = directory_path.resolve()
+    resolved_root = root_directory.resolve()
+
+    if resolved_directory == resolved_root:
+        return
+
+    if not resolved_directory.is_relative_to(resolved_root):
+        return
+
+    try:
+        resolved_directory.rmdir()
+    except OSError:
+        pass
+
 
 def slugify_text(value: str) -> str:
     value = value.strip().lower()
@@ -544,7 +559,9 @@ def delete_document(
     processed_file_path = find_processed_document_path(document_id)
 
     if source_file_path:
+        source_parent_dir = source_file_path.parent
         source_file_path.unlink(missing_ok=True)
+        remove_empty_directory(source_parent_dir, SOURCE_DOCUMENTS_DIR)
 
     if processed_file_path:
         processed_file_path.unlink(missing_ok=True)
