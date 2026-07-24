@@ -23,6 +23,11 @@ export interface DocumentCategory {
   document_count: number;
 }
 
+export interface ReindexDocumentsResponse {
+  success: boolean;
+  message: string;
+}
+
 export class AdminDocumentsApiError extends Error {
   status: number;
 
@@ -36,7 +41,10 @@ const AUTH_API_URL = import.meta.env.VITE_AUTH_API_URL as string;
 const API_URL = (import.meta.env.VITE_ADMIN_API_URL as string | undefined)
   ?? AUTH_API_URL?.replace(/\/auth\/?$/, "");
 
-async function authorizedGet<T>(path: string): Promise<T> {
+async function authorizedRequest<T>(
+  path: string,
+  options: RequestInit = {},
+): Promise<T> {
   const token = getAccessToken();
 
   if (!API_URL || !token) {
@@ -44,8 +52,10 @@ async function authorizedGet<T>(path: string): Promise<T> {
   }
 
   const response = await fetch(`${API_URL}${path}`, {
+    ...options,
     headers: {
       Authorization: `Bearer ${token}`,
+      ...options.headers,
     },
   });
 
@@ -54,6 +64,10 @@ async function authorizedGet<T>(path: string): Promise<T> {
   }
 
   return response.json() as Promise<T>;
+}
+
+function authorizedGet<T>(path: string): Promise<T> {
+  return authorizedRequest<T>(path);
 }
 
 export function getAdminDocuments(
@@ -77,6 +91,12 @@ export function getAdminDocuments(
 
 export function getDocumentCategories() {
   return authorizedGet<DocumentCategory[]>("/admin/documents/categories");
+}
+
+export function reindexAdminDocuments() {
+  return authorizedRequest<ReindexDocumentsResponse>("/admin/documents/reindex", {
+    method: "POST",
+  });
 }
 
 export async function downloadAdminDocument(documentId: string): Promise<Blob> {

@@ -5,6 +5,7 @@ import {
   downloadAdminDocument,
   getAdminDocuments,
   getDocumentCategories,
+  reindexAdminDocuments,
   type AdminDocument,
   type DocumentCategory,
 } from "../../api/adminDocumentsApi";
@@ -45,6 +46,7 @@ function AdminDocumentsPage({
   const [refreshKey, setRefreshKey] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [isReindexing, setIsReindexing] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [downloadingDocumentId, setDownloadingDocumentId] = useState("");
@@ -221,6 +223,63 @@ function AdminDocumentsPage({
     }
   }
 
+  async function handleReindex() {
+    if (isReindexing) return;
+
+    setError("");
+    setSuccess("");
+    setIsReindexing(true);
+
+    try {
+      await reindexAdminDocuments();
+    } catch (requestError) {
+      if (requestError instanceof AdminDocumentsApiError && requestError.status === 401) {
+        setIsReindexing(false);
+        onLogout();
+        return;
+      }
+      if (requestError instanceof AdminDocumentsApiError && requestError.status === 403) {
+        setIsReindexing(false);
+        onGoToChat();
+        return;
+      }
+
+      setError("Yeniden indeksleme işlemi başarısız oldu. Lütfen tekrar deneyin.");
+      setIsReindexing(false);
+      return;
+    }
+
+    setSuccess("Dokümanlar başarıyla yeniden indekslendi.");
+    setIsLoading(true);
+
+    try {
+      const [documentsData, categoriesData] = await Promise.all([
+        getAdminDocuments(PAGE_SIZE, 0, activeSearch, activeCategory),
+        getDocumentCategories(),
+      ]);
+
+      setDocuments(documentsData.items);
+      setTotal(documentsData.total);
+      setNextOffset(documentsData.offset + PAGE_SIZE);
+      setHasMore(documentsData.has_more);
+      setCategories(categoriesData);
+    } catch (requestError) {
+      if (requestError instanceof AdminDocumentsApiError && requestError.status === 401) {
+        onLogout();
+        return;
+      }
+      if (requestError instanceof AdminDocumentsApiError && requestError.status === 403) {
+        onGoToChat();
+        return;
+      }
+
+      setError("Yeniden indeksleme tamamlandı ancak listeler yenilenemedi. Lütfen tekrar deneyin.");
+    } finally {
+      setIsLoading(false);
+      setIsReindexing(false);
+    }
+  }
+
   return (
     <AdminLayout
       user={user}
@@ -241,7 +300,18 @@ function AdminDocumentsPage({
               <h2>Dokümanlar</h2>
               <p>Bilgi tabanında indekslenmiş dokümanlar</p>
             </div>
-            <span className="admin-total-pill">{total} doküman</span>
+            <div className="documents-header-actions">
+              <span className="admin-total-pill">{total} doküman</span>
+              <button
+                className="reindex-button"
+                type="button"
+                onClick={handleReindex}
+                disabled={isReindexing}
+                aria-busy={isReindexing}
+              >
+                {isReindexing ? "İndeksleniyor..." : "Yeniden İndeksle"}
+              </button>
+            </div>
           </div>
 
           <form className="document-toolbar" onSubmit={handleSearch}>

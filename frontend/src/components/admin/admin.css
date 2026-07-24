@@ -604,6 +604,34 @@
   align-items: center;
 }
 
+.documents-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.reindex-button {
+  min-height: 38px;
+  padding: 9px 15px;
+  border: 1px solid var(--admin-red);
+  border-radius: 10px;
+  color: #fff;
+  background: var(--admin-red);
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.reindex-button:hover:not(:disabled) {
+  background: #c9000c;
+}
+
+.reindex-button:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
 .document-toolbar {
   padding: 16px 22px;
   display: grid;
