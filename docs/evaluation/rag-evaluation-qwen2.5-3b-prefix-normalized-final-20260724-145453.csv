@@ -1,0 +1,105 @@
+﻿model_label,case_id,run,question,answer,response_type,expected_response_type,response_type_match,actual_document_ids,expected_document_ids,source_match,actual_sections,accepted_sections,section_match,source_scores,keyword_match,keyword_hit_count,required_keywords,answer_format_match,bullet_count,answer_format_problems,case_pass,response_time_seconds,source_count,answer_length,status,error,manual_quality_score,manual_notes
+qwen2.5-3b-prefix-normalized-final,ACC-01,1,şifremi unuttum,"- Kurum tarafından sağlanan şifre sıfırlama ekranını kullanın.
+- Yeni şifreniz büyük harf, küçük harf, rakam ve özel karakter içermeli.
+- Şifre sıfırlama bağlantısı farklı bir tarayıcıda deneyin.",rag_answer,rag_answer,True,password-account-access,password-account-access,True,Şifre unutuldu,Şifre unutuldu,True,0.4416602795349376,True,2,şifre | sıfırlama,True,3,,True,3.657,1,195,success,,,
+qwen2.5-3b-prefix-normalized-final,ACC-02,1,hesabıma giriş yapamıyorum,"- Kullanıcı adı ve şifrenin doğru girildiğini kontrol edin.
+- Klavyede Caps Lock açık olup olmadığına ve klavye dilinin doğru seçildiğine bakın.
+- Şifre yakın zamanda değiştirilmişse, uygulamadan kayıtlı eski kimlik bilgileri kullanarak tekrar giriş yapın.",rag_answer,rag_answer,True,password-account-access,password-account-access,True,Hesaba giriş yapılamıyor,Hesaba giriş yapılamıyor,True,0.2957484587722665,True,2,kullanıcı adı | şifre,True,3,,True,3.05,1,256,success,,,
+qwen2.5-3b-prefix-normalized-final,ACC-03,1,Şifremi değiştirdim ama Outlook sürekli parola istiyor.,"- Kullanıcı adı ve yeni şifrenin doğru girildiği kontrol edilmelidir.
+- Şifre yakın zamanda değiştirildiyse Outlook kapatılıp yeniden açılmalı ve yeni şifre girilmelidir.
+- Telefon veya başka bir bilgisayarda kayıtlı eski parola hesabının tekrar kilitlenmesine neden olan eski oturumların güncellenmelidir.",rag_answer,rag_answer,True,email-outlook-support,password-account-access | email-outlook-support,True,Outlook sürekli parola istiyor,Şifre değişti ancak uygulama eski şifreyi istiyor | Outlook sürekli parola istiyor,True,0.2362004725096516,True,1,yeni şifre,True,3,,True,2.831,1,306,success,,,
+qwen2.5-3b-prefix-normalized-final,EMAIL-01,1,outlook çevrimdışı görünüyor,"- Outlook'u kapatın ve yeniden açın.
+- Bilgisayarınızın internet bağlantısı kontrol edin.
+- Eğer Outlook durum çubuğunda Çevrimdışı Çalış uyarısı varsa, çevrimdışı çalışma seçeneğini kapatın.",rag_answer,rag_answer,True,email-outlook-support,email-outlook-support,True,Outlook çevrimdışı görünüyor,Outlook çevrimdışı görünüyor,True,0.3195248510718862,True,2,internet | Outlook,True,3,,True,2.549,1,191,success,,,
+qwen2.5-3b-prefix-normalized-final,EMAIL-02,1,mail gönderemiyorum,"- Alıcı adresinin doğru yazıldığı kontrol edilmelidir.
+- Büyük dosya ekleri kaldırılarak Giden Kutusu içinde bekleyen mesaj yeniden gönderilmelidir.
+- İnternet bağlantısı ve Outlook bağlantı durumu kontrol edilmelidir.",rag_answer,rag_answer,True,email-outlook-support,email-outlook-support,True,E-posta gönderilemiyor,E-posta gönderilemiyor,True,0.3303129869885736,True,2,alıcı | Giden Kutusu,True,3,,True,2.331,1,218,success,,,
+qwen2.5-3b-prefix-normalized-final,VPN-01,1,vpn bağlanmıyor,"- Bilgisayarın internet bağlantısı kontrol edilmelidir.
+- VPN istemcisinde doğru bağlantı profili seçilmeli ve kullanıcı adı ile güncel şifre kullanılmalıdır.
+- Şifre yakın zamanda değiştirildiyse, VPN istemcisinde kayıtlı eski bilgiler temizlenmeli ve yeni şifreyle tekrar giriş yapılmalıdır.",rag_answer,rag_answer,True,vpn-remote-access,vpn-remote-access,True,VPN bağlantısı kurulamıyor,VPN bağlantısı kurulamıyor,True,0.2811176944444155,True,2,internet | VPN,True,3,,True,2.639,1,293,success,,,
+qwen2.5-3b-prefix-normalized-final,VPN-02,1,vpn bağlı ama iç sistem açılmıyor,"- VPN bağlantısının aktif olduğunu kontrol edin.
+- İç sistem adresini yeniden oluşturun ve tarayıcıyı kapatıp tekrar yükleyin.
+- Eğer sorun tek bir sisteme aittiyse, sistem adını ve erişim adresini belirtin ve destek kaydı oluşturun.",rag_answer,rag_answer,True,vpn-remote-access,vpn-remote-access,True,VPN bağlanıyor ancak iç sistemler açılmıyor,VPN bağlanıyor ancak iç sistemler açılmıyor,True,0.20899143326179814,True,2,VPN | sistem,True,3,,True,2.453,1,233,success,,,
+qwen2.5-3b-prefix-normalized-final,VPN-03,1,vpn girişinde doğrulama bildirimi gelmiyor,"- Telefonun internet bağlantısı kontrol edilmelidir.
+- Doğrulama uygulaması açılarak bekleyen istek veya manuel doğrulama kodu kontrol edilmelidir.
+- Telefon değiştirildiyse veya doğrulama uygulaması yeniden kurulduysa MFA kaydının güncellenmesi gerekebilir.",rag_answer,rag_answer,True,vpn-remote-access,vpn-remote-access | security-mfa-phishing,True,VPN sırasında MFA bildirimi gelmiyor,VPN sırasında MFA bildirimi gelmiyor | MFA bildirimi gelmiyor,True,0.3262390663429072,True,2,telefon | doğrulama,True,3,,True,2.643,1,258,success,,,
+qwen2.5-3b-prefix-normalized-final,NET-01,1,internet yok,"- Ağ simgesinde bağlantı durumu kontrol edin.
+- Kablolu bağlantıyı doğrulayın: Ağı bilgisayarına ve duvar prizine takınmış olmalı.
+- Kablosuz bağlantıyı doğrulayın: Uçak modu kapalı olduğundan emin olun ve doğru bir ağ seçilmiş olmalı.",rag_answer,rag_answer,True,network-connectivity,network-connectivity,True,İnternet bağlantısı yok,İnternet bağlantısı yok,True,0.39777542312896896,True,1,bağlantı,True,3,,True,3.112,1,235,success,,,
+qwen2.5-3b-prefix-normalized-final,NET-02,1,sadece bir internet sitesi açılmıyor,"- İnternet sitesinin URL'sini kontrol edin.
+- Site farklı tarayıcıda veya gizli pencere üzerinden deneyin.
+- Kurumsal güvenlik politikalarını kontrol edin ve gereksiz engellemeleri yoksa siteyi açın.",rag_answer,rag_answer,True,network-connectivity,network-connectivity,True,Yalnızca bir web sitesi açılmıyor,Yalnızca bir web sitesi açılmıyor,True,0.3063866568362046,True,2,site | tarayıcı,True,3,,True,2.65,1,199,success,,,
+qwen2.5-3b-prefix-normalized-final,HW-01,1,mouse çalışmıyor,"- USB bağlantılı mouse çıkarınıp yeniden takılmalı ve farklı bir bağlantı noktası denenmelidir.
+- Kablosuz mouse kullanılıyorsa güç düğmesi, pil durumu ve USB alıcısının takılı olduğu kontrol edilmelidir.",rag_answer,rag_answer,True,hardware-peripherals,hardware-peripherals,True,Mouse çalışmıyor,Mouse çalışmıyor,True,0.33152773069013086,True,2,mouse | USB,True,2,,True,2.289,1,204,success,,,
+qwen2.5-3b-prefix-normalized-final,HW-02,1,klavye çalışmıyor,"- Klavye bağlantısı kontrol edilmelidir. USB bağlantılı klavye çıkarılıp yeniden takılmalı ve farklı bir USB bağlantı noktası denenmelidir.
+- Kablosuz klavyede pil ve alıcı bağlantısı kontrol edilmelidir.
+- Bazı tuşlar çalışmıyorsa klavye dili ve tuşların fiziksel durumu doğrulanmalıdır.",rag_answer,rag_answer,True,hardware-peripherals,hardware-peripherals,True,Klavye çalışmıyor,Klavye çalışmıyor,True,0.3220993320586638,True,2,klavye | USB,True,3,,True,2.698,1,288,success,,,
+qwen2.5-3b-prefix-normalized-final,HW-03,1,ikinci monitör görüntü vermiyor,"- HDMI veya DisplayPort kablosunun iki uçta da tam takılı olduğundan emin olun.
+- Windows görüntü ayarlarından ikinci ekranı seçip, ekran algılama işlemi çalıştırın.",rag_answer,rag_answer,True,hardware-peripherals,hardware-peripherals,True,Monitör görüntü vermiyor,Monitör görüntü vermiyor,True,0.29816994330851265,True,1,monitör | görüntü,True,2,,True,2.22,1,165,success,,,
+qwen2.5-3b-prefix-normalized-final,MEET-01,1,kamera çalışmıyor,"- Kamera bağlantısı kontrol edilmelidir ve USB kablosu çıkarılarak yeniden takılmalıdır.
+- Toplantı uygulamasında doğru kameranın seçilmiş olup olmadığını doğrulanmalıdır.
+- Eğer başka bir uygulama tarafından kullanılıyorsa, ilgili uygulamanın kapatılması gerekmektedir.",rag_answer,rag_answer,True,meeting-room-av,meeting-room-av,True,Toplantı odası kamerası çalışmıyor,Toplantı odası kamerası çalışmıyor,True,0.33672821461053704,True,2,kamera | USB,True,3,,True,2.682,1,270,success,,,
+qwen2.5-3b-prefix-normalized-final,MEET-02,1,mikrofon sesimi karşı tarafa iletmiyor,"- Mikrofon simgesinin açık olup olmadığını kontrol edin.
+- Doğru giriş cihazı seçip sorun devam ettiğinde yeniden deneyin.
+- İşletim sistemindeki mikrofon izni kapalıysa uygulama için erişimi verin.",rag_answer,rag_answer,True,meeting-room-av,meeting-room-av,True,Toplantıda ses karşı tarafa gitmiyor,Toplantıda ses karşı tarafa gitmiyor | Toplantı odası mikrofonu çalışmıyor,True,0.343076846462011,True,1,mikrofon,True,3,,True,2.441,1,198,success,,,
+qwen2.5-3b-prefix-normalized-final,PRINT-01,1,yazıcı çıktı vermiyor,"- Yazıcının seçildiğini ve çevrimiçi olarak göründüğünü kontrol edin.
+- Yazdırma kuyruğunda bekleyen hatalı işler temizleninizi yapın.
+- Eğer yazıcı ekranında hata veya uyarı varsa, hata mesajını destek kaydına ekleyin.",rag_answer,rag_answer,True,printer-scanner,printer-scanner,True,Yazıcı çıktı vermiyor,Yazıcı çıktı vermiyor,True,0.32136527554574434,True,1,yazıcı | kuyruk,True,3,,True,2.531,1,219,success,,,
+qwen2.5-3b-prefix-normalized-final,PRINT-02,1,taradığım dosyayı maille gönderemiyorum,"- Dosyanın boyutu kontrol edilmesi gerekmektedir. Büyük dosyalar daha düşük çözünürlükte veya PDF formatında yeniden taranabilir.
+- E-posta ile gönderim başarısızsa, alıcı adresi ve posta kutusu kotası kontrol edilmelidir.",rag_answer,rag_answer,True,printer-scanner,printer-scanner,True,Tarama dosyası gönderilemiyor,Tarama dosyası gönderilemiyor,True,0.33270202084170586,True,2,dosya | boyut,True,2,,True,2.474,1,222,success,,,
+qwen2.5-3b-prefix-normalized-final,FILES-01,1,ortak klasöre erişim reddedildi,"- Kullanıcının ilgili ortak klasör için yetkisi doğrulanmalıdır.
+- Kullanıcı adı, departman, klasör yolu ve istenen erişim türü belirtilmelidir.
+- Eğer yazma yetkisi gerekmiyorsa yalnızca okuma erişimi talep edilmelidir.",rag_answer,rag_answer,True,shared-folder-access,shared-folder-access,True,Ortak klasöre erişim reddedildi,Ortak klasöre erişim reddedildi,True,0.32210417722401774,True,2,klasör | yetki,False,3,forbidden_patterns:kullanıcının ,False,2.586,1,220,success,,,
+qwen2.5-3b-prefix-normalized-final,FILES-02,1,dosya başka kullanıcı tarafından açık görünüyor,"- Dosyayı açık tutan kullanıcı bilgisi kontrol edin.
+- Eğer kilit devam ediyorsa, dosya yolu ve saat bilgisiyle destek kaydı oluşturun.",rag_answer,rag_answer,True,shared-folder-access,shared-folder-access,True,Dosya başka kullanıcı tarafından kullanılıyor,Dosya başka kullanıcı tarafından kullanılıyor,True,0.3143917356029018,True,2,dosya | kullanıcı,True,2,,True,2.015,1,135,success,,,
+qwen2.5-3b-prefix-normalized-final,SW-01,1,yeni yazılım kurdurmak istiyorum,"- Yeni yazılımın adı, sürümü ve kullanım amacı belirtilmelidir.
+- Kullanılacak bilgisayarın adı veya IP adresi belirtilmelidir.
+- Kullanıcı bilgileri (kullanıcı adı, şifre vb.) sağlanmalıdır.",rag_answer,rag_answer,True,software-installation-access,software-installation-access,True,Yeni yazılım kurulumu talebi,Yeni yazılım kurulumu talebi,True,0.4642439207885075,True,2,yazılım | kullanım amacı,True,3,,True,2.401,1,191,success,,,
+qwen2.5-3b-prefix-normalized-final,SW-02,1,Bakım Takip Portalı açılmıyor,"- Kurulum ağına veya VPN'a bağlı olunmuş olmalı.
+- Portal adresi doğru girilmeli.
+- Farklı bir tarayıcıda denedikten sonra portal tamamen erişilebilir olmalıdır.",rag_answer,rag_answer,True,software-installation-access,software-installation-access,True,Bakım Takip Portalı açılmıyor,Bakım Takip Portalı açılmıyor,True,0.2617060129956843,True,2,portal | VPN,True,3,,True,2.583,1,161,success,,,
+qwen2.5-3b-prefix-normalized-final,SEC-01,1,şüpheli bir e-posta aldım,"- E-postadaki bağlantılara tıklanmamalıdır ve dosya ekleri açılmamalıdır.
+- Gönderen adresi, bağlantı adresi, ek dosya adı ve olağan dışı ödeme veya parola istekleri kontrol edilmelidir.
+- E-posta silinmeden önce IT destek veya bilgi güvenliği ekibine bildirilmelidir.",rag_answer,rag_answer,True,security-mfa-phishing,security-mfa-phishing,True,Şüpheli e-posta alındı,Şüpheli e-posta alındı,True,0.34574705806269335,True,2,bağlantı | ek,True,3,,True,2.709,1,268,success,,,
+qwen2.5-3b-prefix-normalized-final,SEC-02,1,ben istemeden mfa onayı geliyor,"- İsteyeniz olmadan MFA onayı geldiğinden emin olun ve doğrulama isteği reddedin.
+- Parola değiştirme işlemini gerçekleştirmelidir.
+- Bilgi güvenliği ekibiyle iletişime geçin ve olay saati ve kullanılan uygulamaları paylaşın.",rag_answer,rag_answer,True,security-mfa-phishing,security-mfa-phishing,True,Beklenmeyen MFA onayı geliyor,Beklenmeyen MFA onayı geliyor,True,0.3438650350811071,True,2,onay | parola,True,3,,True,2.585,1,225,success,,,
+qwen2.5-3b-prefix-normalized-final,REQ-01,1,acil laptop ihtiyacım var,- Bu konuda kaynak dokümanlarda yeterli bilgi bulamadım. IT destek ekibiyle iletişime geçebilirsiniz.,no_relevant_source,rag_answer,False,,equipment-request-process,False,,Acil ekipman ihtiyacı | Yeni dizüstü bilgisayar talebi,False,,False,0,acil | onay,True,0,,False,1.034,0,101,success,,,
+qwen2.5-3b-prefix-normalized-final,REQ-02,1,ekipman talebimin durumunu nasıl öğrenirim,"- Mevcut talebin numarasıyla destek sistemi üzerinden durum kontrol edilmelidir.
+- Ek bilgi istenmişse mevcut kayıt güncellenmelidir.",rag_answer,rag_answer,True,equipment-request-process,equipment-request-process,True,Ekipman talebi durumu,Ekipman talebi durumu,True,0.3611711164100537,True,1,talep | numara,True,2,,True,2.31,1,133,success,,,
+qwen2.5-3b-prefix-normalized-final,TICKET-01,1,destek kaydı açarken hangi bilgileri yazmalıyım,"- Kullanıcı adı, sicil numarası, departman, cihaz etiketi ve iletişim bilgisi yazılmalıdır.
+- Sorun kısa ancak açık şekilde açıklanmalı; hangi uygulama veya cihazda yaşandığı belirtilmelidir.
+- Hata mesajı, olay saati ve sorunu tekrar oluşturmak için uygulanan adımlar eklenmelidir.",rag_answer,rag_answer,True,it-support-ticket-process,it-support-ticket-process,True,Destek kaydında bulunması gereken bilgiler,Destek kaydında bulunması gereken bilgiler,True,0.3091581691313745,True,2,kullanıcı | cihaz,True,3,,True,2.852,1,282,success,,,
+qwen2.5-3b-prefix-normalized-final,TICKET-02,1,aynı sorun için tekrar talep açmalı mıyım,"- Eğer sorun devam ederse, mevcut kayıt güncellemeleri yapın.
+- Mevcut kaydaki yeni hata mesajı veya test sonuçlarını ekleyin.
+- Tekrarlanan kayıtlar çözüm sürecini zorlaştırabilir.",rag_answer,rag_answer,True,it-support-ticket-process,it-support-ticket-process,True,Aynı sorun için tekrar kayıt açma,Aynı sorun için tekrar kayıt açma,True,0.3208585932940402,True,1,mevcut kayıt,True,3,,True,2.353,1,181,success,,,
+qwen2.5-3b-prefix-normalized-final,NOSRC-01,1,SAP sevkiyat ekranında teslimat belgesi oluşmuyor,- Bu konuda kaynak dokümanlarda yeterli bilgi bulamadım. IT destek ekibiyle iletişime geçebilirsiniz.,no_relevant_source,no_relevant_source,True,,,True,,,True,,True,0,,True,0,,True,1.006,0,101,success,,,
+qwen2.5-3b-prefix-normalized-final,NOSRC-02,1,bordro portalında maaş bordrom eksik görünüyor,- Bu konuda kaynak dokümanlarda yeterli bilgi bulamadım. IT destek ekibiyle iletişime geçebilirsiniz.,no_relevant_source,no_relevant_source,True,,,True,,,True,,True,0,,True,0,,True,0.995,0,101,success,,,
+qwen2.5-3b-prefix-normalized-final,NOSRC-03,1,CNC tezgahında takım ömrü alarmı var,- Bu konuda kaynak dokümanlarda yeterli bilgi bulamadım. IT destek ekibiyle iletişime geçebilirsiniz.,no_relevant_source,no_relevant_source,True,,,True,,,True,,True,0,,True,0,,True,1.015,0,101,success,,,
+qwen2.5-3b-prefix-normalized-final,OOS-01,1,bugün hava nasıl,"Bu konuda yardımcı olamam. Ben yalnızca VPN, şifre işlemleri, Outlook, yazıcı, donanım, ağ bağlantısı, ortak klasör erişimi, yazılım yetkisi ve ekipman talepleri gibi IT destek konularında yardımcı olabilirim.",out_of_scope,out_of_scope,True,,,True,,,True,,True,0,,True,0,,True,0.737,0,209,success,,,
+qwen2.5-3b-prefix-normalized-final,OOS-02,1,bana makarna tarifi ver,- Bu konuda kaynak dokümanlarda yeterli bilgi bulamadım. IT destek ekibiyle iletişime geçebilirsiniz.,no_relevant_source,out_of_scope,False,,,True,,,True,,True,0,,True,0,,False,1.043,0,101,success,,,
+qwen2.5-3b-prefix-normalized-final,STATIC-01,1,merhaba,"Merhaba, ben İZELTAŞ IT Danışma Asistanı’yım. VPN, şifre, Outlook, yazıcı, donanım, ağ bağlantısı ve ekipman talepleri gibi IT konularında yardımcı olabilirim.",static_response,static_response,True,,,True,,,True,,True,0,,True,0,,True,0.702,0,159,success,,,
+qwen2.5-3b-prefix-normalized-final,STATIC-02,1,sen kimsin,"Ben İZELTAŞ IT Danışma Asistanı’yım. Lokal LLM ve RAG yapısıyla, yüklenen IT destek dokümanlarına göre kullanıcılara yardımcı olmak için tasarlandım.",static_response,static_response,True,,,True,,,True,,True,0,,True,0,,True,0.66,0,149,success,,,
+qwen2.5-3b-prefix-normalized-final,ROB-ACC-01,1,Şifremi unuttum,"- Kurum tarafından sağlanan şifre sıfırlama ekranını kullanın.
+- Yeni şifreniz büyük harf, küçük harf, rakam ve özel karakter içermelidir.
+- Şifre sıfırlama bağlantısı açılmıyorsa farklı bir tarayıcıda deneyin.",rag_answer,rag_answer,True,password-account-access,password-account-access,True,Şifre unutuldu,Şifre unutuldu,True,0.4416602795349376,True,2,şifre | sıfırlama,True,3,,True,3.767,1,210,success,,,
+qwen2.5-3b-prefix-normalized-final,ROB-ACC-02,1,ŞİFREMİ UNUTTUM.,"- Kurum tarafından sağlanan şifre sıfırlama ekranını kullanın.
+- Yeni şifreniz büyük harf, küçük harf, rakam ve özel karakter içermelidir.
+- Şifre sıfırlama bağlantısı açılmıyorsa farklı bir tarayıcıda deneyin.",rag_answer,rag_answer,True,password-account-access,password-account-access,True,Şifre unutuldu,Şifre unutuldu,True,0.4416602795349376,True,2,şifre | sıfırlama,True,3,,True,3.14,1,210,success,,,
+qwen2.5-3b-prefix-normalized-final,ROB-ACC-03,1,  Şifremi   unuttum.  ,"- Kurum tarafından sağlanan şifre sıfırlama ekranını kullanın.
+- Yeni şifreniz büyük harf, küçük harf, rakam ve özel karakter içermelidir.
+- Şifre sıfırlama bağlantısı açılmıyorsa farklı bir tarayıcıda deneyin.",rag_answer,rag_answer,True,password-account-access,password-account-access,True,Şifre unutuldu,Şifre unutuldu,True,0.4416602795349376,True,2,şifre | sıfırlama,True,3,,True,3.148,1,210,success,,,
+qwen2.5-3b-prefix-normalized-final,ROB-VPN-01,1,VPN BAĞLANMIYOR.,"- Bilgisayarın internet bağlantısı kontrol edilmelidir.
+- VPN istemcisinde doğru bağlantı profili seçilmeli ve kullanıcı adı ile güncel şifre kullanılmalıdır.
+- Şifre yakın zamanda değiştirildiyse, VPN istemcisinde kayıtlı eski bilgiler temizlenmeli ve yeni şifreyle tekrar giriş yapılmalıdır.",rag_answer,rag_answer,True,vpn-remote-access,vpn-remote-access,True,VPN bağlantısı kurulamıyor,VPN bağlantısı kurulamıyor,True,0.2811176944444155,True,2,internet | VPN,True,3,,True,2.685,1,293,success,,,
+qwen2.5-3b-prefix-normalized-final,ROB-MEET-01,1,Kamera çalışmıyor.,"- Kamera bağlantısı kontrol edilmelidir ve USB kablosu yeniden takılmalıdır.
+- Toplantı uygulamasında doğru kameranın seçilmiş olup olmadığını doğrulanmalıdır.
+- Eğer başka bir uygulama tarafından kullanılıyorsa, ilgili uygulamanın kapatılması gerekmektedir.",rag_answer,rag_answer,True,meeting-room-av,meeting-room-av,True,Toplantı odası kamerası çalışmıyor,Toplantı odası kamerası çalışmıyor,True,0.33672821461053704,True,2,kamera | USB,True,3,,True,2.646,1,258,success,,,
+qwen2.5-3b-prefix-normalized-final,ROB-EMAIL-01,1,Mail gönderemiyorum.,"- Alıcı adresinin doğru yazıldığı kontrol edilmelidir.
+- Büyük dosya ekleri kaldırılarak Giden Kutusu içinde bekleyen mesaj yeniden gönderilmelidir.
+- İnternet bağlantısı ve Outlook bağlantı durumu kontrol edilmelidir.",rag_answer,rag_answer,True,email-outlook-support,email-outlook-support,True,E-posta gönderilemiyor,E-posta gönderilemiyor,True,0.3303129869885736,True,2,alıcı | Giden Kutusu,True,3,,True,2.362,1,218,success,,,
+qwen2.5-3b-prefix-normalized-final,ROB-SW-01,1,Yeni yazılım kurdurmak istiyorum.,"- Yeni yazılımın adı, sürümü ve kullanım amacı belirtilmelidir.
+- Kullanılacak bilgisayarın adı veya IP adresi belirtilmelidir.
+- Kullanıcı bilgileri (kullanıcı adı, şifre vb.) sağlanmalıdır.",rag_answer,rag_answer,True,software-installation-access,software-installation-access,True,Yeni yazılım kurulumu talebi,Yeni yazılım kurulumu talebi,True,0.4642439207885075,True,2,yazılım | kullanım amacı,True,3,,True,2.454,1,191,success,,,
+qwen2.5-3b-prefix-normalized-final,ROB-REQ-01,1,Ekipman talebim ne durumda?,"- Mevcut talebin numarasıyla destek sistemi üzerinden durum kontrol edilmelidir.
+- Ek bilgi istenmişse mevcut kayıt güncellenmelidir.",rag_answer,rag_answer,True,equipment-request-process,equipment-request-process,True,Ekipman talebi durumu,Ekipman talebi durumu,True,0.35048103025893773,True,1,talep | numara,True,2,,True,2.086,1,133,success,,,
