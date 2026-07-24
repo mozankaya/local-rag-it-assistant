@@ -206,6 +206,23 @@
           "name": "Postgres account"
         }
       }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "admin-document-reindex",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        224
+      ],
+      "id": "fe5b4b3e-a9c1-4ba5-aec3-5f3166e8028d",
+      "name": "Webhook",
+      "webhookId": "27b2c3bb-24b0-415c-b865-e01b651404ce"
     }
   ],
   "pinData": {},
@@ -308,14 +325,26 @@
           }
         ]
       ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Clear Existing LangChain Chunks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
     "executionOrder": "v1",
-    "binaryMode": "separate"
+    "binaryMode": "separate",
+    "availableInMCP": false
   },
-  "versionId": "9d7c663b-683c-468e-bec2-bf26fe6aa400",
+  "versionId": "5468e6b7-0988-4652-8c53-819b4c69f204",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "8ad5e91ca19f2aebbe2ce2f031589771f3e4e7c0049e38f9c59f6c20dd949760"
