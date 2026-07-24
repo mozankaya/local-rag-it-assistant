@@ -1,0 +1,585 @@
+[
+  {
+    "id": "ACC-01",
+    "question": "şifremi unuttum",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "password-account-access"
+    ],
+    "accepted_sections": [
+      "Şifre unutuldu"
+    ],
+    "required_keywords": [
+      "şifre",
+      "sıfırlama"
+    ]
+  },
+  {
+    "id": "ACC-02",
+    "question": "hesabıma giriş yapamıyorum",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "password-account-access"
+    ],
+    "accepted_sections": [
+      "Hesaba giriş yapılamıyor"
+    ],
+    "required_keywords": [
+      "kullanıcı adı",
+      "şifre"
+    ]
+  },
+  {
+    "id": "ACC-03",
+    "question": "Şifremi değiştirdim ama Outlook sürekli parola istiyor.",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "password-account-access",
+      "email-outlook-support"
+    ],
+    "accepted_sections": [
+      "Şifre değişti ancak uygulama eski şifreyi istiyor",
+      "Outlook sürekli parola istiyor"
+    ],
+    "required_keywords": [
+      "yeni şifre"
+    ]
+  },
+  {
+    "id": "EMAIL-01",
+    "question": "outlook çevrimdışı görünüyor",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "email-outlook-support"
+    ],
+    "accepted_sections": [
+      "Outlook çevrimdışı görünüyor"
+    ],
+    "required_keywords": [
+      "internet",
+      "Outlook"
+    ]
+  },
+  {
+    "id": "EMAIL-02",
+    "question": "mail gönderemiyorum",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "email-outlook-support"
+    ],
+    "accepted_sections": [
+      "E-posta gönderilemiyor"
+    ],
+    "required_keywords": [
+      "alıcı",
+      "Giden Kutusu"
+    ]
+  },
+  {
+    "id": "VPN-01",
+    "question": "vpn bağlanmıyor",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "vpn-remote-access"
+    ],
+    "accepted_sections": [
+      "VPN bağlantısı kurulamıyor"
+    ],
+    "required_keywords": [
+      "internet",
+      "VPN"
+    ]
+  },
+  {
+    "id": "VPN-02",
+    "question": "vpn bağlı ama iç sistem açılmıyor",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "vpn-remote-access"
+    ],
+    "accepted_sections": [
+      "VPN bağlanıyor ancak iç sistemler açılmıyor"
+    ],
+    "required_keywords": [
+      "VPN",
+      "sistem"
+    ]
+  },
+  {
+    "id": "VPN-03",
+    "question": "vpn girişinde doğrulama bildirimi gelmiyor",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "vpn-remote-access",
+      "security-mfa-phishing"
+    ],
+    "accepted_sections": [
+      "VPN sırasında MFA bildirimi gelmiyor",
+      "MFA bildirimi gelmiyor"
+    ],
+    "required_keywords": [
+      "telefon",
+      "doğrulama"
+    ]
+  },
+  {
+    "id": "NET-01",
+    "question": "internet yok",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "network-connectivity"
+    ],
+    "accepted_sections": [
+      "İnternet bağlantısı yok"
+    ],
+    "required_keywords": [
+      "bağlantı"
+    ]
+  },
+  {
+    "id": "NET-02",
+    "question": "sadece bir internet sitesi açılmıyor",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "network-connectivity"
+    ],
+    "accepted_sections": [
+      "Yalnızca bir web sitesi açılmıyor"
+    ],
+    "required_keywords": [
+      "site",
+      "tarayıcı"
+    ]
+  },
+  {
+    "id": "HW-01",
+    "question": "mouse çalışmıyor",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "hardware-peripherals"
+    ],
+    "accepted_sections": [
+      "Mouse çalışmıyor"
+    ],
+    "required_keywords": [
+      "mouse",
+      "USB"
+    ]
+  },
+  {
+    "id": "HW-02",
+    "question": "klavye çalışmıyor",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "hardware-peripherals"
+    ],
+    "accepted_sections": [
+      "Klavye çalışmıyor"
+    ],
+    "required_keywords": [
+      "klavye",
+      "USB"
+    ]
+  },
+  {
+    "id": "HW-03",
+    "question": "ikinci monitör görüntü vermiyor",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "hardware-peripherals"
+    ],
+    "accepted_sections": [
+      "Monitör görüntü vermiyor"
+    ],
+    "required_keywords": [
+      "monitör",
+      "görüntü"
+    ]
+  },
+  {
+    "id": "MEET-01",
+    "question": "kamera çalışmıyor",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "meeting-room-av"
+    ],
+    "accepted_sections": [
+      "Toplantı odası kamerası çalışmıyor"
+    ],
+    "required_keywords": [
+      "kamera",
+      "USB"
+    ]
+  },
+  {
+    "id": "MEET-02",
+    "question": "mikrofon sesimi karşı tarafa iletmiyor",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "meeting-room-av"
+    ],
+    "accepted_sections": [
+      "Toplantıda ses karşı tarafa gitmiyor",
+      "Toplantı odası mikrofonu çalışmıyor"
+    ],
+    "required_keywords": [
+      "mikrofon"
+    ]
+  },
+  {
+    "id": "PRINT-01",
+    "question": "yazıcı çıktı vermiyor",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "printer-scanner"
+    ],
+    "accepted_sections": [
+      "Yazıcı çıktı vermiyor"
+    ],
+    "required_keywords": [
+      "yazıcı",
+      "kuyruk"
+    ]
+  },
+  {
+    "id": "PRINT-02",
+    "question": "taradığım dosyayı maille gönderemiyorum",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "printer-scanner"
+    ],
+    "accepted_sections": [
+      "Tarama dosyası gönderilemiyor"
+    ],
+    "required_keywords": [
+      "dosya",
+      "boyut"
+    ]
+  },
+  {
+    "id": "FILES-01",
+    "question": "ortak klasöre erişim reddedildi",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "shared-folder-access"
+    ],
+    "accepted_sections": [
+      "Ortak klasöre erişim reddedildi"
+    ],
+    "required_keywords": [
+      "klasör",
+      "yetki"
+    ]
+  },
+  {
+    "id": "FILES-02",
+    "question": "dosya başka kullanıcı tarafından açık görünüyor",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "shared-folder-access"
+    ],
+    "accepted_sections": [
+      "Dosya başka kullanıcı tarafından kullanılıyor"
+    ],
+    "required_keywords": [
+      "dosya",
+      "kullanıcı"
+    ]
+  },
+  {
+    "id": "SW-01",
+    "question": "yeni yazılım kurdurmak istiyorum",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "software-installation-access"
+    ],
+    "accepted_sections": [
+      "Yeni yazılım kurulumu talebi"
+    ],
+    "required_keywords": [
+      "yazılım",
+      "kullanım amacı"
+    ]
+  },
+  {
+    "id": "SW-02",
+    "question": "Bakım Takip Portalı açılmıyor",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "software-installation-access"
+    ],
+    "accepted_sections": [
+      "Bakım Takip Portalı açılmıyor"
+    ],
+    "required_keywords": [
+      "portal",
+      "VPN"
+    ]
+  },
+  {
+    "id": "SEC-01",
+    "question": "şüpheli bir e-posta aldım",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "security-mfa-phishing"
+    ],
+    "accepted_sections": [
+      "Şüpheli e-posta alındı"
+    ],
+    "required_keywords": [
+      "bağlantı",
+      "ek"
+    ]
+  },
+  {
+    "id": "SEC-02",
+    "question": "ben istemeden mfa onayı geliyor",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "security-mfa-phishing"
+    ],
+    "accepted_sections": [
+      "Beklenmeyen MFA onayı geliyor"
+    ],
+    "required_keywords": [
+      "onay",
+      "parola"
+    ]
+  },
+  {
+    "id": "REQ-01",
+    "question": "acil laptop ihtiyacım var",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "equipment-request-process"
+    ],
+    "accepted_sections": [
+      "Acil ekipman ihtiyacı",
+      "Yeni dizüstü bilgisayar talebi"
+    ],
+    "required_keywords": [
+      "acil",
+      "onay"
+    ]
+  },
+  {
+    "id": "REQ-02",
+    "question": "ekipman talebimin durumunu nasıl öğrenirim",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "equipment-request-process"
+    ],
+    "accepted_sections": [
+      "Ekipman talebi durumu"
+    ],
+    "required_keywords": [
+      "talep",
+      "numara"
+    ]
+  },
+  {
+    "id": "TICKET-01",
+    "question": "destek kaydı açarken hangi bilgileri yazmalıyım",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "it-support-ticket-process"
+    ],
+    "accepted_sections": [
+      "Destek kaydında bulunması gereken bilgiler"
+    ],
+    "required_keywords": [
+      "kullanıcı",
+      "cihaz"
+    ]
+  },
+  {
+    "id": "TICKET-02",
+    "question": "aynı sorun için tekrar talep açmalı mıyım",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "it-support-ticket-process"
+    ],
+    "accepted_sections": [
+      "Aynı sorun için tekrar kayıt açma"
+    ],
+    "required_keywords": [
+      "mevcut kayıt"
+    ]
+  },
+  {
+    "id": "NOSRC-01",
+    "question": "SAP sevkiyat ekranında teslimat belgesi oluşmuyor",
+    "expected_response_type": "no_relevant_source",
+    "expected_document_ids": [],
+    "accepted_sections": [],
+    "required_keywords": []
+  },
+  {
+    "id": "NOSRC-02",
+    "question": "bordro portalında maaş bordrom eksik görünüyor",
+    "expected_response_type": "no_relevant_source",
+    "expected_document_ids": [],
+    "accepted_sections": [],
+    "required_keywords": []
+  },
+  {
+    "id": "NOSRC-03",
+    "question": "CNC tezgahında takım ömrü alarmı var",
+    "expected_response_type": "no_relevant_source",
+    "expected_document_ids": [],
+    "accepted_sections": [],
+    "required_keywords": []
+  },
+  {
+    "id": "OOS-01",
+    "question": "bugün hava nasıl",
+    "expected_response_type": "out_of_scope",
+    "expected_document_ids": [],
+    "accepted_sections": [],
+    "required_keywords": []
+  },
+  {
+    "id": "OOS-02",
+    "question": "bana makarna tarifi ver",
+    "expected_response_type": "out_of_scope",
+    "expected_document_ids": [],
+    "accepted_sections": [],
+    "required_keywords": []
+  },
+  {
+    "id": "STATIC-01",
+    "question": "merhaba",
+    "expected_response_type": "static_response",
+    "expected_document_ids": [],
+    "accepted_sections": [],
+    "required_keywords": []
+  },
+  {
+    "id": "STATIC-02",
+    "question": "sen kimsin",
+    "expected_response_type": "static_response",
+    "expected_document_ids": [],
+    "accepted_sections": [],
+    "required_keywords": []
+  },
+  {
+    "id": "ROB-ACC-01",
+    "question": "Şifremi unuttum",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "password-account-access"
+    ],
+    "accepted_sections": [
+      "Şifre unutuldu"
+    ],
+    "required_keywords": [
+      "şifre",
+      "sıfırlama"
+    ]
+  },
+  {
+    "id": "ROB-ACC-02",
+    "question": "ŞİFREMİ UNUTTUM.",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "password-account-access"
+    ],
+    "accepted_sections": [
+      "Şifre unutuldu"
+    ],
+    "required_keywords": [
+      "şifre",
+      "sıfırlama"
+    ]
+  },
+  {
+    "id": "ROB-ACC-03",
+    "question": "  Şifremi   unuttum.  ",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "password-account-access"
+    ],
+    "accepted_sections": [
+      "Şifre unutuldu"
+    ],
+    "required_keywords": [
+      "şifre",
+      "sıfırlama"
+    ]
+  },
+  {
+    "id": "ROB-VPN-01",
+    "question": "VPN BAĞLANMIYOR.",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "vpn-remote-access"
+    ],
+    "accepted_sections": [
+      "VPN bağlantısı kurulamıyor"
+    ],
+    "required_keywords": [
+      "internet",
+      "VPN"
+    ]
+  },
+  {
+    "id": "ROB-MEET-01",
+    "question": "Kamera çalışmıyor.",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "meeting-room-av"
+    ],
+    "accepted_sections": [
+      "Toplantı odası kamerası çalışmıyor"
+    ],
+    "required_keywords": [
+      "kamera",
+      "USB"
+    ]
+  },
+  {
+    "id": "ROB-EMAIL-01",
+    "question": "Mail gönderemiyorum.",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "email-outlook-support"
+    ],
+    "accepted_sections": [
+      "E-posta gönderilemiyor"
+    ],
+    "required_keywords": [
+      "alıcı",
+      "Giden Kutusu"
+    ]
+  },
+  {
+    "id": "ROB-SW-01",
+    "question": "Yeni yazılım kurdurmak istiyorum.",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "software-installation-access"
+    ],
+    "accepted_sections": [
+      "Yeni yazılım kurulumu talebi"
+    ],
+    "required_keywords": [
+      "yazılım",
+      "kullanım amacı"
+    ]
+  },
+  {
+    "id": "ROB-REQ-01",
+    "question": "Ekipman talebim ne durumda?",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "equipment-request-process"
+    ],
+    "accepted_sections": [
+      "Ekipman talebi durumu"
+    ],
+    "required_keywords": [
+      "talep",
+      "numara"
+    ]
+  }
+]
