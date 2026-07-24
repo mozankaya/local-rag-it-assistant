@@ -1,5 +1,5 @@
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 import hashlib
 import json
 import re
@@ -59,19 +59,31 @@ def ensure_section_heading(text: str) -> str:
 
 def extract_markdown(path: Path) -> str:
     text = path.read_text(encoding="utf-8", errors="ignore")
+    text = clean_text(text)
+
+    if not text:
+        raise RuntimeError("Markdown dosyası boş veya okunamadı.")
+
     return ensure_section_heading(text)
 
 
 def extract_txt(path: Path) -> str:
     text = path.read_text(encoding="utf-8", errors="ignore")
+    text = clean_text(text)
+
+    if not text:
+        raise RuntimeError("TXT dosyası boş veya okunamadı.")
+
     return ensure_section_heading(text)
 
 
 def extract_pdf(path: Path) -> str:
     try:
         import fitz  # PyMuPDF
-    except ImportError:
-        raise RuntimeError("PyMuPDF is not installed. Run: pip install pymupdf")
+    except ImportError as error:
+        raise RuntimeError(
+            "PyMuPDF kurulu değil. Backend sanal ortamında şu komutu çalıştır: pip install pymupdf"
+        ) from error
 
     sections = []
 
@@ -83,10 +95,8 @@ def extract_pdf(path: Path) -> str:
                 sections.append(f"## Sayfa {page_index}\n\n{page_text}")
 
     if not sections:
-        return (
-            "## Genel\n\n"
-            "Bu PDF dosyasından metin çıkarılamadı. "
-            "Dosya taranmış/görsel PDF olabilir ve OCR gerektirebilir."
+        raise RuntimeError(
+            "PDF dosyasından metin çıkarılamadı. Dosya taranmış/görsel PDF olabilir veya boş olabilir."
         )
 
     return "\n\n".join(sections)
@@ -95,8 +105,10 @@ def extract_pdf(path: Path) -> str:
 def extract_docx(path: Path) -> str:
     try:
         from docx import Document
-    except ImportError:
-        raise RuntimeError("python-docx is not installed. Run: pip install python-docx")
+    except ImportError as error:
+        raise RuntimeError(
+            "python-docx kurulu değil. Backend sanal ortamında şu komutu çalıştır: pip install python-docx"
+        ) from error
 
     document = Document(path)
     lines = []
@@ -108,6 +120,7 @@ def extract_docx(path: Path) -> str:
             continue
 
         style_name = ""
+
         if paragraph.style and paragraph.style.name:
             style_name = paragraph.style.name.lower()
 
@@ -117,16 +130,24 @@ def extract_docx(path: Path) -> str:
             lines.append(text)
 
     for table_index, table in enumerate(document.tables, start=1):
-        lines.append(f"## Tablo {table_index}")
+        table_lines = []
 
         for row in table.rows:
             cells = [clean_text(cell.text) for cell in row.cells]
             cells = [cell for cell in cells if cell]
 
             if cells:
-                lines.append(" | ".join(cells))
+                table_lines.append(" | ".join(cells))
 
-    text = "\n\n".join(lines)
+        if table_lines:
+            lines.append(f"## Tablo {table_index}")
+            lines.extend(table_lines)
+
+    text = clean_text("\n\n".join(lines))
+
+    if not text:
+        raise RuntimeError("DOCX dosyasından metin çıkarılamadı.")
+
     return ensure_section_heading(text)
 
 
@@ -145,7 +166,7 @@ def extract_content(path: Path) -> str:
     if extension == ".docx":
         return extract_docx(path)
 
-    raise ValueError(f"Unsupported file type: {extension}")
+    raise ValueError(f"Desteklenmeyen dosya türü: {extension}")
 
 
 def infer_category(path: Path) -> str:
@@ -161,22 +182,15 @@ def infer_category(path: Path) -> str:
     return slugify(relative_parent.parts[0])
 
 
-def load_existing_manifest() -> list:
-    if not MANIFEST_PATH.exists():
-        return []
+def clean_processed_documents_dir() -> None:
+    """
+    documents.json her çalışmada yeniden oluşturulduğu için eski processed .md çıktıları da temizlenir.
+    Böylece silinen veya artık işlenemeyen dokümanların eski çıktıları kalmaz.
+    """
+    PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
 
-    try:
-        manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
-
-        if not isinstance(manifest, list):
-            print("Warning: Existing documents.json is not a list. A new manifest will be created.")
-            return []
-
-        return manifest
-
-    except json.JSONDecodeError:
-        print("Warning: Existing documents.json could not be parsed. A new manifest will be created.")
-        return []
+    for file_path in PROCESSED_DIR.glob("*.md"):
+        file_path.unlink(missing_ok=True)
 
 
 def process_file(path: Path) -> dict:
@@ -186,6 +200,9 @@ def process_file(path: Path) -> dict:
     content_hash = file_hash(path)
 
     extracted_content = clean_text(extract_content(path))
+
+    if not extracted_content:
+        raise RuntimeError("Dokümandan çıkarılan içerik boş.")
 
     output_file_name = f"{document_id}.md"
     output_path = PROCESSED_DIR / output_file_name
@@ -213,7 +230,7 @@ processed_at: {datetime.now().isoformat(timespec="seconds")}
         "source_file_name": path.name,
         "file_type": path.suffix.lower().replace(".", ""),
         "content_hash": content_hash,
-        "last_updated": datetime.now().strftime("%Y-%m-%d")
+        "last_updated": datetime.now().strftime("%Y-%m-%d"),
     }
 
 
@@ -222,49 +239,84 @@ def main() -> int:
     PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
 
     files = [
-        path for path in SOURCE_DIR.rglob("*")
+        path
+        for path in SOURCE_DIR.rglob("*")
         if path.is_file() and path.suffix.lower() in SUPPORTED_EXTENSIONS
     ]
 
+    clean_processed_documents_dir()
+
     if not files:
+        MANIFEST_PATH.write_text(
+            json.dumps([], ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+
         print(f"No supported documents found in: {SOURCE_DIR}")
         print("Supported file types: .md, .txt, .pdf, .docx")
+        print("Manifest reset to empty list.")
         return 0
 
-    existing_manifest = load_existing_manifest()
-
-    manifest_by_id = {
-        document["document_id"]: document
-        for document in existing_manifest
-        if document.get("document_id")
-    }
-
-    processed_count = 0
+    manifest = []
+    document_ids = set()
+    skipped_files = []
 
     for path in sorted(files):
         try:
             print(f"Processing: {path.relative_to(PROJECT_ROOT)}")
             processed_document = process_file(path)
 
-            # Aynı document_id varsa günceller, yoksa yeni kayıt ekler.
-            manifest_by_id[processed_document["document_id"]] = processed_document
-            processed_count += 1
+            document_id = processed_document["document_id"]
+
+            if document_id in document_ids:
+                raise RuntimeError(
+                    f"Aynı document_id birden fazla dosyada oluştu: {document_id}. "
+                    "Lütfen dosya adlarını farklılaştır."
+                )
+
+            document_ids.add(document_id)
+            manifest.append(processed_document)
 
         except Exception as error:
-            print(f"Failed to process {path.name}: {error}", file=sys.stderr)
+            skipped_files.append(
+                {
+                    "file": str(path.relative_to(PROJECT_ROOT)),
+                    "error": str(error),
+                }
+            )
 
-    manifest = list(manifest_by_id.values())
+            print(
+                f"Skipped: {path.relative_to(PROJECT_ROOT)} -> {error}",
+                file=sys.stderr,
+            )
 
     MANIFEST_PATH.write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2),
-        encoding="utf-8"
+        encoding="utf-8",
     )
 
     print()
-    print(f"Processed documents: {processed_count}")
+    print(f"Processed documents: {len(manifest)}")
+    print(f"Skipped documents: {len(skipped_files)}")
     print(f"Total manifest records: {len(manifest)}")
     print(f"Manifest written to: {MANIFEST_PATH.relative_to(PROJECT_ROOT)}")
     print(f"Processed files written to: {PROCESSED_DIR.relative_to(PROJECT_ROOT)}")
+
+    if skipped_files:
+        print()
+        print("Skipped files:", file=sys.stderr)
+
+        for skipped_file in skipped_files:
+            print(
+                f"- {skipped_file['file']}: {skipped_file['error']}",
+                file=sys.stderr,
+            )
+
+        print()
+        print(
+            "Not: Atlanan dosyalar documents.json içine eklenmediği için n8n tarafından indexlenmez.",
+            file=sys.stderr,
+        )
 
     return 0
 

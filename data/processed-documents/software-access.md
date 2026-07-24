@@ -4,7 +4,7 @@
 source_file_name: software-access.md
 source_file_type: md
 content_hash: b71e568f2d92499ceac857a45b2cc99e8c0f39ffa059bd76fc067f65e3212fd8
-processed_at: 2026-07-21T10:35:03
+processed_at: 2026-07-24T09:57:49
 -->
 
 # Yazılım ve Uygulama Yetki Talepleri

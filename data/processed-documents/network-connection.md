@@ -4,7 +4,7 @@
 source_file_name: network-connection.md
 source_file_type: md
 content_hash: 2e5a05fcb65b424d1f9989cb24b3441840978a765d7d6d3050c408ea0ff2d9c7
-processed_at: 2026-07-21T10:35:03
+processed_at: 2026-07-24T09:57:49
 -->
 
 # Ağ ve İnternet Bağlantısı Sorunları

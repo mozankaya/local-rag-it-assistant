@@ -4,7 +4,7 @@
 source_file_name: security-and-mfa.md
 source_file_type: md
 content_hash: 7cf3609d5ad48437e5497fda6d320bc5383ae1ef4f94c31a8dd0d4b0463e84fa
-processed_at: 2026-07-21T10:35:03
+processed_at: 2026-07-24T09:57:49
 -->
 
 # Bilgi Güvenliği ve Çok Faktörlü Doğrulama

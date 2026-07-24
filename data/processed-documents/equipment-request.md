@@ -4,7 +4,7 @@
 source_file_name: equipment-request.md
 source_file_type: md
 content_hash: 350f313e1371f33446a3f7954b0d8d9a8b1e932d29c6f7eecf34724be551cb22
-processed_at: 2026-07-21T10:35:03
+processed_at: 2026-07-24T09:57:49
 -->
 
 # Ekipman Talepleri ve Ekipman Arıza Bildirimi
