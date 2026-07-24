@@ -28,12 +28,28 @@ export interface ReindexDocumentsResponse {
   message: string;
 }
 
+export interface UploadDocumentPayload {
+  title: string;
+  category: string;
+  file: File;
+}
+
+export interface UploadDocumentResponse {
+  success: boolean;
+  message: string;
+  file_name: string;
+  category: string;
+  source_path: string;
+}
+
 export class AdminDocumentsApiError extends Error {
   status: number;
+  detail?: string;
 
-  constructor(status: number) {
-    super(`Admin documents request failed with status ${status}`);
+  constructor(status: number, detail?: string) {
+    super(detail ?? `Admin documents request failed with status ${status}`);
     this.status = status;
+    this.detail = detail;
   }
 }
 
@@ -60,7 +76,16 @@ async function authorizedRequest<T>(
   });
 
   if (!response.ok) {
-    throw new AdminDocumentsApiError(response.status);
+    let detail: string | undefined;
+
+    try {
+      const errorBody = await response.json() as { detail?: unknown };
+      if (typeof errorBody.detail === "string") detail = errorBody.detail;
+    } catch {
+      // Some error responses do not contain a JSON body.
+    }
+
+    throw new AdminDocumentsApiError(response.status, detail);
   }
 
   return response.json() as Promise<T>;
@@ -96,6 +121,18 @@ export function getDocumentCategories() {
 export function reindexAdminDocuments() {
   return authorizedRequest<ReindexDocumentsResponse>("/admin/documents/reindex", {
     method: "POST",
+  });
+}
+
+export function uploadAdminDocument(payload: UploadDocumentPayload) {
+  const formData = new FormData();
+  formData.append("title", payload.title);
+  formData.append("category", payload.category);
+  formData.append("file", payload.file);
+
+  return authorizedRequest<UploadDocumentResponse>("/admin/documents/upload", {
+    method: "POST",
+    body: formData,
   });
 }
 

@@ -6,11 +6,14 @@ import {
   getAdminDocuments,
   getDocumentCategories,
   reindexAdminDocuments,
+  uploadAdminDocument,
   type AdminDocument,
   type DocumentCategory,
+  type UploadDocumentPayload,
 } from "../../api/adminDocumentsApi";
 import type { CurrentUserResponse } from "../../api/authApi";
 import AdminLayout from "./AdminLayout";
+import DocumentUploadModal from "./DocumentUploadModal";
 import DocumentsTable from "./DocumentsTable";
 import "./admin.css";
 
@@ -47,6 +50,9 @@ function AdminDocumentsPage({
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isReindexing, setIsReindexing] = useState(false);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [downloadingDocumentId, setDownloadingDocumentId] = useState("");
@@ -280,6 +286,77 @@ function AdminDocumentsPage({
     }
   }
 
+  function openUploadModal() {
+    setUploadError("");
+    setIsUploadModalOpen(true);
+  }
+
+  function closeUploadModal() {
+    if (isUploading) return;
+    setUploadError("");
+    setIsUploadModalOpen(false);
+  }
+
+  async function handleUpload(payload: UploadDocumentPayload): Promise<boolean> {
+    if (isUploading) return false;
+
+    setError("");
+    setSuccess("");
+    setUploadError("");
+    setIsUploading(true);
+
+    try {
+      await uploadAdminDocument(payload);
+    } catch (requestError) {
+      if (requestError instanceof AdminDocumentsApiError && requestError.status === 401) {
+        setIsUploading(false);
+        onLogout();
+        return false;
+      }
+      if (requestError instanceof AdminDocumentsApiError && requestError.status === 403) {
+        setIsUploading(false);
+        onGoToChat();
+        return false;
+      }
+
+      const detail = requestError instanceof AdminDocumentsApiError
+        ? requestError.detail
+        : undefined;
+      setUploadError(detail || "Doküman yüklenemedi. Lütfen tekrar deneyin.");
+      setIsUploading(false);
+      return false;
+    }
+
+    setSuccess("Doküman başarıyla yüklendi. Değişikliklerin RAG sistemine yansıması için yeniden indeksleme çalıştırılmalıdır.");
+    setIsLoading(true);
+
+    try {
+      const [documentsData, categoriesData] = await Promise.all([
+        getAdminDocuments(PAGE_SIZE, 0, activeSearch, activeCategory),
+        getDocumentCategories(),
+      ]);
+
+      setDocuments(documentsData.items);
+      setTotal(documentsData.total);
+      setNextOffset(documentsData.offset + PAGE_SIZE);
+      setHasMore(documentsData.has_more);
+      setCategories(categoriesData);
+    } catch (requestError) {
+      if (requestError instanceof AdminDocumentsApiError && requestError.status === 401) {
+        onLogout();
+      } else if (requestError instanceof AdminDocumentsApiError && requestError.status === 403) {
+        onGoToChat();
+      } else {
+        setError("Doküman yüklendi ancak listeler yenilenemedi. Lütfen tekrar deneyin.");
+      }
+    } finally {
+      setIsLoading(false);
+      setIsUploading(false);
+    }
+
+    return true;
+  }
+
   return (
     <AdminLayout
       user={user}
@@ -302,6 +379,14 @@ function AdminDocumentsPage({
             </div>
             <div className="documents-header-actions">
               <span className="admin-total-pill">{total} doküman</span>
+              <button
+                className="document-upload-open"
+                type="button"
+                onClick={openUploadModal}
+                disabled={isReindexing || isUploading}
+              >
+                Yeni Doküman Ekle
+              </button>
               <button
                 className="reindex-button"
                 type="button"
@@ -367,6 +452,15 @@ function AdminDocumentsPage({
           )}
         </article>
       </div>
+
+      <DocumentUploadModal
+        isOpen={isUploadModalOpen}
+        isUploading={isUploading}
+        error={uploadError}
+        categorySuggestions={categories.map((category) => category.category)}
+        onClose={closeUploadModal}
+        onSubmit={handleUpload}
+      />
     </AdminLayout>
   );
 }
