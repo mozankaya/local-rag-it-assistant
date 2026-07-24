@@ -26,6 +26,7 @@ from app.models.user import User
 from app.schemas.admin_documents import (
     AdminDocumentResponse,
     DocumentCategoryResponse,
+    DocumentDeleteResponse,
     DocumentUploadResponse,
     PaginatedAdminDocumentsResponse,
     ReindexResponse,
@@ -41,6 +42,8 @@ router = APIRouter(
 PROJECT_ROOT_DIR = Path(__file__).resolve().parents[4]
 SOURCE_DOCUMENTS_DIR = PROJECT_ROOT_DIR / "data" / "source-documents"
 PREPARE_DOCUMENTS_SCRIPT = PROJECT_ROOT_DIR / "scripts" / "prepare_documents.py"
+PROCESSED_DOCUMENTS_DIR = PROJECT_ROOT_DIR / "data" / "processed-documents"
+
 
 ALLOWED_UPLOAD_EXTENSIONS = {".md", ".txt", ".pdf", ".docx"}
 MAX_UPLOAD_SIZE_BYTES = 10 * 1024 * 1024
@@ -74,6 +77,21 @@ def find_source_document_path(
 
             if resolved_path.is_relative_to(source_root):
                 return resolved_path
+
+    return None
+
+
+def find_processed_document_path(document_id: str) -> Path | None:
+    safe_document_id = slugify_text(document_id)
+
+    if not safe_document_id:
+        return None
+
+    processed_root = PROCESSED_DOCUMENTS_DIR.resolve()
+    candidate = (processed_root / f"{safe_document_id}.md").resolve()
+
+    if candidate.is_file() and candidate.is_relative_to(processed_root):
+        return candidate
 
     return None
 
@@ -485,4 +503,78 @@ def upload_document(
         file_name=target_file_path.name,
         category=clean_category,
         source_path=str(target_file_path.relative_to(PROJECT_ROOT_DIR)),
+    )
+    
+    
+@router.delete("/{document_id}", response_model=DocumentDeleteResponse)
+def delete_document(
+    document_id: str,
+    db: Session = Depends(get_db),
+    _current_admin: User = Depends(require_admin),
+):
+    row = db.execute(
+        text(
+            """
+            SELECT
+                COALESCE(
+                    metadata->>'source_file_name',
+                    metadata->>'file_name'
+                ) AS source_file_name,
+                COALESCE(metadata->>'category', 'unknown') AS category
+            FROM langchain_document_chunks
+            WHERE metadata->>'document_id' = :document_id
+            LIMIT 1
+            """
+        ),
+        {"document_id": document_id},
+    ).mappings().first()
+
+    if not row:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Silinecek doküman bulunamadı.",
+        )
+
+    source_file_name = row["source_file_name"]
+    category = row["category"]
+
+    if not source_file_name:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Doküman kaynak dosya bilgisi bulunamadı.",
+        )
+
+    source_file_path = find_source_document_path(
+        source_file_name=source_file_name,
+        category=category,
+    )
+
+    processed_file_path = find_processed_document_path(document_id)
+
+    if source_file_path:
+        source_file_path.unlink(missing_ok=True)
+
+    if processed_file_path:
+        processed_file_path.unlink(missing_ok=True)
+
+    try:
+        run_prepare_documents_script()
+    except HTTPException:
+        raise
+
+    db.execute(
+        text(
+            """
+            DELETE FROM langchain_document_chunks
+            WHERE metadata->>'document_id' = :document_id
+            """
+        ),
+        {"document_id": document_id},
+    )
+    db.commit()
+
+    return DocumentDeleteResponse(
+        success=True,
+        message="Doküman başarıyla silindi. Değişikliğin tüm RAG indeksine yansıması için yeniden indeksleme çalıştırılabilir.",
+        document_id=document_id,
     )

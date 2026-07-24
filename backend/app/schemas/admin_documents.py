@@ -37,3 +37,9 @@ class DocumentUploadResponse(BaseModel):
     file_name: str
     category: str
     source_path: str
+    
+    
+class DocumentDeleteResponse(BaseModel):
+    success: bool
+    message: str
+    document_id: str
