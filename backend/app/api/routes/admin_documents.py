@@ -1,4 +1,3 @@
-from app.core.config import settings
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -9,6 +8,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.api.routes.users import require_admin
+from app.core.config import get_settings
 from app.db.database import get_db
 from app.models.user import User
 from app.schemas.admin_documents import (
@@ -295,8 +295,9 @@ def download_document(
 def reindex_documents(
     _current_admin: User = Depends(require_admin),
 ):
-    webhook_url = settings.n8n_reindex_webhook_url
-    timeout_seconds = settings.reindex_timeout_seconds
+    app_settings = get_settings()
+    webhook_url = app_settings.n8n_reindex_webhook_url
+    timeout_seconds = app_settings.reindex_timeout_seconds
 
     if not webhook_url:
         raise HTTPException(
