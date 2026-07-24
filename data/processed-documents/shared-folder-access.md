@@ -3,32 +3,50 @@
 <!--
 source_file_name: shared-folder-access.md
 source_file_type: md
-content_hash: e5f89bcc848862758b4ce5d36a5aa871eb0f06947c47c3c9da0c012ad390d9ee
-processed_at: 2026-07-24T09:57:49
+content_hash: 4258accdc026b345c7cef41f8daab45d4b0c622901058bbc0c7a81535b415050
+processed_at: 2026-07-24T14:36:00
 -->
 
 # Ortak Klasör ve Dosya Erişimi
 
-## Ortak klasöre erişilemiyor
+Bu doküman ortak klasör erişimi, izin hataları, salt okunur dosyalar, kilitli belgeler ve ağ yolu sorunlarını açıklar.
 
-Kullanıcı ortak klasöre erişemiyorsa öncelikle bilgisayarın şirket ağına bağlı olup olmadığı kontrol edilmelidir. Kullanıcı şirket dışından bağlanıyorsa VPN bağlantısının aktif olması gerekir.
+## Ortak klasör görünmüyor
 
-Erişim hatası devam ederse kullanıcının ilgili klasör için yetkisi olup olmadığı kontrol edilmelidir. Yetki bulunmuyorsa kullanıcı, bağlı olduğu birim yöneticisinin onayı ile IT destek talebi oluşturmalıdır.
+Kullanıcının kurum ağına veya VPN'e bağlı olduğu doğrulanmalıdır. Ağ sürücüsü bağlantısı yeniden açılmalı ve oturum kapatılıp tekrar giriş yapılmalıdır.
 
-## Yetki talebi
+Klasör yeni oluşturulduysa veya yetki yeni verildiyse erişimin yansıması için kısa süre beklenebilir.
 
-Ortak klasör yetki taleplerinde aşağıdaki bilgiler belirtilmelidir:
+Sorun devam ederse klasör yolu, kullanıcı adı ve erişim amacıyla destek kaydı oluşturulmalıdır.
 
-- Kullanıcının adı ve soyadı
-- Erişim istenen klasör adı
-- Talep edilen yetki tipi
-- Bağlı olunan birim
-- Yönetici onayı
+## Ortak klasöre erişim reddedildi
 
-Yetki tipleri genellikle okuma veya okuma-yazma olarak değerlendirilir.
+Doğru klasör yolunun kullanıldığı kontrol edilmelidir. Kullanıcının ilgili klasör için yetkili olup olmadığı doğrulanmalıdır.
 
-## Dosya silme veya kaybolma durumu
+Yetki talebinde kullanıcı adı, departman, klasör yolu, istenen erişim türü ve iş gerekçesi belirtilmelidir.
 
-Kullanıcı bir dosyanın silindiğini veya kaybolduğunu düşünüyorsa dosyanın bulunduğu klasör, yaklaşık tarih ve dosya adı bilgileri IT destek ekibine iletilmelidir.
+Yazma yetkisi gerekmiyorsa yalnızca okuma erişimi talep edilmelidir.
 
-Geri yükleme işlemi yapılmadan önce dosyanın yedekleme kapsamında olup olmadığı kontrol edilir.
+## Dosya salt okunur açılıyor
+
+Kullanıcının klasörde yazma yetkisi olup olmadığı kontrol edilmelidir. Dosyanın başka bir kullanıcı tarafından kilitlenmiş olabileceği değerlendirilmelidir.
+
+Dosya yerel bilgisayara kopyalanıp düzenlenmemeli; kurum içi sürüm ve yetki süreci korunmalıdır.
+
+## Dosya başka kullanıcı tarafından kullanılıyor
+
+Dosyayı açık tutan kullanıcı bilgisi görünüyorsa ilgili kişiden dosyayı kapatması istenmelidir.
+
+Kullanıcı dosyayı kapattığı hâlde kilit devam ediyorsa dosya yolu ve saat bilgisiyle destek kaydı oluşturulmalıdır.
+
+## Ağ yolu bulunamadı
+
+Kurum ağı veya VPN bağlantısı kontrol edilmelidir. Ağ yolu doğru yazılmalı ve eski kısayol yerine güncel klasör yolu kullanılmalıdır.
+
+Aynı klasöre başka kullanıcılar da erişemiyorsa sorun klasör sunucusu veya ağ bağlantısıyla ilgili olabilir.
+
+## Ortak klasör yetki talebi
+
+Talepte kullanıcı adı, sicil numarası, departman, tam klasör yolu ve erişim gerekçesi belirtilmelidir.
+
+Okuma, yazma veya düzenleme yetkisinden hangisinin gerekli olduğu açıkça yazılmalıdır. Gerekli yönetici veya veri sahibi onayı talebe eklenmelidir.

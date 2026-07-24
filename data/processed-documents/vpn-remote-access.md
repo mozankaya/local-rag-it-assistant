@@ -3,48 +3,56 @@
 <!--
 source_file_name: vpn-remote-access.md
 source_file_type: md
-content_hash: 32ddae62a4bddb1a510786267900dd002cd356712dd1ba8cf5d8cc647436ab9d
-processed_at: 2026-07-24T09:57:49
+content_hash: 42f2b1250f7ae99144d0e31940ecce8600fc5869607691e1fb53d4c2553b4d7c
+processed_at: 2026-07-24T14:36:00
 -->
 
-# VPN ve Uzaktan Erişim Sorunları
+# VPN ve Uzaktan Erişim
 
-Bu doküman, VPN bağlantısı ve uzaktan erişim sırasında karşılaşılan temel sorunlar için hazırlanmıştır.
+Bu doküman kurumsal VPN bağlantısı, iç kaynaklara erişim, MFA doğrulaması ve uzak masaüstü sorunları için temel adımları açıklar.
 
 ## VPN bağlantısı kurulamıyor
 
-VPN bağlantısı kurulamıyorsa aşağıdaki adımları izleyin:
+Bilgisayarın internet bağlantısı kontrol edilmelidir. VPN istemcisinde doğru bağlantı profili seçilmeli ve kullanıcı adı ile güncel şifre kullanılmalıdır.
 
-- Bilgisayarınızın internete bağlı olduğunu kontrol edin.
-- VPN kullanıcı adı ve şifrenizi doğru girdiğinizden emin olun.
-- Çok faktörlü doğrulama kullanılıyorsa telefona gelen onay bildirimini kontrol edin.
-- VPN uygulamasını kapatıp tekrar açın.
-- Sorun devam ederse hata mesajının ekran görüntüsünü IT destek ekibine iletin.
+Şifre yakın zamanda değiştirildiyse VPN istemcisinde kayıtlı eski bilgiler temizlenmeli ve yeni şifreyle tekrar giriş yapılmalıdır.
 
-## VPN sürekli kopuyor
+Hata kodu görülüyorsa ekran görüntüsü alınmalı ve hata koduyla birlikte IT destek kaydı oluşturulmalıdır.
 
-VPN bağlantısı sık sık kesiliyorsa aşağıdaki adımları izleyin:
+## VPN bağlanıyor ancak iç sistemler açılmıyor
 
-- İnternet bağlantınızın stabil olup olmadığını kontrol edin.
-- Kablosuz bağlantı kullanıyorsanız daha stabil bir ağa geçmeyi deneyin.
-- VPN uygulamasını kapatıp tekrar açın.
-- Yoğun ağ kullanan gereksiz uygulamaları kapatın.
-- Sorun devam ederse kopma zamanı ve hata mesajını IT destek ekibine iletin.
+VPN bağlantısının aktif göründüğü doğrulanmalıdır. İç sistem adresi yeniden açılmalı ve tarayıcı kapatılıp tekrar denenmelidir.
 
-## VPN bağlantısı yavaş çalışıyor
+Kurum içi dosya paylaşımı veya uygulama yalnızca belirli ağ yetkileriyle çalışıyorsa kullanıcının erişim yetkisi kontrol edilmelidir.
 
-VPN bağlantısı yavaş çalışıyorsa aşağıdaki adımları izleyin:
+Sorun yalnızca tek bir sistemde yaşanıyorsa sistem adı ve erişim adresi belirtilerek destek kaydı oluşturulmalıdır.
 
-- İnternet bağlantı hızınızı kontrol edin.
-- Gereksiz dosya indirme veya video akışı gibi işlemleri durdurun.
-- VPN uygulamasını yeniden başlatın.
-- Sorun devam ederse kullanılan ağ bilgisi ve yaşanan yavaşlığı IT destek ekibine bildirin.
+## VPN sırasında MFA bildirimi gelmiyor
 
-## Çok faktörlü doğrulama onayı gelmiyor
+Telefonun internet bağlantısı kontrol edilmelidir. Doğrulama uygulaması açılarak bekleyen istek veya manuel doğrulama kodu kontrol edilmelidir.
 
-Çok faktörlü doğrulama onayı gelmiyorsa aşağıdaki adımları izleyin:
+Telefon değiştirildiyse veya doğrulama uygulaması yeniden kurulduysa MFA kaydının güncellenmesi gerekebilir.
 
-- Telefonunuzun internet bağlantısını kontrol edin.
-- Kimlik doğrulama uygulamasının bildirim iznini kontrol edin.
-- Onay bildirimi gelmiyorsa uygulamayı açarak manuel onay ekranını kontrol edin.
-- Sorun devam ederse IT destek ekibine başvurun.
+Bildirim gelmiyorsa kullanıcı adı, telefon değişikliği bilgisi ve deneme saatiyle IT destek kaydı oluşturulmalıdır.
+
+## VPN bağlantısı sık sık kopuyor
+
+Kablosuz ağ sinyalinin kararlı olduğu kontrol edilmelidir. Mümkünse kablolu bağlantı veya farklı bir güvenilir ağ üzerinden test yapılmalıdır.
+
+Bilgisayarın uyku moduna geçmesi VPN bağlantısını kesebilir. Uzun işlem sırasında güç ve uyku ayarları kontrol edilmelidir.
+
+Kopma tekrar ediyorsa yaklaşık saat, kullanılan ağ türü ve varsa hata mesajı destek kaydına eklenmelidir.
+
+## Uzak masaüstü bağlantısı açılamıyor
+
+Önce VPN bağlantısının aktif olduğu doğrulanmalıdır. Uzak bilgisayar adı veya bağlantı adresi doğru girilmelidir.
+
+Hedef bilgisayar kapalıysa veya ağdan ayrılmışsa bağlantı kurulamaz. Hedef cihazın açık olduğu ilgili kişi tarafından doğrulanmalıdır.
+
+Erişim reddediliyorsa kullanıcı yetkisi ve hedef bilgisayar adıyla IT destek kaydı oluşturulmalıdır.
+
+## VPN istemcisi açılmıyor
+
+VPN istemcisi tamamen kapatılıp yeniden açılmalıdır. Bilgisayar yeniden başlatılarak tekrar denenmelidir.
+
+Uygulama güncellemesi veya yeniden kurulumu gerekiyorsa kullanıcı kendi başına yönetici yetkisiyle kurulum yapmamalı, IT destek kaydı oluşturmalıdır.
