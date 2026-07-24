@@ -1,3 +1,4 @@
+import json
 import re
 import subprocess
 import sys
@@ -41,9 +42,9 @@ router = APIRouter(
 
 PROJECT_ROOT_DIR = Path(__file__).resolve().parents[4]
 SOURCE_DOCUMENTS_DIR = PROJECT_ROOT_DIR / "data" / "source-documents"
-PREPARE_DOCUMENTS_SCRIPT = PROJECT_ROOT_DIR / "scripts" / "prepare_documents.py"
 PROCESSED_DOCUMENTS_DIR = PROJECT_ROOT_DIR / "data" / "processed-documents"
-
+DOCUMENTS_MANIFEST_PATH = PROJECT_ROOT_DIR / "data" / "documents.json"
+PREPARE_DOCUMENTS_SCRIPT = PROJECT_ROOT_DIR / "scripts" / "prepare_documents.py"
 
 ALLOWED_UPLOAD_EXTENSIONS = {".md", ".txt", ".pdf", ".docx"}
 MAX_UPLOAD_SIZE_BYTES = 10 * 1024 * 1024
@@ -127,6 +128,53 @@ def ensure_allowed_file(file_name: str) -> str:
         )
 
     return suffix
+
+
+def load_documents_manifest() -> list[dict]:
+    if not DOCUMENTS_MANIFEST_PATH.exists():
+        return []
+
+    try:
+        with DOCUMENTS_MANIFEST_PATH.open("r", encoding="utf-8") as file:
+            data = json.load(file)
+
+    except json.JSONDecodeError:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="documents.json dosyası okunamadı. JSON formatı geçersiz.",
+        )
+
+    if not isinstance(data, list):
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="documents.json beklenen liste formatında değil.",
+        )
+
+    return data
+
+
+def save_documents_manifest(documents: list[dict]) -> None:
+    DOCUMENTS_MANIFEST_PATH.parent.mkdir(parents=True, exist_ok=True)
+
+    with DOCUMENTS_MANIFEST_PATH.open("w", encoding="utf-8") as file:
+        json.dump(documents, file, ensure_ascii=False, indent=2)
+
+
+def remove_document_from_manifest(document_id: str) -> bool:
+    documents = load_documents_manifest()
+
+    filtered_documents = [
+        document
+        for document in documents
+        if document.get("document_id") != document_id
+    ]
+
+    changed = len(filtered_documents) != len(documents)
+
+    if changed:
+        save_documents_manifest(filtered_documents)
+
+    return changed
 
 
 def run_prepare_documents_script() -> None:
@@ -381,62 +429,6 @@ def download_document(
     )
 
 
-@router.post("/reindex", response_model=ReindexResponse)
-def reindex_documents(
-    _current_admin: User = Depends(require_admin),
-):
-    app_settings = get_settings()
-    webhook_url = app_settings.n8n_reindex_webhook_url
-    timeout_seconds = app_settings.reindex_timeout_seconds
-
-    if not webhook_url:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="N8N_REINDEX_WEBHOOK_URL tanımlı değil.",
-        )
-
-    request = Request(
-        webhook_url,
-        data=b"",
-        method="POST",
-    )
-
-    try:
-        with urlopen(request, timeout=timeout_seconds) as response:
-            response_body = response.read().decode("utf-8", errors="ignore")
-
-            if response.status >= 400:
-                raise HTTPException(
-                    status_code=status.HTTP_502_BAD_GATEWAY,
-                    detail=f"n8n reindex workflow hata döndürdü: {response_body}",
-                )
-
-    except HTTPError as exc:
-        error_body = exc.read().decode("utf-8", errors="ignore")
-
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"n8n reindex workflow HTTP hatası döndürdü: {error_body}",
-        ) from exc
-
-    except URLError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail="n8n reindex webhook adresine ulaşılamadı.",
-        ) from exc
-
-    except TimeoutError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
-            detail="Reindex işlemi zaman aşımına uğradı.",
-        ) from exc
-
-    return ReindexResponse(
-        success=True,
-        message="Dokümanlar için yeniden indeksleme işlemi başarıyla tetiklendi.",
-    )
-
-
 @router.post("/upload", response_model=DocumentUploadResponse)
 def upload_document(
     title: str = Form(...),
@@ -504,8 +496,8 @@ def upload_document(
         category=clean_category,
         source_path=str(target_file_path.relative_to(PROJECT_ROOT_DIR)),
     )
-    
-    
+
+
 @router.delete("/{document_id}", response_model=DocumentDeleteResponse)
 def delete_document(
     document_id: str,
@@ -557,6 +549,8 @@ def delete_document(
     if processed_file_path:
         processed_file_path.unlink(missing_ok=True)
 
+    remove_document_from_manifest(document_id)
+
     try:
         run_prepare_documents_script()
     except HTTPException:
@@ -575,6 +569,62 @@ def delete_document(
 
     return DocumentDeleteResponse(
         success=True,
-        message="Doküman başarıyla silindi. Değişikliğin tüm RAG indeksine yansıması için yeniden indeksleme çalıştırılabilir.",
+        message="Doküman başarıyla silindi. Kaynak dosya, işlenmiş dosya, manifest kaydı ve indeks kayıtları kaldırıldı.",
         document_id=document_id,
+    )
+
+
+@router.post("/reindex", response_model=ReindexResponse)
+def reindex_documents(
+    _current_admin: User = Depends(require_admin),
+):
+    app_settings = get_settings()
+    webhook_url = app_settings.n8n_reindex_webhook_url
+    timeout_seconds = app_settings.reindex_timeout_seconds
+
+    if not webhook_url:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="N8N_REINDEX_WEBHOOK_URL tanımlı değil.",
+        )
+
+    request = Request(
+        webhook_url,
+        data=b"",
+        method="POST",
+    )
+
+    try:
+        with urlopen(request, timeout=timeout_seconds) as response:
+            response_body = response.read().decode("utf-8", errors="ignore")
+
+            if response.status >= 400:
+                raise HTTPException(
+                    status_code=status.HTTP_502_BAD_GATEWAY,
+                    detail=f"n8n reindex workflow hata döndürdü: {response_body}",
+                )
+
+    except HTTPError as exc:
+        error_body = exc.read().decode("utf-8", errors="ignore")
+
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"n8n reindex workflow HTTP hatası döndürdü: {error_body}",
+        ) from exc
+
+    except URLError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="n8n reindex webhook adresine ulaşılamadı.",
+        ) from exc
+
+    except TimeoutError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+            detail="Reindex işlemi zaman aşımına uğradı.",
+        ) from exc
+
+    return ReindexResponse(
+        success=True,
+        message="Dokümanlar için yeniden indeksleme işlemi başarıyla tetiklendi.",
     )
