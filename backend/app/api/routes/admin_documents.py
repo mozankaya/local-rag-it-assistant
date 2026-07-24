@@ -593,8 +593,28 @@ def delete_document(
 
 @router.post("/reindex", response_model=ReindexResponse)
 def reindex_documents(
+    db: Session = Depends(get_db),
     _current_admin: User = Depends(require_admin),
 ):
+    run_prepare_documents_script()
+
+    manifest = load_documents_manifest()
+
+    if not manifest:
+        db.execute(
+            text(
+                """
+                TRUNCATE TABLE langchain_document_chunks RESTART IDENTITY
+                """
+            )
+        )
+        db.commit()
+
+        return ReindexResponse(
+            success=True,
+            message="Kaynak doküman bulunmadı. Vektör indeks kayıtları temizlendi.",
+        )
+
     app_settings = get_settings()
     webhook_url = app_settings.n8n_reindex_webhook_url
     timeout_seconds = app_settings.reindex_timeout_seconds
@@ -643,5 +663,5 @@ def reindex_documents(
 
     return ReindexResponse(
         success=True,
-        message="Dokümanlar için yeniden indeksleme işlemi başarıyla tetiklendi.",
+        message="Dokümanlar için yeniden indeksleme işlemi başarıyla tamamlandı.",
     )
