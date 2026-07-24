@@ -29,3 +29,11 @@ class DocumentCategoryResponse(BaseModel):
 class ReindexResponse(BaseModel):
     success: bool
     message: str
+    
+
+class DocumentUploadResponse(BaseModel):
+    success: bool
+    message: str
+    file_name: str
+    category: str
+    source_path: str
