@@ -42,6 +42,12 @@ export interface UploadDocumentResponse {
   source_path: string;
 }
 
+export interface DeleteDocumentResponse {
+  success: boolean;
+  message: string;
+  document_id: string;
+}
+
 export class AdminDocumentsApiError extends Error {
   status: number;
   detail?: string;
@@ -134,6 +140,13 @@ export function uploadAdminDocument(payload: UploadDocumentPayload) {
     method: "POST",
     body: formData,
   });
+}
+
+export function deleteAdminDocument(documentId: string) {
+  return authorizedRequest<DeleteDocumentResponse>(
+    `/admin/documents/${encodeURIComponent(documentId)}`,
+    { method: "DELETE" },
+  );
 }
 
 export async function downloadAdminDocument(documentId: string): Promise<Blob> {

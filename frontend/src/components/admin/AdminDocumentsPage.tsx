@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import {
   AdminDocumentsApiError,
+  deleteAdminDocument,
   downloadAdminDocument,
   getAdminDocuments,
   getDocumentCategories,
@@ -56,6 +57,7 @@ function AdminDocumentsPage({
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [downloadingDocumentId, setDownloadingDocumentId] = useState("");
+  const [deletingDocumentId, setDeletingDocumentId] = useState("");
 
   useEffect(() => {
     let isCancelled = false;
@@ -226,6 +228,68 @@ function AdminDocumentsPage({
       setError("Doküman indirilemedi. Lütfen tekrar deneyin.");
     } finally {
       setDownloadingDocumentId("");
+    }
+  }
+
+  async function handleDelete(document: AdminDocument) {
+    if (deletingDocumentId) return;
+
+    const isConfirmed = window.confirm(
+      "Bu dokümanı silmek istediğinize emin misiniz? Bu işlem kaynak dosyayı ve indeks kayıtlarını kaldıracaktır.",
+    );
+    if (!isConfirmed) return;
+
+    setError("");
+    setSuccess("");
+    setDeletingDocumentId(document.document_id);
+
+    try {
+      await deleteAdminDocument(document.document_id);
+    } catch (requestError) {
+      if (requestError instanceof AdminDocumentsApiError && requestError.status === 401) {
+        setDeletingDocumentId("");
+        onLogout();
+        return;
+      }
+      if (requestError instanceof AdminDocumentsApiError && requestError.status === 403) {
+        setDeletingDocumentId("");
+        onGoToChat();
+        return;
+      }
+
+      const detail = requestError instanceof AdminDocumentsApiError
+        ? requestError.detail
+        : undefined;
+      setError(detail || "Doküman silinemedi. Lütfen tekrar deneyin.");
+      setDeletingDocumentId("");
+      return;
+    }
+
+    setSuccess("Doküman başarıyla silindi.");
+    setIsLoading(true);
+
+    try {
+      const [documentsData, categoriesData] = await Promise.all([
+        getAdminDocuments(PAGE_SIZE, 0, activeSearch, activeCategory),
+        getDocumentCategories(),
+      ]);
+
+      setDocuments(documentsData.items);
+      setTotal(documentsData.total);
+      setNextOffset(documentsData.offset + PAGE_SIZE);
+      setHasMore(documentsData.has_more);
+      setCategories(categoriesData);
+    } catch (requestError) {
+      if (requestError instanceof AdminDocumentsApiError && requestError.status === 401) {
+        onLogout();
+      } else if (requestError instanceof AdminDocumentsApiError && requestError.status === 403) {
+        onGoToChat();
+      } else {
+        setError("Doküman silindi ancak listeler yenilenemedi. Lütfen tekrar deneyin.");
+      }
+    } finally {
+      setIsLoading(false);
+      setDeletingDocumentId("");
     }
   }
 
@@ -435,7 +499,9 @@ function AdminDocumentsPage({
             <DocumentsTable
               documents={documents}
               downloadingDocumentId={downloadingDocumentId}
+              deletingDocumentId={deletingDocumentId}
               onDownload={handleDownload}
+              onDelete={handleDelete}
             />
           )}
 

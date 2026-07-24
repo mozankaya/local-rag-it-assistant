@@ -987,7 +987,14 @@
   background: rgba(255, 255, 255, 0.045);
 }
 
-.document-download-button {
+.document-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.document-download-button,
+.document-delete-button {
   min-width: 92px;
   padding: 8px 10px;
   display: inline-flex;
@@ -1003,17 +1010,31 @@
   white-space: nowrap;
 }
 
+.document-delete-button {
+  color: #fff;
+  border: 1px solid rgba(255, 82, 92, 0.68);
+  border-radius: 9px;
+  background: rgba(227, 6, 19, 0.28);
+}
+
 .document-download-button:hover:not(:disabled) {
   border-color: var(--admin-red);
   background: rgba(227, 6, 19, 0.22);
 }
 
-.document-download-button:disabled {
+.document-delete-button:hover:not(:disabled) {
+  border-color: #ff5c65;
+  background: rgba(227, 6, 19, 0.5);
+}
+
+.document-download-button:disabled,
+.document-delete-button:disabled {
   opacity: 0.55;
   cursor: not-allowed;
 }
 
-.document-download-button[aria-busy="true"] {
+.document-download-button[aria-busy="true"],
+.document-delete-button[aria-busy="true"] {
   cursor: wait;
 }
 .recent-question-list { display: grid; }

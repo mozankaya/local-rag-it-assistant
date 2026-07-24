@@ -3,7 +3,9 @@ import type { AdminDocument } from "../../api/adminDocumentsApi";
 interface DocumentsTableProps {
   documents: AdminDocument[];
   downloadingDocumentId: string;
+  deletingDocumentId: string;
   onDownload: (document: AdminDocument) => void;
+  onDelete: (document: AdminDocument) => void;
 }
 
 function displayValue(value?: string | null) {
@@ -28,7 +30,9 @@ function formatDate(value?: string | null) {
 function DocumentsTable({
   documents,
   downloadingDocumentId,
+  deletingDocumentId,
   onDownload,
+  onDelete,
 }: DocumentsTableProps) {
   if (documents.length === 0) {
     return <p className="admin-empty">Doküman bulunamadı.</p>;
@@ -52,6 +56,7 @@ function DocumentsTable({
         <tbody>
           {documents.map((document) => {
             const isDownloading = downloadingDocumentId === document.document_id;
+            const isDeleting = deletingDocumentId === document.document_id;
 
             return (
             <tr key={`${document.document_id}-${document.source_file_name ?? ""}`}>
@@ -80,16 +85,27 @@ function DocumentsTable({
               </td>
               <td className="document-date">{formatDate(document.last_updated)}</td>
               <td>
-                <button
-                  className="document-download-button"
-                  type="button"
-                  disabled={Boolean(downloadingDocumentId)}
-                  aria-busy={isDownloading}
-                  onClick={() => onDownload(document)}
-                >
-                  <span aria-hidden="true">↓</span>
-                  {isDownloading ? "İndiriliyor..." : "İndir"}
-                </button>
+                <div className="document-row-actions">
+                  <button
+                    className="document-download-button"
+                    type="button"
+                    disabled={Boolean(downloadingDocumentId)}
+                    aria-busy={isDownloading}
+                    onClick={() => onDownload(document)}
+                  >
+                    <span aria-hidden="true">↓</span>
+                    {isDownloading ? "İndiriliyor..." : "İndir"}
+                  </button>
+                  <button
+                    className="document-delete-button"
+                    type="button"
+                    disabled={Boolean(deletingDocumentId)}
+                    aria-busy={isDeleting}
+                    onClick={() => onDelete(document)}
+                  >
+                    {isDeleting ? "Siliniyor..." : "Sil"}
+                  </button>
+                </div>
               </td>
             </tr>
             );
