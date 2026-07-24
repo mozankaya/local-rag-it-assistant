@@ -9,8 +9,10 @@ class Settings(BaseSettings):
 
     n8n_rag_webhook_url: str
     n8n_feedback_webhook_url: str
+    n8n_reindex_webhook_url: str | None = None
 
     request_timeout_seconds: float = 60.0
+    reindex_timeout_seconds: float = 300.0
     max_question_length: int = 1000
 
     database_url: str

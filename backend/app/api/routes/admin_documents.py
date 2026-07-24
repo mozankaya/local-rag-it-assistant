@@ -1,3 +1,6 @@
+from app.core.config import settings
+import urllib.error
+import urllib.request
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -12,6 +15,7 @@ from app.schemas.admin_documents import (
     AdminDocumentResponse,
     DocumentCategoryResponse,
     PaginatedAdminDocumentsResponse,
+    ReindexResponse,
 )
 
 
@@ -285,4 +289,58 @@ def download_document(
         path=file_path,
         filename=file_path.name,
         media_type="application/octet-stream",
+    )
+
+@router.post("/reindex", response_model=ReindexResponse)
+def reindex_documents(
+    _current_admin: User = Depends(require_admin),
+):
+    webhook_url = settings.n8n_reindex_webhook_url
+    timeout_seconds = settings.reindex_timeout_seconds
+
+    if not webhook_url:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="N8N_REINDEX_WEBHOOK_URL tanımlı değil.",
+        )
+
+    request = urllib.request.Request(
+        webhook_url,
+        data=b"",
+        method="POST",
+    )
+
+    try:
+        with urllib.request.urlopen(request, timeout=timeout_seconds) as response:
+            response_body = response.read().decode("utf-8", errors="ignore")
+
+            if response.status >= 400:
+                raise HTTPException(
+                    status_code=status.HTTP_502_BAD_GATEWAY,
+                    detail=f"n8n reindex workflow hata döndürdü: {response_body}",
+                )
+
+    except urllib.error.HTTPError as exc:
+        error_body = exc.read().decode("utf-8", errors="ignore")
+
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"n8n reindex workflow HTTP hatası döndürdü: {error_body}",
+        ) from exc
+
+    except urllib.error.URLError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="n8n reindex webhook adresine ulaşılamadı.",
+        ) from exc
+
+    except TimeoutError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+            detail="Reindex işlemi zaman aşımına uğradı.",
+        ) from exc
+
+    return ReindexResponse(
+        success=True,
+        message="Dokümanlar için yeniden indeksleme işlemi başarıyla tetiklendi.",
     )

@@ -24,3 +24,8 @@ class PaginatedAdminDocumentsResponse(BaseModel):
 class DocumentCategoryResponse(BaseModel):
     category: str
     document_count: int
+    
+    
+class ReindexResponse(BaseModel):
+    success: bool
+    message: str
