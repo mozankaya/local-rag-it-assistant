@@ -1,0 +1,194 @@
+[
+  {
+    "id": "NORM-ACC-01",
+    "question": "Şifremi unuttum",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "password-account-access"
+    ],
+    "accepted_sections": [
+      "Şifre unutuldu"
+    ],
+    "required_keywords": [
+      "şifre",
+      "sıfırlama"
+    ],
+    "min_keyword_hits": 1
+  },
+  {
+    "id": "NORM-ACC-02",
+    "question": "ŞİFREMİ UNUTTUM.",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "password-account-access"
+    ],
+    "accepted_sections": [
+      "Şifre unutuldu"
+    ],
+    "required_keywords": [
+      "şifre",
+      "sıfırlama"
+    ],
+    "min_keyword_hits": 1
+  },
+  {
+    "id": "NORM-ACC-03",
+    "question": "  Şifremi   unuttum.  ",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "password-account-access"
+    ],
+    "accepted_sections": [
+      "Şifre unutuldu"
+    ],
+    "required_keywords": [
+      "şifre",
+      "sıfırlama"
+    ],
+    "min_keyword_hits": 1
+  },
+  {
+    "id": "NORM-ACC-04",
+    "question": "şifremi unuttum???",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "password-account-access"
+    ],
+    "accepted_sections": [
+      "Şifre unutuldu"
+    ],
+    "required_keywords": [
+      "şifre",
+      "sıfırlama"
+    ],
+    "min_keyword_hits": 1
+  },
+  {
+    "id": "NORM-VPN-01",
+    "question": "VPN bağlanmıyor",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "vpn-remote-access"
+    ],
+    "accepted_sections": [
+      "VPN bağlantısı kurulamıyor"
+    ],
+    "required_keywords": [
+      "internet",
+      "VPN"
+    ],
+    "min_keyword_hits": 1
+  },
+  {
+    "id": "NORM-VPN-02",
+    "question": "VPN BAĞLANMIYOR.",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "vpn-remote-access"
+    ],
+    "accepted_sections": [
+      "VPN bağlantısı kurulamıyor"
+    ],
+    "required_keywords": [
+      "internet",
+      "VPN"
+    ],
+    "min_keyword_hits": 1
+  },
+  {
+    "id": "NORM-VPN-03",
+    "question": "  vpn   bağlanmıyor.  ",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "vpn-remote-access"
+    ],
+    "accepted_sections": [
+      "VPN bağlantısı kurulamıyor"
+    ],
+    "required_keywords": [
+      "internet",
+      "VPN"
+    ],
+    "min_keyword_hits": 1
+  },
+  {
+    "id": "NORM-VPN-04",
+    "question": "vpn bağlanmıyor!!!",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "vpn-remote-access"
+    ],
+    "accepted_sections": [
+      "VPN bağlantısı kurulamıyor"
+    ],
+    "required_keywords": [
+      "internet",
+      "VPN"
+    ],
+    "min_keyword_hits": 1
+  },
+  {
+    "id": "NORM-EMAIL-01",
+    "question": "Mail gönderemiyorum",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "email-outlook-support"
+    ],
+    "accepted_sections": [
+      "E-posta gönderilemiyor"
+    ],
+    "required_keywords": [
+      "alıcı",
+      "Giden Kutusu"
+    ],
+    "min_keyword_hits": 1
+  },
+  {
+    "id": "NORM-EMAIL-02",
+    "question": "MAİL GÖNDEREMİYORUM.",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "email-outlook-support"
+    ],
+    "accepted_sections": [
+      "E-posta gönderilemiyor"
+    ],
+    "required_keywords": [
+      "alıcı",
+      "Giden Kutusu"
+    ],
+    "min_keyword_hits": 1
+  },
+  {
+    "id": "NORM-EMAIL-03",
+    "question": "  Mail   gönderemiyorum.  ",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "email-outlook-support"
+    ],
+    "accepted_sections": [
+      "E-posta gönderilemiyor"
+    ],
+    "required_keywords": [
+      "alıcı",
+      "Giden Kutusu"
+    ],
+    "min_keyword_hits": 1
+  },
+  {
+    "id": "NORM-EMAIL-04",
+    "question": "mail gönderemiyorum???",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "email-outlook-support"
+    ],
+    "accepted_sections": [
+      "E-posta gönderilemiyor"
+    ],
+    "required_keywords": [
+      "alıcı",
+      "Giden Kutusu"
+    ],
+    "min_keyword_hits": 1
+  }
+]

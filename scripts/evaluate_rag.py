@@ -1,464 +1,350 @@
+from __future__ import annotations
+
 import argparse
 import csv
+import json
+import os
 import time
-from datetime import datetime
 from pathlib import Path
 
 import httpx
 
 
-API_BASE_URL = "http://127.0.0.1:8000"
-
-LOGIN_EMAIL = "admin@izeltas.local"
-LOGIN_PASSWORD = "Admin123!"
-
-
-TEST_CASES = [
-    {
-        "question": "VPN bağlantısı kuramıyorum, ne yapmalıyım?",
-        "expected_document_id": "vpn-remote-access",
-        "expected_keywords": ["internet", "vpn", "şifre"],
-        "case_type": "rag",
-        "expected_response_type": "rag_answer",
-    },
-    {
-        "question": "Şifremi unuttum, nasıl sıfırlayabilirim?",
-        "expected_document_id": "password-and-account",
-        "expected_keywords": ["şifre", "sıfırla"],
-        "case_type": "rag",
-        "expected_response_type": "rag_answer",
-    },
-    {
-        "question": "Outlook mail göndermiyor, ne yapmalıyım?",
-        "expected_document_id": "email-outlook",
-        "expected_keywords": ["outlook", "internet", "adres"],
-        "case_type": "rag",
-        "expected_response_type": "rag_answer",
-    },
-    {
-        "question": "Yazıcıdan çıktı alamıyorum, ne yapmalıyım?",
-        "expected_document_id": "printer-support",
-        "expected_keywords": ["yazıcı", "kağıt", "bağlantı"],
-        "case_type": "rag",
-        "expected_response_type": "rag_answer",
-    },
-    {
-        "question": "İnternet bağlantım yok, ne yapmalıyım?",
-        "expected_document_id": "network-connection",
-        "expected_keywords": ["internet", "ağ", "bağlantı"],
-        "case_type": "rag",
-        "expected_response_type": "rag_answer",
-    },
-    {
-        "question": "Donanım desteği talebi nasıl oluşturabilirim?",
-        "expected_document_id": "hardware-support",
-        "expected_keywords": ["donanım", "talep", "destek"],
-        "case_type": "rag",
-        "expected_response_type": "rag_answer",
-    },
-    {
-        "question": "Ekipman talebi nasıl oluşturabilirim?",
-        "expected_document_id": "equipment-request",
-        "expected_keywords": ["ekipman", "talep", "onay"],
-        "case_type": "rag",
-        "expected_response_type": "rag_answer",
-    },
-    {
-        "question": "Ortak klasöre erişemiyorum, ne yapmalıyım?",
-        "expected_document_id": "shared-folder-access",
-        "expected_keywords": ["ortak", "klasör", "vpn", "yetki"],
-        "case_type": "rag",
-        "expected_response_type": "rag_answer",
-    },
-    {
-        "question": "Ortak klasör için yetki talebi nasıl oluşturulur?",
-        "expected_document_id": "shared-folder-access",
-        "expected_keywords": ["klasör", "yetki", "yönetici", "onay"],
-        "case_type": "rag",
-        "expected_response_type": "rag_answer",
-    },
-    {
-        "question": "Yeni bir yazılım kurulumu için nasıl talep oluşturabilirim?",
-        "expected_document_id": "software-access",
-        "expected_keywords": ["yazılım", "kurulum", "lisans", "talep"],
-        "case_type": "rag",
-        "expected_response_type": "rag_answer",
-    },
-    {
-        "question": "Kurumsal uygulama yetkisi almak için ne yapmalıyım?",
-        "expected_document_id": "software-access",
-        "expected_keywords": ["uygulama", "yetki", "görev", "erişim"],
-        "case_type": "rag",
-        "expected_response_type": "rag_answer",
-    },
-    {
-        "question": "Çok faktörlü doğrulama bildirimi gelmiyor, ne yapmalıyım?",
-        "expected_document_id": "security-and-mfa",
-        "expected_keywords": ["doğrulama", "bildirim", "telefon", "kod"],
-        "case_type": "rag",
-        "expected_response_type": "rag_answer",
-    },
-    {
-        "question": "Şüpheli bir e-posta aldım, ne yapmalıyım?",
-        "expected_document_id": "security-and-mfa",
-        "expected_keywords": ["şüpheli", "e-posta", "bağlantı", "ek"],
-        "case_type": "rag",
-        "expected_response_type": "rag_answer",
-    },
-    {
-        "question": "Toplantı odasındaki ekran çalışmıyor, ne yapmalıyım?",
-        "expected_document_id": "meeting-room-support",
-        "expected_keywords": ["toplantı", "ekran", "giriş", "hdmi"],
-        "case_type": "rag",
-        "expected_response_type": "rag_answer",
-    },
-    {
-        "question": "Kamera veya mikrofon çalışmıyor, ne yapmalıyım?",
-        "expected_document_id": "meeting-room-support",
-        "expected_keywords": ["kamera", "mikrofon", "cihaz", "izin"],
-        "case_type": "rag",
-        "expected_response_type": "rag_answer",
-    },
-
-    # Kaynak bulunmaması beklenen ama IT'ye yakın soru
-    {
-        "question": "SAP sevkiyat ekranı çalışmıyor, ne yapmalıyım?",
-        "expected_document_id": "",
-        "expected_keywords": ["kaynak", "bilgi", "IT"],
-        "case_type": "no_relevant_source",
-        "expected_response_type": "no_relevant_source",
-    },
-
-    # Kapsam dışı soru
-    {
-        "question": "Bana yemek tarifi verir misin?",
-        "expected_document_id": "",
-        "expected_keywords": ["yardımcı olamam", "IT"],
-        "case_type": "out_of_scope",
-        "expected_response_type": "out_of_scope",
-    },
-
-    # Static cevap
-    {
-        "question": "Merhaba",
-        "expected_document_id": "",
-        "expected_keywords": ["merhaba", "yardımcı"],
-        "case_type": "static",
-        "expected_response_type": "static_response",
-    },
-]
+API_URL = os.getenv("RAG_API_BASE_URL", "http://127.0.0.1:8000")
+EMAIL = os.getenv("RAG_LOGIN_EMAIL", "admin@izeltas.local")
+PASSWORD = os.getenv("RAG_LOGIN_PASSWORD", "Admin123!")
 
 
-def login() -> str:
-    response = httpx.post(
-        f"{API_BASE_URL}/auth/login",
-        json={
-            "email": LOGIN_EMAIL,
-            "password": LOGIN_PASSWORD,
-        },
+def normalize(value: object) -> str:
+    return " ".join(str(value or "").casefold().split())
+
+
+def load_cases(path: Path) -> list[dict]:
+    cases = json.loads(path.read_text(encoding="utf-8"))
+    required = {
+        "id",
+        "question",
+        "expected_response_type",
+        "expected_document_ids",
+        "accepted_sections",
+        "required_keywords",
+    }
+
+    if not isinstance(cases, list):
+        raise ValueError("Test dosyası JSON listesi olmalıdır.")
+
+    for index, case in enumerate(cases, 1):
+        missing = required - set(case)
+        if missing:
+            raise ValueError(
+                f"{index}. test vakasında eksik alanlar: {sorted(missing)}"
+            )
+
+    return cases
+
+
+def login(client: httpx.Client) -> str:
+    response = client.post(
+        f"{API_URL}/auth/login",
+        json={"email": EMAIL, "password": PASSWORD},
         timeout=30,
     )
-
     response.raise_for_status()
 
-    data = response.json()
-    return data["access_token"]
+    token = response.json().get("access_token")
+    if not token:
+        raise RuntimeError("access_token bulunamadı.")
+
+    return str(token)
 
 
-def ask_question(token: str, question: str) -> tuple[dict, float]:
-    start_time = time.perf_counter()
+def ask(
+    client: httpx.Client,
+    token: str,
+    question: str,
+) -> tuple[dict, float]:
+    started = time.perf_counter()
 
-    response = httpx.post(
-        f"{API_BASE_URL}/chat",
-        headers={
-            "Authorization": f"Bearer {token}",
-        },
-        json={
-            "question": question,
-        },
+    response = client.post(
+        f"{API_URL}/chat",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"question": question},
         timeout=120,
     )
-
-    elapsed_seconds = time.perf_counter() - start_time
+    elapsed = time.perf_counter() - started
 
     response.raise_for_status()
+    data = response.json()
 
-    return response.json(), elapsed_seconds
+    if not isinstance(data, dict):
+        raise RuntimeError("Chat cevabı JSON nesnesi olmalıdır.")
+
+    return data, elapsed
 
 
-def get_keyword_hit_count(answer: str, keywords: list[str]) -> int:
-    normalized_answer = answer.lower()
+def values(sources: list[dict], field: str) -> list[str]:
+    return [
+        str(source[field])
+        for source in sources
+        if source.get(field) not in (None, "")
+    ]
 
-    return sum(
-        1
+
+def scores(sources: list[dict]) -> list[str]:
+    result = []
+
+    for source in sources:
+        value = source.get("score", source.get("distance"))
+        if value is not None:
+            result.append(str(value))
+
+    return result
+
+
+def matches(expected: list[str], actual: list[str]) -> bool:
+    if not expected:
+        return not actual
+
+    expected_set = {normalize(item) for item in expected}
+    actual_set = {normalize(item) for item in actual}
+    return bool(expected_set & actual_set)
+
+
+def keyword_check(
+    answer: str,
+    keywords: list[str],
+    minimum: int,
+) -> tuple[bool, int]:
+    if not keywords:
+        return True, 0
+
+    normalized_answer = normalize(answer)
+    hits = sum(
+        normalize(keyword) in normalized_answer
         for keyword in keywords
-        if keyword.lower() in normalized_answer
+    )
+    required = min(max(minimum, 1), len(keywords))
+
+    return hits >= required, hits
+
+
+def format_check(
+    answer: str,
+    response_type: str,
+) -> tuple[bool, int, str]:
+    if response_type != "rag_answer":
+        return True, 0, ""
+
+    lines = [line.strip() for line in answer.splitlines() if line.strip()]
+    bullets = [line for line in lines if line.startswith("- ")]
+    problems = []
+
+    if not 1 <= len(bullets) <= 3:
+        problems.append("bullet_count")
+
+    if len(lines) != len(bullets):
+        problems.append("non_bullet_text")
+
+    cleaned = [
+        normalize(line.removeprefix("- ").rstrip(".!?"))
+        for line in bullets
+    ]
+    if len(cleaned) != len(set(cleaned)):
+        problems.append("duplicate_bullets")
+
+    return not problems, len(bullets), "|".join(problems)
+
+
+def evaluate(
+    case: dict,
+    response: dict,
+    elapsed: float,
+    model: str,
+    run: int,
+) -> dict:
+    answer = str(response.get("answer") or "")
+    response_type = str(response.get("response_type") or "")
+    sources = response.get("sources") or []
+    sources = sources if isinstance(sources, list) else []
+
+    actual_documents = values(sources, "document_id")
+    actual_sections = values(sources, "section_title")
+
+    expected_documents = case["expected_document_ids"]
+    accepted_sections = case["accepted_sections"]
+    required_keywords = case["required_keywords"]
+
+    type_match = response_type == case["expected_response_type"]
+    source_match = matches(expected_documents, actual_documents)
+    section_match = matches(accepted_sections, actual_sections)
+
+    keyword_match, keyword_hits = keyword_check(
+        answer,
+        required_keywords,
+        int(case.get("min_keyword_hits", 1)),
+    )
+    format_match, bullet_count, format_problem = format_check(
+        answer,
+        response_type,
     )
 
-
-def contains_expected_keywords(answer: str, keywords: list[str]) -> bool:
-    return get_keyword_hit_count(answer, keywords) > 0
-
-
-def get_first_source_document_id(sources: list[dict]) -> str:
-    if not sources:
-        return ""
-
-    first_source = sources[0]
-    return str(first_source.get("document_id") or "")
-
-
-def get_first_source_score(sources: list[dict]) -> str:
-    if not sources:
-        return ""
-
-    first_source = sources[0]
-
-    score = (
-        first_source.get("score")
-        or first_source.get("distance")
-        or first_source.get("_distance")
+    case_pass = all(
+        [
+            type_match,
+            source_match,
+            section_match,
+            keyword_match,
+            format_match,
+        ]
     )
 
-    return str(score) if score is not None else ""
+    return {
+        "model": model,
+        "case_id": case["id"],
+        "run": run,
+        "question": case["question"],
+        "answer": answer,
+        "expected_response_type": case["expected_response_type"],
+        "response_type": response_type,
+        "response_type_match": type_match,
+        "expected_document_ids": " | ".join(expected_documents),
+        "actual_document_ids": " | ".join(actual_documents),
+        "source_match": source_match,
+        "accepted_sections": " | ".join(accepted_sections),
+        "actual_sections": " | ".join(actual_sections),
+        "section_match": section_match,
+        "source_scores": " | ".join(scores(sources)),
+        "required_keywords": " | ".join(required_keywords),
+        "keyword_match": keyword_match,
+        "keyword_hit_count": keyword_hits,
+        "answer_format_match": format_match,
+        "bullet_count": bullet_count,
+        "answer_format_problems": format_problem,
+        "case_pass": case_pass,
+        "response_time_seconds": round(elapsed, 3),
+        "error": "",
+        "manual_quality_score": "",
+        "manual_notes": "",
+    }
 
 
-def evaluate_source_match(
-    expected_document_id: str,
-    first_source_document_id: str,
-) -> bool:
-    if expected_document_id:
-        return first_source_document_id == expected_document_id
+def failed_row(case: dict, model: str, run: int, error: Exception) -> dict:
+    row = evaluate(
+        case=case,
+        response={"answer": "", "response_type": "", "sources": []},
+        elapsed=0,
+        model=model,
+        run=run,
+    )
+    row["response_time_seconds"] = ""
+    row["error"] = str(error)
+    return row
 
-    return first_source_document_id == ""
 
-
-def write_summary(results: list[dict], output_path: Path) -> Path:
-    successful_results = [
-        result for result in results if result["status"] == "success"
+def summary(rows: list[dict], model: str) -> dict:
+    times = [
+        float(row["response_time_seconds"])
+        for row in rows
+        if row["response_time_seconds"] != ""
     ]
 
-    response_times = [
-        float(result["response_time_seconds"])
-        for result in successful_results
-        if result["response_time_seconds"] != ""
-    ]
+    result = {
+        "model": model,
+        "total_run_count": len(rows),
+        "case_pass_count": sum(row["case_pass"] for row in rows),
+        "source_match_count": sum(row["source_match"] for row in rows),
+        "section_match_count": sum(row["section_match"] for row in rows),
+        "keyword_match_count": sum(row["keyword_match"] for row in rows),
+        "response_type_match_count": sum(
+            row["response_type_match"] for row in rows
+        ),
+        "answer_format_match_count": sum(
+            row["answer_format_match"] for row in rows
+        ),
+        "request_error_count": sum(bool(row["error"]) for row in rows),
+    }
 
-    total_count = len(results)
-    success_count = len(successful_results)
-    error_count = total_count - success_count
-
-    source_match_count = sum(
-        1 for result in successful_results if result["source_match"] == "True"
+    result["average_response_time_seconds"] = (
+        round(sum(times) / len(times), 3) if times else ""
+    )
+    result["min_response_time_seconds"] = (
+        round(min(times), 3) if times else ""
+    )
+    result["max_response_time_seconds"] = (
+        round(max(times), 3) if times else ""
     )
 
-    keyword_match_count = sum(
-        1 for result in successful_results if result["keyword_match"] == "True"
-    )
+    return result
 
-    response_type_match_count = sum(
-        1
-        for result in successful_results
-        if result["response_type_match"] == "True"
-    )
 
-    average_response_time = (
-        round(sum(response_times) / len(response_times), 3)
-        if response_times
-        else ""
-    )
+def write_csv(path: Path, rows: list[dict]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
 
-    max_response_time = round(max(response_times), 3) if response_times else ""
-    min_response_time = round(min(response_times), 3) if response_times else ""
-
-    summary_path = output_path.with_name(output_path.stem + "-summary.csv")
-
-    with summary_path.open("w", newline="", encoding="utf-8-sig") as file:
-        writer = csv.DictWriter(
-            file,
-            fieldnames=[
-                "total_count",
-                "success_count",
-                "error_count",
-                "source_match_count",
-                "keyword_match_count",
-                "response_type_match_count",
-                "average_response_time_seconds",
-                "min_response_time_seconds",
-                "max_response_time_seconds",
-            ],
-        )
-
+    with path.open("w", newline="", encoding="utf-8-sig") as file:
+        writer = csv.DictWriter(file, fieldnames=rows[0].keys())
         writer.writeheader()
-        writer.writerow(
-            {
-                "total_count": total_count,
-                "success_count": success_count,
-                "error_count": error_count,
-                "source_match_count": source_match_count,
-                "keyword_match_count": keyword_match_count,
-                "response_type_match_count": response_type_match_count,
-                "average_response_time_seconds": average_response_time,
-                "min_response_time_seconds": min_response_time,
-                "max_response_time_seconds": max_response_time,
-            }
-        )
-
-    return summary_path
-
-
-def evaluate(model_name: str, repeat_count: int) -> tuple[Path, Path]:
-    token = login()
-
-    results = []
-
-    for test_case in TEST_CASES:
-        question = test_case["question"]
-        expected_document_id = test_case["expected_document_id"]
-        expected_keywords = test_case["expected_keywords"]
-        case_type = test_case["case_type"]
-        expected_response_type = test_case["expected_response_type"]
-
-        for run_index in range(1, repeat_count + 1):
-            print(f"Testing [{model_name}] run {run_index}: {question}")
-
-            try:
-                response_data, elapsed_seconds = ask_question(token, question)
-
-                answer = str(response_data.get("answer") or "")
-                sources = response_data.get("sources") or []
-
-                response_type = str(response_data.get("response_type") or "")
-                response_type_match = response_type == expected_response_type
-
-                first_source_document_id = get_first_source_document_id(sources)
-                first_source_score = get_first_source_score(sources)
-
-                source_match = evaluate_source_match(
-                    expected_document_id=expected_document_id,
-                    first_source_document_id=first_source_document_id,
-                )
-
-                keyword_hit_count = get_keyword_hit_count(
-                    answer=answer,
-                    keywords=expected_keywords,
-                )
-
-                keyword_match = keyword_hit_count > 0
-
-                results.append(
-                    {
-                        "model": model_name,
-                        "run": run_index,
-                        "case_type": case_type,
-                        "question": question,
-                        "answer": answer,
-                        "response_type": response_type,
-                        "expected_response_type": expected_response_type,
-                        "response_type_match": str(response_type_match),
-                        "response_time_seconds": round(elapsed_seconds, 3),
-                        "source_count": len(sources),
-                        "first_source_document_id": first_source_document_id,
-                        "expected_document_id": expected_document_id,
-                        "source_match": str(source_match),
-                        "first_source_score": first_source_score,
-                        "keyword_match": str(keyword_match),
-                        "keyword_hit_count": keyword_hit_count,
-                        "expected_keywords": ", ".join(expected_keywords),
-                        "answer_length": len(answer),
-                        "status": "success",
-                        "error": "",
-                        "manual_quality_score": "",
-                        "manual_notes": "",
-                    }
-                )
-
-            except Exception as error:
-                results.append(
-                    {
-                        "model": model_name,
-                        "run": run_index,
-                        "case_type": case_type,
-                        "question": question,
-                        "answer": "",
-                        "response_type": "",
-                        "expected_response_type": expected_response_type,
-                        "response_type_match": "False",
-                        "response_time_seconds": "",
-                        "source_count": "",
-                        "first_source_document_id": "",
-                        "expected_document_id": expected_document_id,
-                        "source_match": "False",
-                        "first_source_score": "",
-                        "keyword_match": "False",
-                        "keyword_hit_count": 0,
-                        "expected_keywords": ", ".join(expected_keywords),
-                        "answer_length": 0,
-                        "status": "error",
-                        "error": str(error),
-                        "manual_quality_score": "",
-                        "manual_notes": "",
-                    }
-                )
-
-    project_root = Path(__file__).resolve().parents[1]
-    output_dir = project_root / "docs" / "evaluation"
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-    safe_model_name = model_name.replace(":", "-").replace("/", "-")
-    output_path = output_dir / f"rag-evaluation-{safe_model_name}-{timestamp}.csv"
-
-    fieldnames = [
-        "model",
-        "run",
-        "case_type",
-        "question",
-        "answer",
-        "response_type",
-        "expected_response_type",
-        "response_type_match",
-        "response_time_seconds",
-        "source_count",
-        "first_source_document_id",
-        "expected_document_id",
-        "source_match",
-        "first_source_score",
-        "keyword_match",
-        "keyword_hit_count",
-        "expected_keywords",
-        "answer_length",
-        "status",
-        "error",
-        "manual_quality_score",
-        "manual_notes",
-    ]
-
-    with output_path.open("w", newline="", encoding="utf-8-sig") as file:
-        writer = csv.DictWriter(file, fieldnames=fieldnames)
-        writer.writeheader()
-        writer.writerows(results)
-
-    summary_path = write_summary(results, output_path)
-
-    return output_path, summary_path
+        writer.writerows(rows)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", required=True)
+    parser.add_argument(
+        "--cases",
+        type=Path,
+        default=Path("docs/evaluation/cases/evaluation-cases.json"),
+    )
     parser.add_argument("--repeat", type=int, default=1)
-
     args = parser.parse_args()
 
-    output_path, summary_path = evaluate(
-        model_name=args.model,
-        repeat_count=args.repeat,
-    )
+    cases = load_cases(args.cases)
+    rows = []
+
+    with httpx.Client() as client:
+        token = login(client)
+
+        for case in cases:
+            for run in range(1, args.repeat + 1):
+                print(
+                    f"[{args.model}] {case['id']} "
+                    f"run {run}/{args.repeat}"
+                )
+
+                try:
+                    response, elapsed = ask(
+                        client,
+                        token,
+                        case["question"],
+                    )
+                    row = evaluate(
+                        case,
+                        response,
+                        elapsed,
+                        args.model,
+                        run,
+                    )
+                except Exception as error:
+                    row = failed_row(
+                        case,
+                        args.model,
+                        run,
+                        error,
+                    )
+
+                rows.append(row)
+
+                if not row["case_pass"]:
+                    print(f"  FAIL: {case['question']}")
+
+    model_name = args.model.replace(":", "-").replace("/", "-")
+    output_dir = Path("docs/evaluation/results") / model_name
+
+    write_csv(output_dir / "results.csv", rows)
+    write_csv(output_dir / "summary.csv", [summary(rows, args.model)])
 
     print("\nEvaluation completed.")
-    print(f"Result file: {output_path}")
-    print(f"Summary file: {summary_path}")
+    print(f"Results: {output_dir / 'results.csv'}")
+    print(f"Summary: {output_dir / 'summary.csv'}")
 
 
 if __name__ == "__main__":
