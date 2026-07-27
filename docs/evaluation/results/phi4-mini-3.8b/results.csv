@@ -1,0 +1,103 @@
+﻿model,case_id,run,question,answer,expected_response_type,response_type,response_type_match,expected_document_ids,actual_document_ids,source_match,accepted_sections,actual_sections,section_match,source_scores,required_keywords,keyword_match,keyword_hit_count,answer_format_match,bullet_count,answer_format_problems,case_pass,response_time_seconds,error,manual_quality_score,manual_notes
+phi4-mini-3.8b,ACC-E01,1,"Şifremi unuttum, nasıl sıfırlayabilirim?","- Kurumu sağladığı şifre sıfırlama ekranını kullanın.
+- Yeni bir şifre oluştururken büyük harf, küçük harf, rakam ve özel karakter içeren kuruma uygun şifre kurallarına uyun.",rag_answer,rag_answer,True,password-account-access,password-account-access,True,Şifre unutuldu,Şifre unutuldu,True,0.3402536879911521,şifre | sıfırlama,True,2,True,2,,True,17.697,,,
+phi4-mini-3.8b,ACC-N01,1,şifremi unuttum,"- Şifre sıfırlama ekranını kullanın.
+- Büyük harfle küçük harflere, rakamlara ve özel karakterlere sahip yeni bir şifre oluşturun.
+- Sorun devam ederse IT destek kaydı oluşturun.",rag_answer,rag_answer,True,password-account-access,password-account-access,True,Şifre unutuldu,Şifre unutuldu,True,0.4416602795349376,şifre | sıfırlama,True,2,True,3,,True,5.926,,,
+phi4-mini-3.8b,ACC-C01,1,şifreyi değiştirdim ama Outlook hâlâ eski parolayı istiyor,"- Kullanıcı adı ve yeni şifrenin doğru girildiğini kontrol edin.
+- Eski oturumları güncelleyin.
+- Parola istemesinin devam etmesi durumunda IT destek kaydı oluşturun.",rag_answer,rag_answer,True,password-account-access | email-outlook-support,email-outlook-support,True,Şifre değişti ancak uygulama eski şifreyi istiyor | Outlook sürekli parola istiyor,Outlook sürekli parola istiyor,True,0.294605416381025,yeni şifre,True,1,True,3,,True,2.379,,,
+phi4-mini-3.8b,EMAIL-E01,1,"Outlook çevrimdışı görünüyor, ne yapmalıyım?","- Bilgisayarın internet bağlantısını kontrol edin.
+- Outlook durum çubuğunda Çevrimdışı Çalış veya Bağlantı Kesildi uyarısı varsa çevrimdışı çalışma seçeneğini kapatın.
+- Sorun devam ederse bilgisayarınızı yeniden başlatın.",rag_answer,rag_answer,True,email-outlook-support,email-outlook-support,True,Outlook çevrimdışı görünüyor,Outlook çevrimdışı görünüyor,True,0.2606880769242591,internet | Outlook,True,2,True,3,,True,2.949,,,
+phi4-mini-3.8b,EMAIL-N01,1,mail gönderemiyorum,"- Alıcının doğru yazıldığından emin olun.
+- Gönderilemeyen mesajın Giden Kutusunda büyük dosya eklerini kaldırıp yeniden deneyin.
+- İnternet bağlantısı ve Outlook bağlantı durumunu kontrol edin.",rag_answer,rag_answer,True,email-outlook-support,email-outlook-support,True,E-posta gönderilemiyor,E-posta gönderilemiyor,True,0.3303129869885736,alıcı | Giden Kutusu,True,2,True,3,,True,3.06,,,
+phi4-mini-3.8b,EMAIL-C01,1,gönderdiğim mail giden kutusunda takılı kaldı,"- Alıcının doğru yazıldığından emin olun.
+- Büyük dosya eklerini kaldırın ve yeniden deneyin.
+- İnternet bağlantısı ve Outlook bağlantı durumunu kontrol edin.",rag_answer,rag_answer,True,email-outlook-support,email-outlook-support,True,E-posta gönderilemiyor,E-posta gönderilemiyor,True,0.4249843008774111,Giden Kutusu | alıcı,True,1,True,3,,True,2.329,,,
+phi4-mini-3.8b,VPN-E01,1,"VPN bağlantısı kurulamıyor, ne yapmalıyım?","- Bilgisayarın internet bağlantısını kontrol edin.
+- VPN istemcisinde doğru bağlantı profili seçin.
+- Kullanıcı adı ve güncel şifreyi kullanın.",rag_answer,rag_answer,True,vpn-remote-access,vpn-remote-access,True,VPN bağlantısı kurulamıyor,VPN bağlantısı kurulamıyor,True,0.24039607553200815,internet | VPN,True,2,True,3,,True,3.036,,,
+phi4-mini-3.8b,VPN-N01,1,vpn bağlanmıyor,"- Bilgisayarın internet bağlantısını kontrol edin.
+- VPN istemcisinde doğru bağlantı profili seçin.
+- Kullanıcı adı ile güncel şifre kullanın.",rag_answer,rag_answer,True,vpn-remote-access,vpn-remote-access,True,VPN bağlantısı kurulamıyor,VPN bağlantısı kurulamıyor,True,0.2811176944444155,internet | VPN,True,2,True,3,,True,2.733,,,
+phi4-mini-3.8b,VPN-C01,1,vpn bağlı görünüyor ama şirket içi sisteme giremiyorum,"- İç sistem adresini yeniden açın.
+- Tarayıcı kapatıp tekrar deneyin.",rag_answer,rag_answer,True,vpn-remote-access,vpn-remote-access,True,VPN bağlanıyor ancak iç sistemler açılmıyor,VPN bağlanıyor ancak iç sistemler açılmıyor,True,0.3311026893731298,VPN | sistem,True,1,True,2,,True,2.046,,,
+phi4-mini-3.8b,NET-E01,1,"İnternet bağlantım yok, ne yapmalıyım?","- Ağ simgesinde bağlantı durumunu kontrol edin.
+- Kablolu bağlantıda ağ kablosunun bilgisayara ve duvar prizine takılı olduğundan emin olun.
+- Kablosuz bağlantıda doğru kurum ağı seçin ve uçak modunun kapalı olduğundan emin olun.",rag_answer,rag_answer,True,network-connectivity,network-connectivity,True,İnternet bağlantısı yok,İnternet bağlantısı yok,True,0.30891975058081245,bağlantı,True,1,True,3,,True,2.995,,,
+phi4-mini-3.8b,NET-N01,1,internet yok,"- Ağ simgesinde bağlantı durumunu kontrol edin.
+- Kablolu bağlantıda ağ kablosunun bilgisayara ve duvar prizine takılı olduğundan emin olun.
+- Kablosuz bağlantıda doğru kurum ağı seçin ve uçak modunun kapalı olduğundan emin olun.",rag_answer,rag_answer,True,network-connectivity,network-connectivity,True,İnternet bağlantısı yok,İnternet bağlantısı yok,True,0.39777542312896896,bağlantı,True,1,True,3,,True,2.861,,,
+phi4-mini-3.8b,NET-C01,1,internet çalışıyor ama yalnızca bir site açılmıyor,"- Diğer internet sitelerinin açılıp açılmadığını kontrol edin.
+- Adresin doğru yazıldığından emin olun.
+- Farklı bir tarayıcıda veya gizli pencerede denemek için deneyin.",rag_answer,rag_answer,True,network-connectivity,network-connectivity,True,Yalnızca bir web sitesi açılmıyor,Yalnızca bir web sitesi açılmıyor,True,0.30423524069083485,site | tarayıcı,True,2,True,3,,True,2.757,,,
+phi4-mini-3.8b,HW-E01,1,"USB mouse çalışmıyor, ne yapmalıyım?","- Mouse bağlantısını farklı bir USB bağlantı noktasıyla kontrol edin.
+- Kablosuz mouse kullanılıyorsa güç düğmesini ve pil durumunu kontrol edin.",rag_answer,rag_answer,True,hardware-peripherals,hardware-peripherals,True,Mouse çalışmıyor,Mouse çalışmıyor,True,0.3273331918516843,mouse | USB,True,2,True,2,,True,2.19,,,
+phi4-mini-3.8b,HW-N01,1,klavye çalışmıyor,"- Klavye bağlantısını kontrol edin.
+- USB bağlantılı klavyeyi çıkarıp yeniden takın, farklı bir USB bağlantı noktası deneyin.
+- Kablosuz klavye için pil ve alıcı bağlantısını kontrol edin.",rag_answer,rag_answer,True,hardware-peripherals,hardware-peripherals,True,Klavye çalışmıyor,Klavye çalışmıyor,True,0.3220993320586638,klavye | USB,True,2,True,3,,True,2.586,,,
+phi4-mini-3.8b,HW-C01,1,ikinci ekranı bağladım ama görüntü gelmiyor,"- Monitörde doğru ikinci ekranın seçildiğinden emin olun.
+- İkinci monitör kullanılıyorsa Windows'da ekran algılama işlemini çalıştırın.",rag_answer,rag_answer,True,hardware-peripherals,hardware-peripherals,True,Monitör görüntü vermiyor,Monitör görüntü vermiyor,True,0.31769848009658774,monitör | görüntü,True,1,True,2,,True,2.238,,,
+phi4-mini-3.8b,MEET-E01,1,"Toplantı odası kamerası çalışmıyor, ne yapmalıyım?","- Kamera bağlantısı ve USB kablosunu kontrol edin.
+- Kablo çıkarıp yeniden takın.
+- Toplantı uygulamasında doğru kameranın seçildiğini doğrulayın.",rag_answer,rag_answer,True,meeting-room-av,meeting-room-av,True,Toplantı odası kamerası çalışmıyor,Toplantı odası kamerası çalışmıyor,True,0.24399664926486841,kamera | USB,True,2,True,3,,True,2.565,,,
+phi4-mini-3.8b,MEET-N01,1,kamera çalışmıyor,"- Kamera bağlantısı ve USB kablosunu kontrol edin.
+- Kablo çıkarıp yeniden takın.
+- Toplantı uygulamasında doğru kameranın seçildiğini doğrulayın.",rag_answer,rag_answer,True,meeting-room-av,meeting-room-av,True,Toplantı odası kamerası çalışmıyor,Toplantı odası kamerası çalışmıyor,True,0.33672821461053704,kamera | USB,True,2,True,3,,True,2.377,,,
+phi4-mini-3.8b,MEET-C01,1,toplantıda karşı taraf sesimi duymuyor,"- Toplantı uygulamasında mikrofon simgesinin kapalı olup olmadığını kontrol edin.
+- İşletim sistemi mikrofon izni açık olduğundan emin olun.",rag_answer,rag_answer,True,meeting-room-av,meeting-room-av,True,Toplantıda ses karşı tarafa gitmiyor | Toplantı odası mikrofonu çalışmıyor,Toplantıda ses karşı tarafa gitmiyor,True,0.327918768897266,mikrofon,True,1,True,2,,True,2.106,,,
+phi4-mini-3.8b,PRINT-E01,1,"Yazıcıdan çıktı alamıyorum, ne yapmalıyım?","- Yazıcının doğru seçildiğinden ve çevrimiçi göründüğünden emin olun.
+- Yazdırma kuyruğudaki hatalı işler temizleyin ve belgenizi yeniden gönderin.
+- Yazıcı ekranında hata veya uyarı varsa, destek kaydına eklenmesi gereken hata mesajını not edin.",rag_answer,rag_answer,True,printer-scanner,printer-scanner,True,Yazıcı çıktı vermiyor,Yazıcı çıktı vermiyor,True,0.2938529077855686,yazıcı | kuyruk,True,1,True,3,,True,2.643,,,
+phi4-mini-3.8b,PRINT-N01,1,yazıcı çıktı vermiyor,"- Yazıcının doğru seçildiğini ve çevrimiçi olarak bulunup bulunmadığını kontrol edin.
+- Yazdırma kuyruğunda bekleyen hatalı işler temizleyin ve belgenizi yeniden gönderin.
+- Yazıcı ekranında hata veya uyarı varsa, bu hataları destek kaydına ekleyin.",rag_answer,rag_answer,True,printer-scanner,printer-scanner,True,Yazıcı çıktı vermiyor,Yazıcı çıktı vermiyor,True,0.32136527554574434,yazıcı | kuyruk,True,1,True,3,,True,2.503,,,
+phi4-mini-3.8b,PRINT-C01,1,taradığım dosyayı e-postayla gönderemiyorum,"- Dosya boyutunu kontrol edin.
+- Alıcı adresini ve posta kutasını doğrulayın.",rag_answer,rag_answer,True,printer-scanner,printer-scanner,True,Tarama dosyası gönderilemiyor,Tarama dosyası gönderilemiyor,True,0.31453597545621836,dosya | boyut,True,2,True,2,,True,1.894,,,
+phi4-mini-3.8b,FILES-E01,1,"Ortak klasöre erişim reddediliyor, ne yapmalıyım?","- Doğru klasör yolunun kullanıldığından emin olun.
+- Kullanıcının ilgili klasör için yetkili olup olmadığını doğrulayın.
+- Yüksek izin gerektirmeyen bir durum ise yalnızca okuma erişimi talep edin.",rag_answer,rag_answer,True,shared-folder-access,shared-folder-access,True,Ortak klasöre erişim reddedildi,Ortak klasöre erişim reddedildi,True,0.30217149082595807,klasör | yetki,True,2,True,3,,True,2.506,,,
+phi4-mini-3.8b,FILES-N01,1,ortak klasör açılmıyor,"- Kurum ağına veya VPN'e bağlı olduğundan emin olun.
+- Ağ sürücüsü bağlantısını yeniden başlatın ve oturum kapatıp tekrar giriş yapın.
+- Sorun devam ederse, klasör yolu, kullanıcı adı ve erişim amacıyla destek kaydı oluşturun.",rag_answer,rag_answer,True,shared-folder-access,shared-folder-access,True,Ortak klasöre erişim reddedildi,Ortak klasör görünmüyor,False,0.313292659913599,klasör | yetki,True,1,True,3,,False,2.595,,,
+phi4-mini-3.8b,FILES-C01,1,dosya bende kapalı ama başka kullanıcıda açık görünüyor,- Dosyanıza erişimi engellemek için ilgili kişiden dosyayı kapatın.,rag_answer,rag_answer,True,shared-folder-access,shared-folder-access,True,Dosya başka kullanıcı tarafından kullanılıyor,Dosya başka kullanıcı tarafından kullanılıyor,True,0.31211189555454755,dosya | kullanıcı,True,1,True,1,,True,1.902,,,
+phi4-mini-3.8b,SW-E01,1,Yeni bir yazılım kurulumu için talep oluşturmak istiyorum.,"- Yazılımın adı, sürümü, kullanım amacı, bilgisayar ve kullanıcı bilgilerini belirtin.
+- Lisans gerektiren yazılımlarda lisans durumu ve yönetici onayı ekleyin.
+- Kurum onayı olmadan internetten yazılım indirmeyin veya kurmayın.",rag_answer,rag_answer,True,software-installation-access,software-installation-access,True,Yeni yazılım kurulumu talebi,Yeni yazılım kurulumu talebi,True,0.3336586754206037,yazılım | kullanım amacı,True,2,True,3,,True,2.56,,,
+phi4-mini-3.8b,SW-N01,1,program yükletmem lazım,- Bu konuda kaynak dokümanlarda yeterli bilgi bulamadım. IT destek ekibiyle iletişime geçebilirsiniz.,rag_answer,no_relevant_source,False,software-installation-access,,False,Yeni yazılım kurulumu talebi,,False,,yazılım | kullanım amacı,False,0,True,0,,False,15.758,,,
+phi4-mini-3.8b,SW-C01,1,Bakım Takip Portalı iş yerinde açılıyor ama uzaktan açılmıyor,"- Kurum ağına veya VPN'e bağlı olduğundan emin olun.
+- Farklı bir tarayıcıda portal adresini tekrar deneyin.",rag_answer,rag_answer,True,software-installation-access,software-installation-access,True,Bakım Takip Portalı açılmıyor,Bakım Takip Portalı açılmıyor,True,0.36154116965423266,portal | VPN,True,2,True,2,,True,21.135,,,
+phi4-mini-3.8b,SEC-E01,1,"Şüpheli bir e-posta aldım, ne yapmalıyım?","- Gönderen adresini ve bağlantı adresini kontrol edin.
+- Ek dosya adlarını gözden geçirin.
+- Olağan dışı ödeme veya parola isteklerini arayın.",rag_answer,rag_answer,True,security-mfa-phishing,security-mfa-phishing,True,Şüpheli e-posta alındı,Şüpheli e-posta alındı,True,0.3305137162481091,bağlantı | ek,True,2,True,3,,True,6.789,,,
+phi4-mini-3.8b,SEC-N01,1,bu mail bana şüpheli geldi,"- Gönderen adresini, bağlantı adresini ve ek dosya adını kontrol edin.
+- E-postayı IT destek veya bilgi güvenliği ekibiyle bildirinizden önce silin.
+- Olağan dışı ödeme veya parola isteklerini gözlemleyin.",rag_answer,rag_answer,True,security-mfa-phishing,security-mfa-phishing,True,Şüpheli e-posta alındı,Şüpheli e-posta alındı,True,0.39545595510481346,bağlantı | ek,True,2,True,3,,True,2.326,,,
+phi4-mini-3.8b,SEC-C01,1,ben işlem yapmadığım halde telefona MFA onayı geldi,"- Hesabınızda MFA (Multi-Factor Authentication) onayını fark ettiğinizde, bu durumun yanlış bir şekilde gerçekleştiğini belirtin ve hesap parolası değiştirin.
+- Olay saati ve kullanılan uygulama bilgisiyle bilgi güvenliği ekibine bildirim verin.",rag_answer,rag_answer,True,security-mfa-phishing,security-mfa-phishing,True,Beklenmeyen MFA onayı geliyor,Beklenmeyen MFA onayı geliyor,True,0.39940838824351943,onay | parola,True,2,True,2,,True,2.568,,,
+phi4-mini-3.8b,REQ-E01,1,Yeni dizüstü bilgisayar talebi nasıl oluşturulur?,"- Talepte kullanıcı adı, sicil numarası, departman ve görev bilgisi belirtin.
+- Kullanım amacı açıklayın.
+- Standart dışı donanım ihtiyacı varsa gerekli işlemci, bellek veya bağlantı özellikleri iş gerekçesiyle açıklayın.",rag_answer,rag_answer,True,equipment-request-process,equipment-request-process,True,Yeni dizüstü bilgisayar talebi,Yeni dizüstü bilgisayar talebi,True,0.34506700156514314,talep | onay,True,1,True,3,,True,2.652,,,
+phi4-mini-3.8b,REQ-N01,1,acil laptop ihtiyacım var,- Bu asistan yalnızca IT destek konularında yardımcı olabilir.,rag_answer,out_of_scope,False,equipment-request-process,,False,Acil ekipman ihtiyacı | Yeni dizüstü bilgisayar talebi,,False,,acil | onay,False,0,True,0,,False,15.289,,,
+phi4-mini-3.8b,REQ-C01,1,ekipman talebimin hangi aşamada olduğunu öğrenmek istiyorum,- Talep sürecinin adımlarını kontrol edin.,rag_answer,rag_answer,True,equipment-request-process,equipment-request-process,True,Ekipman talebi durumu,Genel,False,0.491951704025236,talep | numara,True,1,True,1,,False,20.34,,,
+phi4-mini-3.8b,TICKET-E01,1,IT destek kaydı açarken hangi bilgileri eklemeliyim?,"- Cihazın, hata saati, ekran görüntüsü ve kullanıcı bilgilerinin mevcut kayıt üzerinden paylaşılmasını sağlayın.
+- Sorunun değiştiği veya farklı bir uygulamayı etkilemeye başladığı durumlar açıklayın.",rag_answer,rag_answer,True,it-support-ticket-process,it-support-ticket-process,True,Destek kaydında bulunması gereken bilgiler,Destek kaydına ek bilgi ekleme,False,0.38638156178161753,kullanıcı | cihaz,True,2,True,2,,False,5.963,,,
+phi4-mini-3.8b,TICKET-N01,1,destek kaydı nasıl açılır,"- Kullanıcı adı, sicil numarası, departman, cihaz etiketi ve iletişim bilgisi yazın.
+- Sorunun kısa ama açık şekilde açıklayın; hangi uygulama veya cihazda yaşandığı belirtin.
+- Hata mesajını, olay saati ve sorunu tekrar oluşturmak için uygulanan adımları ekleyin.",rag_answer,rag_answer,True,it-support-ticket-process,it-support-ticket-process,True,Destek kaydında bulunması gereken bilgiler,Destek kaydında bulunması gereken bilgiler,True,0.4482653860412481,kullanıcı | cihaz,True,2,True,3,,True,2.72,,,
+phi4-mini-3.8b,TICKET-C01,1,"aynı sorun devam ediyor, yeniden talep açayım mı?",- Mevcut kayıt güncellenir.,rag_answer,rag_answer,True,it-support-ticket-process,it-support-ticket-process,True,Aynı sorun için tekrar kayıt açma,Aynı sorun için tekrar kayıt açma,True,0.3788119717163232,mevcut kayıt,True,1,True,1,,True,1.746,,,
+phi4-mini-3.8b,NOSRC-01,1,SAP sevkiyat ekranında teslimat belgesi oluşmuyor,- Bu konuda kaynak dokümanlarda yeterli bilgi bulamadım. IT destek ekibiyle iletişime geçebilirsiniz.,no_relevant_source,no_relevant_source,True,,,True,,,True,,,True,0,True,0,,True,15.12,,,
+phi4-mini-3.8b,NOSRC-02,1,bordro portalında maaş bordrom eksik görünüyor,- Bu konuda kaynak dokümanlarda yeterli bilgi bulamadım. IT destek ekibiyle iletişime geçebilirsiniz.,no_relevant_source,no_relevant_source,True,,,True,,,True,,,True,0,True,0,,True,4.962,,,
+phi4-mini-3.8b,NOSRC-03,1,üretim takip ekranında vardiya raporu görünmüyor,- Bu konuda kaynak dokümanlarda yeterli bilgi bulamadım. IT destek ekibiyle iletişime geçebilirsiniz.,no_relevant_source,no_relevant_source,True,,,True,,,True,,,True,0,True,0,,True,1.404,,,
+phi4-mini-3.8b,NOSRC-04,1,CRM sisteminde müşteri kartını kaydedemiyorum,- Bu konuda kaynak dokümanlarda yeterli bilgi bulamadım. IT destek ekibiyle iletişime geçebilirsiniz.,no_relevant_source,no_relevant_source,True,,,True,,,True,,,True,0,True,0,,True,1.416,,,
+phi4-mini-3.8b,OOS-01,1,bugün hava nasıl,- Bu asistan yalnızca IT destek konularında yardımcı olabilir.,out_of_scope,out_of_scope,True,,,True,,,True,,,True,0,True,0,,True,1.437,,,
+phi4-mini-3.8b,OOS-02,1,bana makarna tarifi ver,- Bu asistan yalnızca IT destek konularında yardımcı olabilir.,out_of_scope,out_of_scope,True,,,True,,,True,,,True,0,True,0,,True,1.421,,,
+phi4-mini-3.8b,OOS-03,1,CNC tezgahında takım ömrü alarmı var,- Bu asistan yalnızca IT destek konularında yardımcı olabilir.,out_of_scope,out_of_scope,True,,,True,,,True,,,True,0,True,0,,True,1.438,,,
+phi4-mini-3.8b,OOS-04,1,forkliftin hidrolik sistemi çalışmıyor,- Bu asistan yalnızca IT destek konularında yardımcı olabilir.,out_of_scope,out_of_scope,True,,,True,,,True,,,True,0,True,0,,True,1.399,,,
+phi4-mini-3.8b,OOS-05,1,bana kısa bir şiir yazar mısın,- Bu asistan yalnızca IT destek konularında yardımcı olabilir.,out_of_scope,out_of_scope,True,,,True,,,True,,,True,0,True,0,,True,1.423,,,
+phi4-mini-3.8b,STATIC-01,1,merhaba,"Merhaba, ben İZELTAŞ IT Danışma Asistanı’yım. IT destek süreçleriyle ilgili sorularınızda yardımcı olabilirim.",static_response,static_response,True,,,True,,,True,,,True,0,True,0,,True,0.679,,,
+phi4-mini-3.8b,STATIC-02,1,sen kimsin,"Ben İZELTAŞ IT Danışma Asistanı’yım. Lokal LLM ve RAG yapısıyla, yüklenen IT destek dokümanlarına göre VPN, şifre, Outlook, yazıcı, donanım, ağ bağlantısı, ortak klasör erişimi, yazılım yetkileri ve ekipman talepleri gibi konularda yardımcı olabilirim.",static_response,static_response,True,,,True,,,True,,,True,0,True,0,,True,0.665,,,
+phi4-mini-3.8b,STATIC-03,1,ne yapabiliyorsun,"Ben İZELTAŞ IT Danışma Asistanı’yım. Lokal LLM ve RAG yapısıyla, yüklenen IT destek dokümanlarına göre VPN, şifre, Outlook, yazıcı, donanım, ağ bağlantısı, ortak klasör erişimi, yazılım yetkileri ve ekipman talepleri gibi konularda yardımcı olabilirim.",static_response,static_response,True,,,True,,,True,,,True,0,True,0,,True,0.71,,,
+phi4-mini-3.8b,STATIC-04,1,teşekkürler,Rica ederim. IT süreçleriyle ilgili başka bir konuda da yardımcı olabilirim.,static_response,static_response,True,,,True,,,True,,,True,0,True,0,,True,0.678,,,

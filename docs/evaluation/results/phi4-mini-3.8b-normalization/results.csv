@@ -1,0 +1,37 @@
+﻿model,case_id,run,question,answer,expected_response_type,response_type,response_type_match,expected_document_ids,actual_document_ids,source_match,accepted_sections,actual_sections,section_match,source_scores,required_keywords,keyword_match,keyword_hit_count,answer_format_match,bullet_count,answer_format_problems,case_pass,response_time_seconds,error,manual_quality_score,manual_notes
+phi4-mini-3.8b-normalization,NORM-ACC-01,1,Şifremi unuttum,"- Şifre sıfırlama ekranını kullanın.
+- Yeni şifre kurallarına göre büyük harf, küçük harf, rakam ve özel karakter içeren bir şifre oluşturun.
+- Bağlantı farklı bir tarayıcıda deneyin eğer açılmıyorsa.",rag_answer,rag_answer,True,password-account-access,password-account-access,True,Şifre unutuldu,Şifre unutuldu,True,0.4416602795349376,şifre | sıfırlama,True,2,True,3,,True,18.043,,,
+phi4-mini-3.8b-normalization,NORM-ACC-02,1,ŞİFREMİ UNUTTUM.,"- Şifrenizi sıfırlama ekranını kullanın.
+- Yeni şifre kurallarına göre büyük harf, küçük harf, rakam ve özel karakter içeren bir şifre oluşturun.
+- Bağlantı farklı bir tarayıcıda deneyin eğer açılmıyorsa.",rag_answer,rag_answer,True,password-account-access,password-account-access,True,Şifre unutuldu,Şifre unutuldu,True,0.4416602795349376,şifre | sıfırlama,True,2,True,3,,True,6.761,,,
+phi4-mini-3.8b-normalization,NORM-ACC-03,1,  Şifremi   unuttum.  ,"- Şifre sıfırlama ekranını kullanın.
+- Büyük harfle küçük harflere, rakamlara ve özel karakterlere sahip yeni bir şifre oluşturun.
+- Sorun devam ederse IT destek kaydı oluşturun.",rag_answer,rag_answer,True,password-account-access,password-account-access,True,Şifre unutuldu,Şifre unutuldu,True,0.4416602795349376,şifre | sıfırlama,True,2,True,3,,True,2.251,,,
+phi4-mini-3.8b-normalization,NORM-ACC-04,1,şifremi unuttum???,"- Şifre sıfırlama ekranını kullanın.
+- Büyük harfle küçük harflere, rakamlara ve özel karakterlere sahip yeni bir şifre oluşturun.
+- Sorun devam ederse IT destek kaydı oluşturun.",rag_answer,rag_answer,True,password-account-access,password-account-access,True,Şifre unutuldu,Şifre unutuldu,True,0.4416602795349376,şifre | sıfırlama,True,2,True,3,,True,2.205,,,
+phi4-mini-3.8b-normalization,NORM-VPN-01,1,VPN bağlanmıyor,"- Bilgisayarın internet bağlantısını kontrol edin.
+- VPN istemcisinde doğru bağlantı profili seçin, kullanıcı adı ile güncel şifre kullanın.
+- Şifrenin yakın zamanda değiştirildiyse, eski bilgiler temizleyip yeni şifreyle giriş yapın.",rag_answer,rag_answer,True,vpn-remote-access,vpn-remote-access,True,VPN bağlantısı kurulamıyor,VPN bağlantısı kurulamıyor,True,0.2811176944444155,internet | VPN,True,2,True,3,,True,2.874,,,
+phi4-mini-3.8b-normalization,NORM-VPN-02,1,VPN BAĞLANMIYOR.,"- Bilgisayarın internet bağlantısını kontrol edin.
+- VPN istemcisinde doğru bağlantı profili seçin.
+- Kullanıcı adı ile güncel şifre kullanın.",rag_answer,rag_answer,True,vpn-remote-access,vpn-remote-access,True,VPN bağlantısı kurulamıyor,VPN bağlantısı kurulamıyor,True,0.2811176944444155,internet | VPN,True,2,True,3,,True,2.68,,,
+phi4-mini-3.8b-normalization,NORM-VPN-03,1,  vpn   bağlanmıyor.  ,"- Bilgisayarın internet bağlantısını kontrol edin.
+- VPN istemcisinde doğru bağlantı profili seçin.
+- Kullanıcı adı ile güncel şifre kullanın.",rag_answer,rag_answer,True,vpn-remote-access,vpn-remote-access,True,VPN bağlantısı kurulamıyor,VPN bağlantısı kurulamıyor,True,0.2811176944444155,internet | VPN,True,2,True,3,,True,2.721,,,
+phi4-mini-3.8b-normalization,NORM-VPN-04,1,vpn bağlanmıyor!!!,"- Bilgisayarın internet bağlantısını kontrol edin.
+- VPN istemcisinde doğru bağlantı profili seçin.
+- Kullanıcı adı ile güncel şifre kullanın.",rag_answer,rag_answer,True,vpn-remote-access,vpn-remote-access,True,VPN bağlantısı kurulamıyor,VPN bağlantısı kurulamıyor,True,0.2811176944444155,internet | VPN,True,2,True,3,,True,2.71,,,
+phi4-mini-3.8b-normalization,NORM-EMAIL-01,1,Mail gönderemiyorum,"- Alıcının doğru yazıldığından emin olun.
+- Gönderilemeyen mesajın Giden Kutusunda büyük dosya eklerini kaldırıp yeniden deneyin.
+- İnternet bağlantısı ve Outlook bağlantı durumunu kontrol edin.",rag_answer,rag_answer,True,email-outlook-support,email-outlook-support,True,E-posta gönderilemiyor,E-posta gönderilemiyor,True,0.3303129869885736,alıcı | Giden Kutusu,True,2,True,3,,True,2.927,,,
+phi4-mini-3.8b-normalization,NORM-EMAIL-02,1,MAİL GÖNDEREMİYORUM.,"- Alıcının doğru yazıldığından emin olun.
+- Gönderilemeyen mesajın Giden Kutusunda büyük dosya eklerini kaldırarak yeniden deneyin.
+- İnternet bağlantısı ve Outlook bağlantı durumunu kontrol edin.",rag_answer,rag_answer,True,email-outlook-support,email-outlook-support,True,E-posta gönderilemiyor,E-posta gönderilemiyor,True,0.3303129869885736,alıcı | Giden Kutusu,True,2,True,3,,True,2.725,,,
+phi4-mini-3.8b-normalization,NORM-EMAIL-03,1,  Mail   gönderemiyorum.  ,"- Alıcının doğru yazıldığından emin olun.
+- Gönderilemeyen mesajın Giden Kutusu içinde büyük dosya eklerini kaldırarak yeniden deneyin.
+- İnternet bağlantısı ve Outlook bağlantı durumunu kontrol edin.",rag_answer,rag_answer,True,email-outlook-support,email-outlook-support,True,E-posta gönderilemiyor,E-posta gönderilemiyor,True,0.3303129869885736,alıcı | Giden Kutusu,True,2,True,3,,True,2.78,,,
+phi4-mini-3.8b-normalization,NORM-EMAIL-04,1,mail gönderemiyorum???,"- Alıcının doğru yazıldığından emin olun.
+- Büyük dosyaları kaldırın ve yeniden deneyin.
+- İnternet bağlantısını kontrol edin.",rag_answer,rag_answer,True,email-outlook-support,email-outlook-support,True,E-posta gönderilemiyor,E-posta gönderilemiyor,True,0.3303129869885736,alıcı | Giden Kutusu,True,1,True,3,,True,2.487,,,
