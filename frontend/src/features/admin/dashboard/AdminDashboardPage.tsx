@@ -11,6 +11,7 @@ import {
   type ResponseTypeCount,
 } from "../../../api/adminApi";
 import type { CurrentUserResponse } from "../../../api/authApi";
+import { humanize } from "../../../utils/humanize";
 import AdminLayout from "../shared/AdminLayout";
 import DistributionCard from "./DistributionCard";
 import SummaryCards from "./SummaryCards";
@@ -33,10 +34,6 @@ const responseTypeLabels: Record<string, string> = {
   llm_error: "LLM hatası",
   unknown: "Bilinmiyor",
 };
-
-function humanize(value: string) {
-  return value.replaceAll("_", " ").replace(/^./, (letter) => letter.toLocaleUpperCase("tr-TR"));
-}
 
 function AdminDashboardPage({
   user,

@@ -1,4 +1,5 @@
 import { getAccessToken } from "./authApi";
+import type { PaginatedResponse } from "../types/pagination";
 
 export interface AdminDocument {
   document_id: string;
@@ -10,13 +11,7 @@ export interface AdminDocument {
   chunk_count: number;
 }
 
-export interface PaginatedAdminDocuments {
-  items: AdminDocument[];
-  total: number;
-  limit: number;
-  offset: number;
-  has_more: boolean;
-}
+export type PaginatedAdminDocuments = PaginatedResponse<AdminDocument>;
 
 export interface DocumentCategory {
   category: string;

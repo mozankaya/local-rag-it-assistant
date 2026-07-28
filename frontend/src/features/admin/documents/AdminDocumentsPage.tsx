@@ -13,6 +13,7 @@ import {
   type UploadDocumentPayload,
 } from "../../../api/adminDocumentsApi";
 import type { CurrentUserResponse } from "../../../api/authApi";
+import { downloadBlob } from "../../../utils/downloadBlob";
 import AdminLayout from "../shared/AdminLayout";
 import DocumentUploadModal from "./DocumentUploadModal";
 import DocumentsTable from "./DocumentsTable";
@@ -204,15 +205,7 @@ function AdminDocumentsPage({
         .pop()
         ?.trim();
       const fileName = sourceName || document.document_id;
-      const objectUrl = URL.createObjectURL(blob);
-      const downloadLink = window.document.createElement("a");
-
-      downloadLink.href = objectUrl;
-      downloadLink.download = fileName;
-      window.document.body.appendChild(downloadLink);
-      downloadLink.click();
-      downloadLink.remove();
-      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+      downloadBlob(blob, fileName);
 
       setSuccess(`${fileName} indirme işlemi başlatıldı.`);
     } catch (requestError) {
