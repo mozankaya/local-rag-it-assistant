@@ -4,7 +4,7 @@
 source_file_name: hardware-peripherals.md
 source_file_type: md
 content_hash: 583ce1daa5556bc5219ea9b217f9982f6a5b9da37b54ee4f3f3c91c7bdd47938
-processed_at: 2026-07-24T14:36:00
+processed_at: 2026-07-27T16:48:21
 -->
 
 # Bilgisayar ve Çevre Birimleri Desteği

@@ -4,6 +4,8 @@ Bu doküman yeni ekipman talebi, arızalı cihaz değişimi, acil ihtiyaç, tesl
 
 ## Yeni dizüstü bilgisayar talebi
 
+Bu bölüm dizüstü bilgisayar, laptop, bilgisayar ve diğer IT ekipmanı ihtiyaçları için oluşturulan talepleri açıklar.
+
 Talepte kullanıcı adı, sicil numarası, departman, görev bilgisi ve kullanım amacı belirtilmelidir.
 
 Standart dışı donanım ihtiyacı varsa gerekli işlemci, bellek veya bağlantı özellikleri iş gerekçesiyle açıklanmalıdır.
@@ -25,6 +27,8 @@ Mümkünse cihaz farklı bir USB bağlantı noktası veya başka bilgisayarda te
 Donanım arızası doğrulanırsa değişim talebi oluşturulmalıdır.
 
 ## Acil ekipman ihtiyacı
+
+Bu bölüm acil laptop, bilgisayar, monitör veya diğer IT ekipmanı ihtiyaçları için izlenecek talep sürecini açıklar.
 
 Talebin neden acil olduğu ve işin hangi kısmını durdurduğu açıkça yazılmalıdır.
 

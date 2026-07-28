@@ -4,7 +4,7 @@
 source_file_name: password-account-access.md
 source_file_type: md
 content_hash: adad1ea7272387f74d30853bdb396952eb0ae9599d8dc382e60b37f33123d362
-processed_at: 2026-07-24T14:36:00
+processed_at: 2026-07-27T16:48:21
 -->
 
 # Şifre ve Hesap Erişimi

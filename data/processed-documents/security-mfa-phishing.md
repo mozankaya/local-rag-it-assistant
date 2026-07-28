@@ -4,7 +4,7 @@
 source_file_name: security-mfa-phishing.md
 source_file_type: md
 content_hash: 930e1ff0ded7fb816bd456a08fe19c5a47f0db61daa2092abbac7c7b8671b7d8
-processed_at: 2026-07-24T14:36:00
+processed_at: 2026-07-27T16:48:21
 -->
 
 # Bilgi Güvenliği ve Çok Faktörlü Doğrulama

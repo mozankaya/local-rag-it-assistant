@@ -4,7 +4,7 @@
 source_file_name: email-outlook-support.md
 source_file_type: md
 content_hash: 5152073a2dc4a8c7760d378757402998b73eae8901ff900c803f620471435f0c
-processed_at: 2026-07-24T14:36:00
+processed_at: 2026-07-27T16:48:21
 -->
 
 # E-posta ve Outlook Desteği

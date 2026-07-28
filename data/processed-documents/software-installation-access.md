@@ -3,8 +3,8 @@
 <!--
 source_file_name: software-installation-access.md
 source_file_type: md
-content_hash: 9c2ca5909bfb90fe0a17b2c553b4e05c345ea9c7b4a679351bf28352db10c222
-processed_at: 2026-07-24T14:36:00
+content_hash: 0e344efeb550b3d9bbbf78b26c3050a0da5e5beac9531ebce26f6d957e86c075
+processed_at: 2026-07-27T16:48:21
 -->
 
 # Yazılım Kurulumu ve Uygulama Erişimi
@@ -13,7 +13,11 @@ Bu doküman yazılım kurulum talepleri, uygulama açılmaması, lisans sorunlar
 
 ## Yeni yazılım kurulumu talebi
 
-Talepte yazılımın adı, sürümü, kullanım amacı, kullanılacağı bilgisayar ve kullanıcı bilgileri belirtilmelidir.
+Bu bölüm program, uygulama veya yazılım yükleme ve kurulum taleplerini açıklar.
+
+Talepte yazılımın adı, sürümü, kullanım amacı, kullanılacağı bilgisayar ile talebi açan kullanıcının adı, soyadı, departmanı ve kurumsal e-posta adresi belirtilmelidir.
+
+Parola, MFA doğrulama kodu, erişim anahtarı, API anahtarı veya başka bir gizli bilgi destek talebine eklenmemelidir.
 
 Lisans gerektiren yazılımlarda lisans durumu ve yönetici onayı eklenmelidir. Kullanıcılar kurum onayı olmadan internetten yazılım indirip kurmamalıdır.
 

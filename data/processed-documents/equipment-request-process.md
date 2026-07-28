@@ -3,8 +3,8 @@
 <!--
 source_file_name: equipment-request-process.md
 source_file_type: md
-content_hash: 67ce1452157dce750684e00939a1b03fd5292762e74235c1f36b476bd8720905
-processed_at: 2026-07-24T14:36:00
+content_hash: 37067d9e90bf80e3c9664718a0a79aac2d765543ef49a09d4f97b3750ea9d36c
+processed_at: 2026-07-27T16:48:21
 -->
 
 # IT Ekipman Talep ve Teslim Süreci
@@ -12,6 +12,8 @@ processed_at: 2026-07-24T14:36:00
 Bu doküman yeni ekipman talebi, arızalı cihaz değişimi, acil ihtiyaç, teslim ve iade süreçlerini açıklar.
 
 ## Yeni dizüstü bilgisayar talebi
+
+Bu bölüm dizüstü bilgisayar, laptop, bilgisayar ve diğer IT ekipmanı ihtiyaçları için oluşturulan talepleri açıklar.
 
 Talepte kullanıcı adı, sicil numarası, departman, görev bilgisi ve kullanım amacı belirtilmelidir.
 
@@ -34,6 +36,8 @@ Mümkünse cihaz farklı bir USB bağlantı noktası veya başka bilgisayarda te
 Donanım arızası doğrulanırsa değişim talebi oluşturulmalıdır.
 
 ## Acil ekipman ihtiyacı
+
+Bu bölüm acil laptop, bilgisayar, monitör veya diğer IT ekipmanı ihtiyaçları için izlenecek talep sürecini açıklar.
 
 Talebin neden acil olduğu ve işin hangi kısmını durdurduğu açıkça yazılmalıdır.
 

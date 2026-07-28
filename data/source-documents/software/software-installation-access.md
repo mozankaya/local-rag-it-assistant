@@ -4,7 +4,11 @@ Bu doküman yazılım kurulum talepleri, uygulama açılmaması, lisans sorunlar
 
 ## Yeni yazılım kurulumu talebi
 
-Talepte yazılımın adı, sürümü, kullanım amacı, kullanılacağı bilgisayar ve kullanıcı bilgileri belirtilmelidir.
+Bu bölüm program, uygulama veya yazılım yükleme ve kurulum taleplerini açıklar.
+
+Talepte yazılımın adı, sürümü, kullanım amacı, kullanılacağı bilgisayar ile talebi açan kullanıcının adı, soyadı, departmanı ve kurumsal e-posta adresi belirtilmelidir.
+
+Parola, MFA doğrulama kodu, erişim anahtarı, API anahtarı veya başka bir gizli bilgi destek talebine eklenmemelidir.
 
 Lisans gerektiren yazılımlarda lisans durumu ve yönetici onayı eklenmelidir. Kullanıcılar kurum onayı olmadan internetten yazılım indirip kurmamalıdır.
 
