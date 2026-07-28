@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { CurrentUserResponse } from "../../api/authApi";
+import type { CurrentUserResponse } from "../../../api/authApi";
 
 interface AdminLayoutProps {
   user: CurrentUserResponse;

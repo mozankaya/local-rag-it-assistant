@@ -1,4 +1,5 @@
 import { getAccessToken } from "./authApi";
+import type { PaginatedResponse } from "../types/pagination";
 
 export interface DashboardSummary {
   total_questions: number;
@@ -51,13 +52,7 @@ export interface ReviewItem {
   created_at?: string | null;
 }
 
-export interface PaginatedReviewItems {
-  items: ReviewItem[];
-  total: number;
-  limit: number;
-  offset: number;
-  has_more: boolean;
-}
+export type PaginatedReviewItems = PaginatedResponse<ReviewItem>;
 
 export class AdminApiError extends Error {
   status: number;

@@ -3,11 +3,11 @@ import {
   AdminApiError,
   getReviewItems,
   type ReviewItem,
-} from "../../api/adminApi";
-import type { CurrentUserResponse } from "../../api/authApi";
-import AdminLayout from "./AdminLayout";
+} from "../../../api/adminApi";
+import type { CurrentUserResponse } from "../../../api/authApi";
+import AdminLayout from "../shared/AdminLayout";
 import ReviewItemsList, { type ReviewFilter } from "./ReviewItemsList";
-import "./admin.css";
+import "../../../components/admin/admin.css";
 
 interface AdminReviewItemsPageProps {
   user: CurrentUserResponse;

@@ -1,6 +1,8 @@
 import { getAccessToken } from "./authApi";
+import type { PaginatedResponse } from "../types/pagination";
+import type { UserRole } from "../types/user";
 
-export type UserRole = "admin" | "user";
+export type { UserRole } from "../types/user";
 
 export interface AdminUser {
   id: number;
@@ -11,13 +13,7 @@ export interface AdminUser {
   created_at?: string | null;
 }
 
-export interface PaginatedAdminUsers {
-  items: AdminUser[];
-  total: number;
-  limit: number;
-  offset: number;
-  has_more: boolean;
-}
+export type PaginatedAdminUsers = PaginatedResponse<AdminUser>;
 
 export interface CreateUserRequest {
   full_name: string;

@@ -4,41 +4,14 @@ import {
   getAccessToken,
   getCurrentUser,
   type CurrentUserResponse,
-} from "./api/authApi";
-import ChatBox from "./components/ChatBox";
-import LoginPage from "./components/LoginPage";
-import AdminDashboardPage from "./components/admin/AdminDashboardPage";
-import AdminReviewItemsPage from "./components/admin/AdminReviewItemsPage";
-import AdminUsersPage from "./components/admin/AdminUsersPage";
-import AdminDocumentsPage from "./components/admin/AdminDocumentsPage";
-import "./App.css";
-
-const quickTopics = [
-  {
-    label: "VPN",
-    question: "VPN bağlantısı kuramıyorum, ne yapmalıyım?",
-  },
-  {
-    label: "Şifre",
-    question: "Şifremi unuttum, nasıl sıfırlayabilirim?",
-  },
-  {
-    label: "Outlook",
-    question: "Outlook mail göndermiyor, ne yapmalıyım?",
-  },
-  {
-    label: "Yazıcı",
-    question: "Yazıcıdan çıktı alamıyorum, ne yapmalıyım?",
-  },
-  {
-    label: "Donanım",
-    question: "Donanım desteği talebi nasıl oluşturabilirim?",
-  },
-  {
-    label: "Ağ",
-    question: "İnternet bağlantım yok, ne yapmalıyım?",
-  },
-];
+} from "../api/authApi";
+import AdminDashboardPage from "../features/admin/dashboard/AdminDashboardPage";
+import AdminDocumentsPage from "../features/admin/documents/AdminDocumentsPage";
+import AdminReviewItemsPage from "../features/admin/review-queue/AdminReviewItemsPage";
+import AdminUsersPage from "../features/admin/users/AdminUsersPage";
+import LoginPage from "../features/auth/LoginPage";
+import ChatPage from "../features/chat/ChatPage";
+import "../App.css";
 
 function App() {
   const [currentUser, setCurrentUser] = useState<CurrentUserResponse | null>(
@@ -224,109 +197,15 @@ function App() {
   }
 
   return (
-    <div className="app-shell">
-      <header className="topbar">
-        <div className="brand-area">
-          <div className="brand-logo">IZELTAS</div>
-          <div className="brand-divider" />
-          <div>
-            <h1>İZELTAŞ IT Danışma Asistanı</h1>
-            <p>Lokal LLM & RAG destekli IT yardım sistemi</p>
-          </div>
-        </div>
-
-        <div className="topbar-right">
-          <span className="status-dot" />
-          <span>Çevrimiçi</span>
-
-          <div className="user-chip">
-            {currentUser.full_name} · {currentUser.role}
-          </div>
-
-          {currentUser.role === "admin" && (
-            <button
-              className="admin-button"
-              type="button"
-              onClick={() => navigate("/admin/dashboard")}
-            >
-              Admin Panel
-            </button>
-          )}
-
-          <button
-            className="logout-button"
-            type="button"
-            onClick={handleLogout}
-          >
-            Çıkış
-          </button>
-        </div>
-      </header>
-
-      <main className="dashboard-layout">
-        <aside className="sidebar">
-          <div className="assistant-card">
-            <div className="assistant-icon">IT</div>
-
-            <h2>İZELTAŞ IT Danışma Asistanı</h2>
-            <p>
-              IT ile ilgili sorularınızda size hızlı ve doğru destek olmak için
-              buradayım. Aşağıdaki konulardan birini seçebilir veya sorunuzu
-              yazabilirsiniz.
-            </p>
-          </div>
-
-          <div className="quick-topics">
-            <h3>Hızlı Konular</h3>
-
-            <div className="topic-grid">
-              {quickTopics.map((topic) => (
-                <button
-                  key={topic.label}
-                  type="button"
-                  onClick={() => handleQuickTopic(topic.question)}
-                >
-                  {topic.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="announcement-card">
-            <h3>Duyurular</h3>
-            <p>
-              Sistem bakım ve destek süreçleri hakkında güncel bilgilendirmeler
-              burada gösterilebilir.
-            </p>
-          </div>
-
-          <div className="support-info">
-            <p>Yardım ve destek için:</p>
-            <strong>itdestek@izeltas.com</strong>
-            <span>0232 XXX XX XX</span>
-          </div>
-        </aside>
-
-        <section className="chat-panel">
-          <div className="chat-panel-header">
-            <div>
-              <h2>Sohbet</h2>
-              <span>IT destek dokümanlarına göre cevap üretir</span>
-            </div>
-
-            <button
-              className="new-chat-button"
-              type="button"
-              onClick={handleNewChat}
-            >
-              Yeni Sohbet
-            </button>
-          </div>
-
-          <ChatBox key={resetSignal} quickQuestion={quickQuestion} />
-        </section>
-      </main>
-    </div>
+    <ChatPage
+      user={currentUser}
+      quickQuestion={quickQuestion}
+      resetSignal={resetSignal}
+      onQuickTopic={handleQuickTopic}
+      onNewChat={handleNewChat}
+      onGoToAdmin={handleGoToDashboard}
+      onLogout={handleLogout}
+    />
   );
 }
 

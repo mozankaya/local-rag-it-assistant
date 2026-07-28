@@ -4,16 +4,9 @@ import {
   askQuestion,
   sendFeedback,
   type ChatResponse,
-  type Source,
-} from "../api/chatApi";
-
-interface Message {
-  id: number;
-  role: "user" | "assistant";
-  text: string;
-  sources?: Source[];
-  question?: string;
-}
+} from "../../api/chatApi";
+import MessageList from "./components/MessageList";
+import type { Message } from "./types";
 
 interface ChatBoxProps {
   quickQuestion: {
@@ -37,24 +30,6 @@ function createInitialMessages(): Message[] {
       sources: [],
     },
   ];
-}
-
-function formatSourceTitle(source: Source) {
-  if (source.section_title) {
-    return `${source.title || "Kaynak"} / ${source.section_title}`;
-  }
-
-  return source.title || source.document_id || "Kaynak";
-}
-
-function formatSourceMeta(source: Source) {
-  const parts = [];
-
-  if (source.category) parts.push(source.category);
-  if (source.file_type) parts.push(source.file_type.toUpperCase());
-  if (source.chunk_index) parts.push(`chunk ${source.chunk_index}`);
-
-  return parts.join(" · ");
 }
 
 function ChatBox({ quickQuestion }: ChatBoxProps) {
@@ -178,93 +153,13 @@ function ChatBox({ quickQuestion }: ChatBoxProps) {
         ))}
       </div>
 
-      <div className="messages">
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={`message-row ${
-              message.role === "user"
-                ? "message-row-user"
-                : "message-row-assistant"
-            }`}
-          >
-            {message.role === "assistant" && (
-              <div className="message-avatar">IT</div>
-            )}
-
-            <div className={`message-bubble ${message.role}`}>
-              <p>{message.text}</p>
-
-              {message.sources && message.sources.length > 0 && (
-                <div className="source-tooltip-wrapper">
-                  <button
-                    className="source-tooltip-trigger"
-                    type="button"
-                    aria-label="Kaynakları göster"
-                  >
-                    ⓘ Kaynak
-                  </button>
-
-                  <div className="source-tooltip-panel">
-                    <h4>Kaynaklar</h4>
-
-                    <div className="source-tooltip-list">
-                      {message.sources.map((source, index) => (
-                        <div
-                          className="source-tooltip-item"
-                          key={`${source.document_id}-${index}`}
-                        >
-                          <span className="source-icon">▣</span>
-
-                          <div>
-                            <strong>{formatSourceTitle(source)}</strong>
-                            <small>{formatSourceMeta(source)}</small>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {message.role === "assistant" && message.question && (
-                <div className="feedback-area">
-                  <span>Bu yanıt yardımcı oldu mu?</span>
-
-                  <button
-                    type="button"
-                    onClick={() => handleFeedback(message, "useful")}
-                  >
-                    Evet
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleFeedback(message, "not_useful")}
-                  >
-                    Hayır
-                  </button>
-
-                  {feedbackStatus[message.id] && (
-                    <small>{feedbackStatus[message.id]}</small>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
-
-        {isLoading && (
-          <div className="message-row message-row-assistant">
-            <div className="message-avatar">IT</div>
-            <div className="message-bubble assistant">
-              <p>Yanıt hazırlanıyor...</p>
-            </div>
-          </div>
-        )}
-
-        <div ref={messagesEndRef} />
-      </div>
+      <MessageList
+        messages={messages}
+        isLoading={isLoading}
+        feedbackStatus={feedbackStatus}
+        messagesEndRef={messagesEndRef}
+        onFeedback={handleFeedback}
+      />
 
       <form className="chat-input-form" onSubmit={handleSubmit}>
         <textarea

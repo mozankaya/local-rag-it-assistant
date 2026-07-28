@@ -3,8 +3,8 @@ import type { FormEvent } from "react";
 import {
   AdminUsersApiError,
   createUser,
-  type UserRole,
-} from "../../api/adminUsersApi";
+} from "../../../api/adminUsersApi";
+import type { UserRole } from "../../../types/user";
 
 interface UserCreateFormProps {
   onCreated: () => void;

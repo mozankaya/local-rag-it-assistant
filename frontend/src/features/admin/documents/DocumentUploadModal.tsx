@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent, MouseEvent } from "react";
-import type { UploadDocumentPayload } from "../../api/adminDocumentsApi";
+import type { UploadDocumentPayload } from "../../../api/adminDocumentsApi";
 
 interface DocumentUploadModalProps {
   isOpen: boolean;
