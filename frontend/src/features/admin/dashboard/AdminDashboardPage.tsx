@@ -9,12 +9,12 @@ import {
   type DashboardSummary,
   type FeedbackSummary,
   type ResponseTypeCount,
-} from "../../api/adminApi";
-import type { CurrentUserResponse } from "../../api/authApi";
-import AdminLayout from "./AdminLayout";
+} from "../../../api/adminApi";
+import type { CurrentUserResponse } from "../../../api/authApi";
+import AdminLayout from "../shared/AdminLayout";
 import DistributionCard from "./DistributionCard";
 import SummaryCards from "./SummaryCards";
-import "./admin.css";
+import "../../../components/admin/admin.css";
 
 interface AdminDashboardPageProps {
   user: CurrentUserResponse;

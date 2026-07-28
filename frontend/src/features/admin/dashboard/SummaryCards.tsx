@@ -1,4 +1,4 @@
-import type { DashboardSummary, FeedbackSummary } from "../../api/adminApi";
+import type { DashboardSummary, FeedbackSummary } from "../../../api/adminApi";
 
 interface SummaryCardsProps {
   summary: DashboardSummary;

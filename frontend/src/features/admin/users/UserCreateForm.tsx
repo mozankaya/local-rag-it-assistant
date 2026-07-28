@@ -4,7 +4,7 @@ import {
   AdminUsersApiError,
   createUser,
   type UserRole,
-} from "../../api/adminUsersApi";
+} from "../../../api/adminUsersApi";
 
 interface UserCreateFormProps {
   onCreated: () => void;

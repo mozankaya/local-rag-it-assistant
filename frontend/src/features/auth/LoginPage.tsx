@@ -5,7 +5,7 @@ import {
   loginUser,
   saveAccessToken,
   type CurrentUserResponse,
-} from "../api/authApi";
+} from "../../api/authApi";
 
 type LoginPageProps = {
   onLoginSuccess: (user: CurrentUserResponse) => void;

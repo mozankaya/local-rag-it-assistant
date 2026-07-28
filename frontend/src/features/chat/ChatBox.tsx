@@ -5,7 +5,7 @@ import {
   sendFeedback,
   type ChatResponse,
   type Source,
-} from "../api/chatApi";
+} from "../../api/chatApi";
 
 interface Message {
   id: number;

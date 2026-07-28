@@ -11,12 +11,12 @@ import {
   type AdminDocument,
   type DocumentCategory,
   type UploadDocumentPayload,
-} from "../../api/adminDocumentsApi";
-import type { CurrentUserResponse } from "../../api/authApi";
-import AdminLayout from "./AdminLayout";
+} from "../../../api/adminDocumentsApi";
+import type { CurrentUserResponse } from "../../../api/authApi";
+import AdminLayout from "../shared/AdminLayout";
 import DocumentUploadModal from "./DocumentUploadModal";
 import DocumentsTable from "./DocumentsTable";
-import "./admin.css";
+import "../../../components/admin/admin.css";
 
 interface AdminDocumentsPageProps {
   user: CurrentUserResponse;

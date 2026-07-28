@@ -1,4 +1,4 @@
-import type { AdminUser, UserRole } from "../../api/adminUsersApi";
+import type { AdminUser, UserRole } from "../../../api/adminUsersApi";
 
 interface UsersTableProps {
   users: AdminUser[];

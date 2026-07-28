@@ -1,4 +1,4 @@
-import type { ReviewItem } from "../../api/adminApi";
+import type { ReviewItem } from "../../../api/adminApi";
 
 export type ReviewFilter =
   | "all"

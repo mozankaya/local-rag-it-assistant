@@ -7,12 +7,12 @@ import {
   updateAdminUserStatus,
   type AdminUser,
   type UserRole,
-} from "../../api/adminUsersApi";
-import type { CurrentUserResponse } from "../../api/authApi";
-import AdminLayout from "./AdminLayout";
+} from "../../../api/adminUsersApi";
+import type { CurrentUserResponse } from "../../../api/authApi";
+import AdminLayout from "../shared/AdminLayout";
 import UserCreateForm from "./UserCreateForm";
 import UsersTable from "./UsersTable";
-import "./admin.css";
+import "../../../components/admin/admin.css";
 
 interface AdminUsersPageProps {
   user: CurrentUserResponse;

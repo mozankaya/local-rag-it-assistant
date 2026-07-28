@@ -1,4 +1,4 @@
-import type { AdminDocument } from "../../api/adminDocumentsApi";
+import type { AdminDocument } from "../../../api/adminDocumentsApi";
 
 interface DocumentsTableProps {
   documents: AdminDocument[];
