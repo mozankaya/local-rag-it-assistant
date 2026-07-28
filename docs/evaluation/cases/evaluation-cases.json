@@ -358,7 +358,8 @@
       "shared-folder-access"
     ],
     "accepted_sections": [
-      "Ortak klasöre erişim reddedildi"
+      "Ortak klasöre erişim reddedildi",
+      "Ortak klasör görünmüyor"
     ],
     "required_keywords": [
       "klasör",
@@ -535,7 +536,8 @@
       "it-support-ticket-process"
     ],
     "accepted_sections": [
-      "Destek kaydında bulunması gereken bilgiler"
+      "Destek kaydında bulunması gereken bilgiler",
+      "Destek kaydına ek bilgi ekleme"
     ],
     "required_keywords": [
       "kullanıcı",
@@ -570,9 +572,10 @@
       "Aynı sorun için tekrar kayıt açma"
     ],
     "required_keywords": [
-      "mevcut kayıt"
+      "mevcut",
+      "kayıt"
     ],
-    "min_keyword_hits": 1
+    "min_keyword_hits": 2
   },
   {
     "id": "NOSRC-01",

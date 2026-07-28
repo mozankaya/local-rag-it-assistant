@@ -1,37 +1,37 @@
 ﻿model,case_id,run,question,answer,expected_response_type,response_type,response_type_match,expected_document_ids,actual_document_ids,source_match,accepted_sections,actual_sections,section_match,source_scores,required_keywords,keyword_match,keyword_hit_count,answer_format_match,bullet_count,answer_format_problems,case_pass,response_time_seconds,error,manual_quality_score,manual_notes
-qwen2.5-3b-normalization,NORM-ACC-01,1,Şifremi unuttum,"- Kurum tarafından sağlanan şifre sıfırlama ekranına gidin.
-- Yeni şifrenizi oluşturun, büyük harf, küçük harf, rakam ve özel karakter içermeli.
-- Şifre sıfırlama bağlantısını farklı bir tarayıcıda kontrol edin.",rag_answer,rag_answer,True,password-account-access,password-account-access,True,Şifre unutuldu,Şifre unutuldu,True,0.4416602795349376,şifre | sıfırlama,True,2,True,3,,True,3.774,,,
-qwen2.5-3b-normalization,NORM-ACC-02,1,ŞİFREMİ UNUTTUM.,"- Kurum tarafından sağlanan şifre sıfırlama ekranını kullanın.
-- Yeni şifreniz büyük harf, küçük harf, rakam ve özel karakter içermelidir.
-- Şifre sıfırlama bağlantısı açılmıyorsa farklı bir tarayıcıda deneyin.",rag_answer,rag_answer,True,password-account-access,password-account-access,True,Şifre unutuldu,Şifre unutuldu,True,0.4416602795349376,şifre | sıfırlama,True,2,True,3,,True,3.096,,,
-qwen2.5-3b-normalization,NORM-ACC-03,1,  Şifremi   unuttum.  ,"- Kurum tarafından sağlanan şifre sıfırlama ekranını kullanın.
-- Yeni şifreniz büyük harf, küçük harf, rakam ve özel karakter içermelidir.
-- Şifre sıfırlama bağlantısı açılmıyorsa farklı bir tarayıcıda deneyin.",rag_answer,rag_answer,True,password-account-access,password-account-access,True,Şifre unutuldu,Şifre unutuldu,True,0.4416602795349376,şifre | sıfırlama,True,2,True,3,,True,3.102,,,
-qwen2.5-3b-normalization,NORM-ACC-04,1,şifremi unuttum???,"- Kurum tarafından sağlanan şifre sıfırlama ekranına gidin.
-- Yeni şifrenizi oluşturun, büyük harf, küçük harf, rakam ve özel karakter içermeli.
-- Şifre sıfırlama bağlantısını farklı bir tarayıcıda kontrol edin.",rag_answer,rag_answer,True,password-account-access,password-account-access,True,Şifre unutuldu,Şifre unutuldu,True,0.4416602795349376,şifre | sıfırlama,True,2,True,3,,True,3.119,,,
+qwen2.5-3b-normalization,NORM-ACC-01,1,Şifremi unuttum,"- Şifre sıfırlama ekranını kullanarak yeni bir şifre oluşturun.
+- Eğer bağlantı açılmıyorsa, farklı bir tarayıcıda deneyin.
+- İşlem tamamlandığında Outlook, VPN ve diğer kurumsal uygulamaları yeniden giriş yapın.",rag_answer,rag_answer,True,password-account-access,password-account-access,True,Şifre unutuldu,Şifre unutuldu,True,0.4416602795349376,şifre | sıfırlama,True,2,True,3,,True,3.46,,,
+qwen2.5-3b-normalization,NORM-ACC-02,1,ŞİFREMİ UNUTTUM.,"- Şifre sıfırlama ekranını kullanarak yeni şifrenizi oluşturun.
+- Eğer bağlantı açılmıyorsa, farklı bir tarayıcıda deneyin.
+- İşlem tamamlandığında Outlook, VPN ve diğer kurumsal uygulamaları yeniden giriş yapın.",rag_answer,rag_answer,True,password-account-access,password-account-access,True,Şifre unutuldu,Şifre unutuldu,True,0.4416602795349376,şifre | sıfırlama,True,2,True,3,,True,2.823,,,
+qwen2.5-3b-normalization,NORM-ACC-03,1,  Şifremi   unuttum.  ,"- Şifre sıfırlama ekranını kullanarak yeni şifrenizi oluşturun.
+- Eğer bağlantı açılmıyorsa, farklı bir tarayıcıda deneyin.
+- İşlem tamamlandığında Outlook, VPN ve diğer kurumsal uygulamaları yeniden giriş yapın.",rag_answer,rag_answer,True,password-account-access,password-account-access,True,Şifre unutuldu,Şifre unutuldu,True,0.4416602795349376,şifre | sıfırlama,True,2,True,3,,True,2.917,,,
+qwen2.5-3b-normalization,NORM-ACC-04,1,şifremi unuttum???,"- Şifre sıfırlama ekranını kullanarak yeni bir şifre oluşturun.
+- Eğer bağlantı açılmıyorsa, farklı bir tarayıcıda deneyin.
+- İşlem tamamlandığında Outlook, VPN ve diğer kurumsal uygulamaların yeni şifreyle yeniden giriş yapılıp durumu kontrol edin.",rag_answer,rag_answer,True,password-account-access,password-account-access,True,Şifre unutuldu,Şifre unutuldu,True,0.4416602795349376,şifre | sıfırlama,True,2,True,3,,True,2.916,,,
 qwen2.5-3b-normalization,NORM-VPN-01,1,VPN bağlanmıyor,"- Bilgisayarın internet bağlantısı kontrol edilmelidir.
-- VPN istemcisinde doğru bağlantı profili seçilmeli ve kullanıcı adı ile güncel şifre kullanılmalıdır.
-- Şifre yakın zamanda değiştirildiyse, VPN istemcisinde kayıtlı eski bilgiler temizlenmeli ve yeni şifreyle tekrar giriş yapılmalıdır.",rag_answer,rag_answer,True,vpn-remote-access,vpn-remote-access,True,VPN bağlantısı kurulamıyor,VPN bağlantısı kurulamıyor,True,0.2811176944444155,internet | VPN,True,2,True,3,,True,2.713,,,
+- Parola, MFA doğrulama kodu veya başka bir gizli bilgi destek talebine eklenmemelidir.
+- Şifre yakın zamanda değiştirildiyse, VPN istemcisinde kayıtlı eski bilgiler temizlenmeli ve yeni şifreyle tekrar giriş yapılmalıdır.",rag_answer,rag_answer,True,vpn-remote-access,vpn-remote-access,True,VPN bağlantısı kurulamıyor,VPN bağlantısı kurulamıyor,True,0.2811176944444155,internet | VPN,True,2,True,3,,True,2.71,,,
 qwen2.5-3b-normalization,NORM-VPN-02,1,VPN BAĞLANMIYOR.,"- Bilgisayarın internet bağlantısı kontrol edilmelidir.
-- VPN istemcisinde doğru bağlantı profili seçilmeli ve kullanıcı adı ile güncel şifre kullanılmalıdır.
-- Şifre yakın zamanda değiştirildiyse, VPN istemcisinde kayıtlı eski bilgiler temizlenmeli ve yeni şifreyle tekrar giriş yapılmalıdır.",rag_answer,rag_answer,True,vpn-remote-access,vpn-remote-access,True,VPN bağlantısı kurulamıyor,VPN bağlantısı kurulamıyor,True,0.2811176944444155,internet | VPN,True,2,True,3,,True,2.444,,,
+- Parola, MFA doğrulama kodu veya başka bir gizli bilgi destek talebine eklenmemelidir.
+- Şifre yakın zamanda değiştirildiyse, VPN istemcisinde kayıtlı eski bilgiler temizlenmeli ve yeni şifreyle tekrar giriş yapılmalıdır.",rag_answer,rag_answer,True,vpn-remote-access,vpn-remote-access,True,VPN bağlantısı kurulamıyor,VPN bağlantısı kurulamıyor,True,0.2811176944444155,internet | VPN,True,2,True,3,,True,2.534,,,
 qwen2.5-3b-normalization,NORM-VPN-03,1,  vpn   bağlanmıyor.  ,"- Bilgisayarın internet bağlantısı kontrol edilmelidir.
-- VPN istemcisinde doğru bağlantı profili seçilmeli ve kullanıcı adı ile güncel şifre kullanılmalıdır.
-- Şifre yakın zamanda değiştirildiyse, VPN istemcisinde kayıtlı eski bilgiler temizlenmeli ve yeni şifreyle tekrar giriş yapılmalıdır.",rag_answer,rag_answer,True,vpn-remote-access,vpn-remote-access,True,VPN bağlantısı kurulamıyor,VPN bağlantısı kurulamıyor,True,0.2811176944444155,internet | VPN,True,2,True,3,,True,2.436,,,
+- Parola, MFA doğrulama kodu veya başka bir gizli bilgi destek talebine eklenmemelidir.
+- Şifre yakın zamanda değiştirildiyse, VPN istemcisinde kayıtlı eski bilgiler temizlenmeli ve yeni şifreyle tekrar giriş yapılmalıdır.",rag_answer,rag_answer,True,vpn-remote-access,vpn-remote-access,True,VPN bağlantısı kurulamıyor,VPN bağlantısı kurulamıyor,True,0.2811176944444155,internet | VPN,True,2,True,3,,True,2.536,,,
 qwen2.5-3b-normalization,NORM-VPN-04,1,vpn bağlanmıyor!!!,"- Bilgisayarın internet bağlantısı kontrol edilmelidir.
-- VPN istemcisinde doğru bağlantı profili seçilmeli ve kullanıcı adı ile güncel şifre kullanılmalıdır.
-- Şifre yakın zamanda değiştirildiyse, VPN istemcisinde kayıtlı eski bilgiler temizlenmeli ve yeni şifreyle tekrar giriş yapılmalıdır.",rag_answer,rag_answer,True,vpn-remote-access,vpn-remote-access,True,VPN bağlantısı kurulamıyor,VPN bağlantısı kurulamıyor,True,0.2811176944444155,internet | VPN,True,2,True,3,,True,2.436,,,
+- Parola, MFA doğrulama kodu veya başka bir gizli bilgi destek talebine eklenmemelidir.
+- Şifre yakın zamanda değiştirildiyse, VPN istemcisinde kayıtlı eski bilgiler temizlenmeli ve yeni şifreyle tekrar giriş yapılmalıdır.",rag_answer,rag_answer,True,vpn-remote-access,vpn-remote-access,True,VPN bağlantısı kurulamıyor,VPN bağlantısı kurulamıyor,True,0.2811176944444155,internet | VPN,True,2,True,3,,True,2.481,,,
 qwen2.5-3b-normalization,NORM-EMAIL-01,1,Mail gönderemiyorum,"- Alıcı adresinin doğru yazıldığı kontrol edilmelidir.
-- Büyük dosya ekleri kaldırılarak Giden Kutusu içinde bekleyen mesaj yeniden gönderilmelidir.
-- İnternet bağlantısı ve Outlook bağlantı durumu kontrol edilmelidir.",rag_answer,rag_answer,True,email-outlook-support,email-outlook-support,True,E-posta gönderilemiyor,E-posta gönderilemiyor,True,0.3303129869885736,alıcı | Giden Kutusu,True,2,True,3,,True,2.382,,,
-qwen2.5-3b-normalization,NORM-EMAIL-02,1,MAİL GÖNDEREMİYORUM.,"- Alıcı adresinin doğru yazıldığı kontrol edilmelidir.
-- Büyük dosya ekleri kaldırılarak Outlook kutusu yeniden denilmelidir.
-- İnternet bağlantısı ve Outlook bağlantı durumu kontrol edilmelidir.",rag_answer,rag_answer,True,email-outlook-support,email-outlook-support,True,E-posta gönderilemiyor,E-posta gönderilemiyor,True,0.3303129869885736,alıcı | Giden Kutusu,True,1,True,3,,True,2.052,,,
-qwen2.5-3b-normalization,NORM-EMAIL-03,1,  Mail   gönderemiyorum.  ,"- Alıcı adresinin doğru yazıldığı kontrol edilmelidir.
 - Büyük dosya eklentilerini kaldırarak yeniden deneyin.
-- İnternet bağlantısı ve Outlook bağlantı durumu kontrol edilmelidir.",rag_answer,rag_answer,True,email-outlook-support,email-outlook-support,True,E-posta gönderilemiyor,E-posta gönderilemiyor,True,0.3303129869885736,alıcı | Giden Kutusu,True,1,True,3,,True,1.984,,,
+- İnternet bağlantısı ve Outlook bağlantı durumu kontrol edilmelidir.",rag_answer,rag_answer,True,email-outlook-support,email-outlook-support,True,E-posta gönderilemiyor,E-posta gönderilemiyor,True,0.3303129869885736,alıcı | Giden Kutusu,True,1,True,3,,True,2.607,,,
+qwen2.5-3b-normalization,NORM-EMAIL-02,1,MAİL GÖNDEREMİYORUM.,"- Alıcı adresinin doğru yazıldığı kontrol edilmelidir.
+- Büyük dosya ekleri kaldırılarak Gönderilemeyen mesaj Giden Kutusu içinde bekleyen mesajların yeniden denenmesi gerekmektedir.
+- İnternet bağlantısı ve Outlook bağlantı durumu kontrol edilmelidir.",rag_answer,rag_answer,True,email-outlook-support,email-outlook-support,True,E-posta gönderilemiyor,E-posta gönderilemiyor,True,0.3303129869885736,alıcı | Giden Kutusu,True,2,True,3,,True,2.788,,,
+qwen2.5-3b-normalization,NORM-EMAIL-03,1,  Mail   gönderemiyorum.  ,"- Alıcı adresinin doğru yazıldığı kontrol edilmelidir.
+- Büyük dosya ekleri kaldırılarak Gönderilemeyen mesaj Giden Kutusu içinde bekleyen mesajların yeniden denenmesi gerekmektedir.
+- İnternet bağlantısı ve Outlook bağlantı durumu kontrol edilmelidir.",rag_answer,rag_answer,True,email-outlook-support,email-outlook-support,True,E-posta gönderilemiyor,E-posta gönderilemiyor,True,0.3303129869885736,alıcı | Giden Kutusu,True,2,True,3,,True,2.888,,,
 qwen2.5-3b-normalization,NORM-EMAIL-04,1,mail gönderemiyorum???,"- Alıcı adresinin doğru yazıldığı kontrol edilmelidir.
-- Büyük dosya ekleri kaldırılarak Gönderilemeyen mesaj Giden Kutusu içinde bekleyen mesaj yeniden gönderilmelidir.
-- İnternet bağlantısı ve Outlook bağlantı durumu kontrol edilmelidir.",rag_answer,rag_answer,True,email-outlook-support,email-outlook-support,True,E-posta gönderilemiyor,E-posta gönderilemiyor,True,0.3303129869885736,alıcı | Giden Kutusu,True,2,True,3,,True,2.21,,,
+- Büyük dosya ekleri kaldırılarak Gönderilemeyen mesaj Giden Kutusu içinde beklenmelidir.
+- İnternet bağlantısı ve Outlook bağlantı durumu kontrol edilmelidir.",rag_answer,rag_answer,True,email-outlook-support,email-outlook-support,True,E-posta gönderilemiyor,E-posta gönderilemiyor,True,0.3303129869885736,alıcı | Giden Kutusu,True,2,True,3,,True,2.561,,,
