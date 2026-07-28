@@ -471,7 +471,10 @@ def upload_document(
     if target_file_path.exists():
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Bu başlık ve kategoriyle aynı isimde bir doküman zaten mevcut.",
+            detail=(
+                "Bu başlık ve kategoriyle aynı isimde "
+                "bir doküman zaten mevcut."
+            ),
         )
 
     uploaded_size = 0
@@ -487,7 +490,6 @@ def upload_document(
                 uploaded_size += len(chunk)
 
                 if uploaded_size > MAX_UPLOAD_SIZE_BYTES:
-                    target_file_path.unlink(missing_ok=True)
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
                         detail="Dosya boyutu 10 MB sınırını aşamaz.",
@@ -495,21 +497,33 @@ def upload_document(
 
                 buffer.write(chunk)
 
+    except Exception:
+        target_file_path.unlink(missing_ok=True)
+        raise
+
     finally:
         file.file.close()
 
     try:
         run_prepare_documents_script()
+
     except HTTPException:
         target_file_path.unlink(missing_ok=True)
+        remove_empty_directory(target_dir, SOURCE_DOCUMENTS_DIR)
         raise
 
     return DocumentUploadResponse(
         success=True,
-        message="Doküman başarıyla yüklendi ve ön işleme alındı. Vektör veritabanını güncellemek için yeniden indeksleme çalıştırılmalıdır.",
+        message=(
+            "Doküman başarıyla yüklendi ve ön işleme alındı. "
+            "Vektör veritabanını güncellemek için yeniden "
+            "indeksleme çalıştırılmalıdır."
+        ),
         file_name=target_file_path.name,
         category=clean_category,
-        source_path=str(target_file_path.relative_to(PROJECT_ROOT_DIR)),
+        source_path=str(
+            target_file_path.relative_to(PROJECT_ROOT_DIR)
+        ),
     )
 
 
