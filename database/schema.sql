@@ -1,13 +1,27 @@
 CREATE EXTENSION IF NOT EXISTS vector;
 
--- LangChain / n8n PGVector Store tarafından kullanılan aktif RAG doküman tablosu.
--- Bu tablo n8n workflow tarafından da oluşturulabilir; burada temiz kurulum için tutulur.
+
+-- ============================================================
+-- RAG DOKÜMAN TABLOSU
+-- ============================================================
+
+-- LangChain / n8n PGVector Store tarafından kullanılan
+-- aktif RAG doküman tablosu.
+--
+-- Bu tablo n8n workflow tarafından da oluşturulabilir.
+-- Burada temiz kurulum için tutulur.
+
 CREATE TABLE IF NOT EXISTS langchain_document_chunks (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     content TEXT,
     metadata JSONB,
     embedding vector(768)
 );
+
+
+-- ============================================================
+-- KULLANICI TABLOSU
+-- ============================================================
 
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
@@ -18,6 +32,14 @@ CREATE TABLE IF NOT EXISTS users (
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+
+-- ============================================================
+-- CHAT LOG TABLOSU
+-- ============================================================
+
+-- request_id, duration_ms ve source_count alanları
+-- Alembic migration'ı tarafından eklenecektir.
 
 CREATE TABLE IF NOT EXISTS chat_logs (
     id SERIAL PRIMARY KEY,
@@ -30,14 +52,25 @@ CREATE TABLE IF NOT EXISTS chat_logs (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+
+-- ============================================================
+-- FEEDBACK LOG TABLOSU
+-- ============================================================
+
 CREATE TABLE IF NOT EXISTS feedback_logs (
     id SERIAL PRIMARY KEY,
     question TEXT NOT NULL,
     answer TEXT NOT NULL,
-    feedback TEXT NOT NULL CHECK (feedback IN ('useful', 'not_useful')),
+    feedback TEXT NOT NULL
+        CHECK (feedback IN ('useful', 'not_useful')),
     sources JSONB,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+
+-- ============================================================
+-- CHAT LOG INDEXLERİ
+-- ============================================================
 
 CREATE INDEX IF NOT EXISTS idx_chat_logs_created_at
 ON chat_logs (created_at);
@@ -51,11 +84,21 @@ ON chat_logs (section_title);
 CREATE INDEX IF NOT EXISTS idx_chat_logs_response_type
 ON chat_logs (response_type);
 
+
+-- ============================================================
+-- FEEDBACK LOG INDEXLERİ
+-- ============================================================
+
 CREATE INDEX IF NOT EXISTS idx_feedback_logs_created_at
 ON feedback_logs (created_at);
 
 CREATE INDEX IF NOT EXISTS idx_feedback_logs_feedback
 ON feedback_logs (feedback);
+
+
+-- ============================================================
+-- KULLANICI INDEXLERİ
+-- ============================================================
 
 CREATE INDEX IF NOT EXISTS idx_users_email
 ON users (email);

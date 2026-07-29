@@ -21,7 +21,7 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const body = $json.body || {};\n\nconst question = body.question || body.query || body.message;\n\nif (!question || String(question).trim().length === 0) {\n  throw new Error('Question is required. Send JSON body like: { \"question\": \"...\" }');\n}\n\nreturn {\n  json: {\n    question: String(question).trim()\n  }\n};"
+        "jsCode": "const body = $json.body || {};\n\nconst question =\n  body.question ||\n  body.query ||\n  body.message;\n\nif (\n  !question ||\n  String(question).trim().length === 0\n) {\n  throw new Error(\n    'Question is required. Send JSON body like: ' +\n    '{ \"question\": \"...\" }'\n  );\n}\n\nconst requestId = String(\n  body.request_id ||\n  body.requestId ||\n  ''\n).trim() || null;\n\nreturn {\n  json: {\n    question: String(question).trim(),\n    request_id: requestId,\n    started_at_ms: Date.now()\n  }\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -238,7 +238,10 @@
             "sources": "={{ $json.sources_json }}",
             "category": "={{ $json.category }}",
             "section_title": "={{ $json.section_title }}",
-            "response_type": "={{ $json.response_type }}"
+            "response_type": "={{ $json.response_type }}",
+            "request_id": "={{ $json.request_i }}",
+            "duration_ms": "={{ $json.duration_ms }}",
+            "source_count": "={{ $json.source_count }}"
           },
           "matchingColumns": [
             "id"
@@ -317,6 +320,36 @@
               "type": "dateTime",
               "canBeUsedToMatch": true,
               "removed": true
+            },
+            {
+              "id": "request_id",
+              "displayName": "request_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "duration_ms",
+              "displayName": "duration_ms",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "source_count",
+              "displayName": "source_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
             }
           ],
           "attemptToConvertTypes": false,
@@ -337,7 +370,8 @@
           "id": "jShdzm8IEPIqSd41",
           "name": "Postgres account"
         }
-      }
+      },
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
@@ -404,7 +438,7 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const question = String($json.question || '').trim();\nconst answer = String($json.answer || '').trim();\nconst sources = Array.isArray($json.sources) ? $json.sources : [];\n\nif (!question) throw new Error('Question is required for chat log.');\nif (!answer) throw new Error('Answer is required for chat log.');\n\nfunction maskSensitiveText(value) {\n  return String(value ?? '')\n    .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}/gi, '[masked_email]')\n    .replace(/(\\+90|0)?\\s?5\\d{2}\\s?\\d{3}\\s?\\d{2}\\s?\\d{2}/g, '[masked_phone]')\n    .replace(/\\b\\d{8,}\\b/g, '[masked_number]');\n}\n\nconst firstSource = sources[0] || {};\n\nconst category = firstSource.category || null;\nconst sectionTitle = firstSource.section_title || null;\n\nconst responseType =\n  $json.response_type ||\n  (sources.length > 0 ? 'rag_answer' : 'unknown');\n\nconst maskedQuestion = maskSensitiveText(question);\nconst maskedAnswer = maskSensitiveText(answer);\n\nreturn {\n  json: {\n    question,\n    answer,\n    sources,\n\n    question_masked: maskedQuestion,\n    answer_masked: maskedAnswer,\n\n    // JSONB alanı için array'i object içine alıyoruz.\n    sources_json: {\n      source_items: sources\n    },\n\n    category,\n    section_title: sectionTitle,\n    response_type: responseType\n  }\n};"
+        "jsCode": "const question = String(\n  $json.question || ''\n).trim();\n\nconst answer = String(\n  $json.answer || ''\n).trim();\n\nconst sources = Array.isArray($json.sources)\n  ? $json.sources\n  : [];\n\n\nif (!question) {\n  throw new Error(\n    'Question is required for chat log.'\n  );\n}\n\nif (!answer) {\n  throw new Error(\n    'Answer is required for chat log.'\n  );\n}\n\nconst requestData =\n  $('Get User Question').first().json;\n\nconst requestId = String(\n  requestData.request_id || ''\n).trim() || null;\n\nconst startedAtMs = Number(\n  requestData.started_at_ms\n);\n\nlet durationMs = null;\n\nif (Number.isFinite(startedAtMs)) {\n  durationMs = Math.max(\n    0,\n    Date.now() - startedAtMs\n  );\n}\n\n\nconst sourceCount = sources.length;\n\n\n\nfunction maskSensitiveText(value) {\n  return String(value ?? '')\n    .replace(\n      /[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}/gi,\n      '[masked_email]'\n    )\n    .replace(\n      /(\\+90|0)?\\s?5\\d{2}\\s?\\d{3}\\s?\\d{2}\\s?\\d{2}/g,\n      '[masked_phone]'\n    )\n    .replace(\n      /\\b\\d{8,}\\b/g,\n      '[masked_number]'\n    );\n}\n\n\nconst firstSource = sources[0] || {};\n\nconst category =\n  firstSource.category || null;\n\nconst sectionTitle =\n  firstSource.section_title || null;\n\nconst responseType =\n  $json.response_type ||\n  (\n    sources.length > 0\n      ? 'rag_answer'\n      : 'unknown'\n  );\n\n\n\nconst maskedQuestion =\n  maskSensitiveText(question);\n\nconst maskedAnswer =\n  maskSensitiveText(answer);\n\n\nreturn {\n  json: {\n    request_id: requestId,\n    duration_ms: durationMs,\n    source_count: sourceCount,\n\n    question,\n    answer,\n    sources,\n\n    question_masked: maskedQuestion,\n    answer_masked: maskedAnswer,\n\n    sources_json: {\n      source_items: sources\n    },\n\n    category,\n    section_title: sectionTitle,\n    response_type: responseType\n  }\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -766,7 +800,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "ff7946c5-54ea-4868-a3cd-8093e2d61dd3",
+  "versionId": "d4e87550-29ea-497f-a73e-e7575ad214e5",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "8ad5e91ca19f2aebbe2ce2f031589771f3e4e7c0049e38f9c59f6c20dd949760"

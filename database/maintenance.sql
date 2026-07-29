@@ -1,11 +1,24 @@
--- Chat log retention cleanup
--- This query deletes chat logs older than 180 days.
--- It is intended to be executed manually or by a scheduled maintenance job in future versions.
+-- Chat ve feedback kayıtları için saklama süresi temizliği.
+-- Bu sorgu 30 günden eski kayıtları siler.
+-- Şimdilik manuel olarak çalıştırılabilir.
+-- İleride zamanlanmış bir n8n bakım workflow'u tarafından çalıştırılacaktır.
 
-WITH deleted AS (
+WITH deleted_chat_logs AS (
     DELETE FROM chat_logs
-    WHERE created_at < NOW() - INTERVAL '180 days'
+    WHERE created_at < NOW() - INTERVAL '30 days'
+    RETURNING id
+),
+deleted_feedback_logs AS (
+    DELETE FROM feedback_logs
+    WHERE created_at < NOW() - INTERVAL '30 days'
     RETURNING id
 )
-SELECT COUNT(*) AS deleted_count
-FROM deleted;
+SELECT
+    (
+        SELECT COUNT(*)
+        FROM deleted_chat_logs
+    ) AS deleted_chat_log_count,
+    (
+        SELECT COUNT(*)
+        FROM deleted_feedback_logs
+    ) AS deleted_feedback_log_count;
