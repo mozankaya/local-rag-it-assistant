@@ -211,7 +211,7 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        3360,
+        3152,
         80
       ],
       "id": "db925f28-a155-4a6c-a4d6-328fa22b2be9",
@@ -233,15 +233,15 @@
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
-            "question": "={{ $json.question_masked }}",
-            "answer": "={{ $json.answer_masked }}",
-            "sources": "={{ $json.sources_json }}",
-            "category": "={{ $json.category }}",
-            "section_title": "={{ $json.section_title }}",
-            "response_type": "={{ $json.response_type }}",
-            "request_id": "={{ $json.request_i }}",
-            "duration_ms": "={{ $json.duration_ms }}",
-            "source_count": "={{ $json.source_count }}"
+            "question": "={{ $('Prepare Chat Log Data').first().json.question_masked }}",
+            "answer": "={{ $('Prepare Chat Log Data').first().json.answer_masked }}",
+            "sources": "={{ $('Prepare Chat Log Data').first().json.sources_json }}",
+            "category": "={{ $('Prepare Chat Log Data').first().json.category }}",
+            "section_title": "={{ $('Prepare Chat Log Data').first().json.section_title }}",
+            "response_type": "={{ $('Prepare Chat Log Data').first().json.response_type }}",
+            "request_id": "={{ $('Prepare Chat Log Data').first().json.request_id }}",
+            "duration_ms": "={{ Number($('Prepare Chat Log Data').first().json.duration_ms) }}",
+            "source_count": "={{ Number($('Prepare Chat Log Data').first().json.source_count) }}"
           },
           "matchingColumns": [
             "id"
@@ -360,7 +360,7 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        2944,
+        3344,
         80
       ],
       "id": "0cc8eef1-930b-4d45-8211-b76dcd843b58",
@@ -381,7 +381,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3152,
+        2944,
         80
       ],
       "id": "6445a47a-5f9b-49ef-87f9-44d47906da93",
@@ -671,13 +671,7 @@
     },
     "Insert Chat Log": {
       "main": [
-        [
-          {
-            "node": "Format Chat Response",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        []
       ]
     },
     "Format Chat Response": {
@@ -724,7 +718,7 @@
       "main": [
         [
           {
-            "node": "Insert Chat Log",
+            "node": "Format Chat Response",
             "type": "main",
             "index": 0
           }
@@ -792,6 +786,17 @@
           }
         ]
       ]
+    },
+    "Respond Full LangChain Answer": {
+      "main": [
+        [
+          {
+            "node": "Insert Chat Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
@@ -800,7 +805,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "d4e87550-29ea-497f-a73e-e7575ad214e5",
+  "versionId": "926efa06-4734-462b-8e16-0db0711bdb79",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "8ad5e91ca19f2aebbe2ce2f031589771f3e4e7c0049e38f9c59f6c20dd949760"
