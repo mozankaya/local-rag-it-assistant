@@ -68,31 +68,6 @@
     },
     {
       "parameters": {
-        "mode": "insert",
-        "tableName": "langchain_document_chunks",
-        "options": {
-          "collection": {
-            "values": {}
-          }
-        }
-      },
-      "type": "@n8n/n8n-nodes-langchain.vectorStorePGVector",
-      "typeVersion": 1.3,
-      "position": [
-        1248,
-        0
-      ],
-      "id": "a25a74b7-4528-4be4-8561-a1f10d02fe2c",
-      "name": "Insert Documents to PGVector - LangChain",
-      "credentials": {
-        "postgres": {
-          "id": "jShdzm8IEPIqSd41",
-          "name": "Postgres account"
-        }
-      }
-    },
-    {
-      "parameters": {
         "jsonMode": "expressionData",
         "jsonData": "={{ $json.text }}",
         "textSplittingMode": "custom",
@@ -188,27 +163,6 @@
     },
     {
       "parameters": {
-        "operation": "executeQuery",
-        "query": "TRUNCATE TABLE langchain_document_chunks RESTART IDENTITY;",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.6,
-      "position": [
-        208,
-        0
-      ],
-      "id": "2d87435e-acb5-4fb4-a2b9-4de4d20d1553",
-      "name": "Clear Existing LangChain Chunks",
-      "credentials": {
-        "postgres": {
-          "id": "jShdzm8IEPIqSd41",
-          "name": "Postgres account"
-        }
-      }
-    },
-    {
-      "parameters": {
         "httpMethod": "POST",
         "path": "admin-document-reindex",
         "responseMode": "lastNode",
@@ -223,6 +177,143 @@
       "id": "fe5b4b3e-a9c1-4ba5-aec3-5f3166e8028d",
       "name": "Webhook",
       "webhookId": "27b2c3bb-24b0-415c-b865-e01b651404ce"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "TRUNCATE TABLE public.langchain_document_chunks_staging;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        208,
+        0
+      ],
+      "id": "2d87435e-acb5-4fb4-a2b9-4de4d20d1553",
+      "name": "Clear Staging Chunks",
+      "credentials": {
+        "postgres": {
+          "id": "jShdzm8IEPIqSd41",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": "langchain_document_chunks_staging",
+        "options": {
+          "collection": {
+            "values": {}
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePGVector",
+      "typeVersion": 1.3,
+      "position": [
+        1248,
+        0
+      ],
+      "id": "a25a74b7-4528-4be4-8561-a1f10d02fe2c",
+      "name": "Insert Documents to PGVector Staging",
+      "credentials": {
+        "postgres": {
+          "id": "jShdzm8IEPIqSd41",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH staging_stats AS (\n    SELECT\n        COUNT(*)::integer AS total_chunks,\n\n        COUNT(\n            DISTINCT metadata ->> 'document_id'\n        )::integer AS document_count,\n\n        COUNT(*) FILTER (\n            WHERE embedding IS NULL\n        )::integer AS null_embedding_count,\n\n        COUNT(*) FILTER (\n            WHERE text IS NULL\n               OR BTRIM(text) = ''\n        )::integer AS empty_text_count,\n\n        COUNT(*) FILTER (\n            WHERE metadata IS NULL\n               OR COALESCE(\n                    BTRIM(metadata ->> 'document_id'),\n                    ''\n               ) = ''\n        )::integer AS missing_document_id_count,\n\n        COUNT(*) FILTER (\n            WHERE metadata IS NULL\n               OR COALESCE(\n                    BTRIM(metadata ->> 'chunk_index'),\n                    ''\n               ) = ''\n        )::integer AS missing_chunk_index_count\n    FROM public.langchain_document_chunks_staging\n),\nduplicate_stats AS (\n    SELECT\n        COUNT(*)::integer\n            AS duplicate_chunk_key_count\n    FROM (\n        SELECT\n            metadata ->> 'document_id'\n                AS document_id,\n            metadata ->> 'chunk_index'\n                AS chunk_index\n        FROM public.langchain_document_chunks_staging\n        WHERE COALESCE(\n                  BTRIM(metadata ->> 'document_id'),\n                  ''\n              ) <> ''\n          AND COALESCE(\n                  BTRIM(metadata ->> 'chunk_index'),\n                  ''\n              ) <> ''\n        GROUP BY\n            metadata ->> 'document_id',\n            metadata ->> 'chunk_index'\n        HAVING COUNT(*) > 1\n    ) AS duplicate_chunks\n)\nSELECT\n    staging_stats.*,\n    duplicate_stats.duplicate_chunk_key_count,\n\n    (\n        staging_stats.total_chunks > 0\n        AND staging_stats.null_embedding_count = 0\n        AND staging_stats.empty_text_count = 0\n        AND staging_stats.missing_document_id_count = 0\n        AND staging_stats.missing_chunk_index_count = 0\n        AND duplicate_stats.duplicate_chunk_key_count = 0\n    ) AS is_valid\n\nFROM staging_stats\nCROSS JOIN duplicate_stats;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1632,
+        0
+      ],
+      "id": "241ff475-dc61-4cb2-8d79-9047a6a6de1e",
+      "name": "Validate Staging Chunks",
+      "credentials": {
+        "postgres": {
+          "id": "jShdzm8IEPIqSd41",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "f1727b45-558e-4e84-94cb-cbeba3cc6e36",
+              "leftValue": "={{\n  $json.is_valid === true &&\n  Number($json.document_count) ===\n    $('Create File List').all().length\n}}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1840,
+        0
+      ],
+      "id": "fe21f856-3b30-4531-851d-d4d38534c6d4",
+      "name": "Is Staging Valid?"
+    },
+    {
+      "parameters": {
+        "jsCode": "const validation = $json;\n\nconst expectedDocumentCount =\n  $('Create File List').all().length;\n\nthrow new Error(\n  [\n    'Staging validation failed.',\n    `total_chunks=${validation.total_chunks}`,\n    `document_count=${validation.document_count}`,\n    `expected_document_count=${expectedDocumentCount}`,\n    `null_embeddings=${validation.null_embedding_count}`,\n    `empty_texts=${validation.empty_text_count}`,\n    `missing_document_ids=${validation.missing_document_id_count}`,\n    `missing_chunk_indexes=${validation.missing_chunk_index_count}`,\n    `duplicate_chunk_keys=${validation.duplicate_chunk_key_count}`\n  ].join(' ')\n);"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2048,
+        128
+      ],
+      "id": "9d9cc82a-6fa3-4f2c-b0c3-732033c724eb",
+      "name": "Fail Reindex Validation"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "TRUNCATE TABLE\n    public.langchain_document_chunks;\n\nINSERT INTO public.langchain_document_chunks (\n    id,\n    text,\n    metadata,\n    embedding,\n    collection_id\n)\nSELECT\n    id,\n    text,\n    metadata,\n    embedding,\n    collection_id\nFROM public.langchain_document_chunks_staging;\n\nSELECT\n    (\n        SELECT COUNT(*)::integer\n        FROM public.langchain_document_chunks\n    ) AS active_chunk_count,\n\n    (\n        SELECT COUNT(*)::integer\n        FROM public.langchain_document_chunks_staging\n    ) AS staging_chunk_count,\n\n    (\n        (\n            SELECT COUNT(*)\n            FROM public.langchain_document_chunks\n        )\n        =\n        (\n            SELECT COUNT(*)\n            FROM public.langchain_document_chunks_staging\n        )\n    ) AS counts_match,\n\n    NOW() AS promoted_at;",
+        "options": {
+          "queryBatching": "transaction"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2048,
+        -128
+      ],
+      "id": "a9901945-1070-4012-8335-3f9b0a17d4d4",
+      "name": "Promote Staging to Active",
+      "credentials": {
+        "postgres": {
+          "id": "jShdzm8IEPIqSd41",
+          "name": "Postgres account"
+        }
+      }
     }
   ],
   "pinData": {},
@@ -231,7 +322,7 @@
       "main": [
         [
           {
-            "node": "Clear Existing LangChain Chunks",
+            "node": "Clear Staging Chunks",
             "type": "main",
             "index": 0
           }
@@ -275,7 +366,7 @@
       "main": [
         [
           {
-            "node": "Insert Documents to PGVector - LangChain",
+            "node": "Insert Documents to PGVector Staging",
             "type": "main",
             "index": 0
           }
@@ -286,7 +377,7 @@
       "ai_document": [
         [
           {
-            "node": "Insert Documents to PGVector - LangChain",
+            "node": "Insert Documents to PGVector Staging",
             "type": "ai_document",
             "index": 0
           }
@@ -308,14 +399,25 @@
       "ai_embedding": [
         [
           {
-            "node": "Insert Documents to PGVector - LangChain",
+            "node": "Insert Documents to PGVector Staging",
             "type": "ai_embedding",
             "index": 0
           }
         ]
       ]
     },
-    "Clear Existing LangChain Chunks": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Clear Staging Chunks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clear Staging Chunks": {
       "main": [
         [
           {
@@ -326,11 +428,40 @@
         ]
       ]
     },
-    "Webhook": {
+    "Insert Documents to PGVector Staging": {
       "main": [
         [
           {
-            "node": "Clear Existing LangChain Chunks",
+            "node": "Validate Staging Chunks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Staging Chunks": {
+      "main": [
+        [
+          {
+            "node": "Is Staging Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Staging Valid?": {
+      "main": [
+        [
+          {
+            "node": "Promote Staging to Active",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fail Reindex Validation",
             "type": "main",
             "index": 0
           }
@@ -344,7 +475,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "3e14c737-6001-427b-a673-8aeb286a8ae1",
+  "versionId": "4dcd061c-6454-4a9f-873c-a6fb408de69a",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "8ad5e91ca19f2aebbe2ce2f031589771f3e4e7c0049e38f9c59f6c20dd949760"

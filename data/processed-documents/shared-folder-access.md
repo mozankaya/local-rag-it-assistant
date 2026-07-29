@@ -4,7 +4,7 @@
 source_file_name: shared-folder-access.md
 source_file_type: md
 content_hash: 4258accdc026b345c7cef41f8daab45d4b0c622901058bbc0c7a81535b415050
-processed_at: 2026-07-27T16:48:21
+processed_at: 2026-07-29T16:54:55
 -->
 
 # Ortak Klasör ve Dosya Erişimi

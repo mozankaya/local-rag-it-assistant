@@ -4,7 +4,7 @@
 source_file_name: it-support-ticket-process.md
 source_file_type: md
 content_hash: 7f0630393daf2940cef6a6a91fa43885685b1371bbb927dc42916931f008c28a
-processed_at: 2026-07-27T16:48:21
+processed_at: 2026-07-29T16:54:55
 -->
 
 # IT Destek Kaydı Oluşturma ve Takip Süreci
