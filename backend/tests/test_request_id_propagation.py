@@ -1,0 +1,93 @@
+from types import SimpleNamespace
+from typing import Any
+
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
+from pytest import MonkeyPatch
+
+from app.api.routes import chat as chat_routes
+from app.api.routes.auth import get_current_user
+from app.core.config import get_settings
+from app.middleware.request_logging import (
+    REQUEST_ID_HEADER,
+    RequestLoggingMiddleware,
+)
+
+
+def test_chat_forwards_request_id_to_n8n(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    captured_call: dict[str, Any] = {}
+
+    async def fake_post_to_n8n(
+        *,
+        url: str,
+        payload: dict[str, Any],
+        timeout_seconds: float,
+    ) -> dict[str, Any]:
+        captured_call["url"] = url
+        captured_call["payload"] = payload
+        captured_call["timeout_seconds"] = (
+            timeout_seconds
+        )
+
+        return {
+            "question": payload["question"],
+            "answer": "- VPN bağlantısını kontrol edin.",
+            "sources": [],
+            "response_type": "rag_answer",
+        }
+
+    monkeypatch.setattr(
+        chat_routes,
+        "post_to_n8n",
+        fake_post_to_n8n,
+    )
+
+    app = FastAPI()
+    app.add_middleware(RequestLoggingMiddleware)
+    app.include_router(chat_routes.router)
+
+    app.dependency_overrides[
+        get_current_user
+    ] = lambda: object()
+
+    app.dependency_overrides[
+        get_settings
+    ] = lambda: SimpleNamespace(
+        max_question_length=1000,
+        n8n_rag_webhook_url=(
+            "http://n8n.test/webhook/rag-query"
+        ),
+        request_timeout_seconds=60.0,
+    )
+
+    with TestClient(app) as client:
+        response = client.post(
+            "/chat",
+            headers={
+                REQUEST_ID_HEADER: "test-request-123",
+            },
+            json={
+                "question": (
+                    "VPN bağlantısı kuramıyorum."
+                ),
+            },
+        )
+
+    assert response.status_code == 200
+
+    assert response.headers[REQUEST_ID_HEADER] == (
+        "test-request-123"
+    )
+
+    assert captured_call["payload"] == {
+        "question": "VPN bağlantısı kuramıyorum.",
+        "request_id": "test-request-123",
+    }
+
+    assert captured_call["url"] == (
+        "http://n8n.test/webhook/rag-query"
+    )
+
+    assert captured_call["timeout_seconds"] == 60.0
