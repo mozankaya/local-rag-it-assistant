@@ -13,7 +13,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
   n8n:
-    image: n8nio/n8n:latest
+    image: n8nio/n8n:2.29.10
     container_name: rag_n8n
     restart: unless-stopped
     ports:
@@ -22,6 +22,21 @@ services:
       GENERIC_TIMEZONE: ${GENERIC_TIMEZONE}
       TZ: ${GENERIC_TIMEZONE}
       N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
+
+      EXECUTIONS_DATA_SAVE_ON_ERROR: "all"
+
+      EXECUTIONS_DATA_SAVE_ON_SUCCESS: "none"
+
+      EXECUTIONS_DATA_SAVE_ON_PROGRESS: "false"
+
+      EXECUTIONS_DATA_SAVE_MANUAL_EXECUTIONS: "true"
+
+      EXECUTIONS_DATA_PRUNE: "true"
+      #7 days 7x24=168
+      EXECUTIONS_DATA_MAX_AGE: "168"
+
+      EXECUTIONS_DATA_PRUNE_MAX_COUNT: "1000"
+
     volumes:
       - n8n_data:/home/node/.n8n
       - ../data:/home/node/.n8n-files/data:ro
