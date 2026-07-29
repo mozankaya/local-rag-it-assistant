@@ -2,6 +2,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.router import api_router
+from app.core.logging_config import configure_logging
+from app.middleware.request_logging import (
+    RequestLoggingMiddleware,
+)
+
+
+configure_logging()
 
 
 app = FastAPI(
@@ -20,6 +27,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.add_middleware(RequestLoggingMiddleware)
 
 
 app.include_router(api_router)
