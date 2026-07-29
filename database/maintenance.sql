@@ -1,15 +1,20 @@
 -- Chat ve feedback kayıtları için saklama süresi temizliği.
 -- Bu sorgu 30 günden eski kayıtları siler.
--- Şimdilik manuel olarak çalıştırılabilir.
--- İleride zamanlanmış bir n8n bakım workflow'u tarafından çalıştırılacaktır.
+--
+-- Temizlik işlemi normalde zamanlanmış
+-- "Database Retention Cleanup" n8n workflow'u tarafından
+-- her gün otomatik olarak çalıştırılır.
+--
+-- Gerektiğinde bu dosya DBeaver veya psql üzerinden
+-- manuel olarak da çalıştırılabilir.
 
 WITH deleted_chat_logs AS (
-    DELETE FROM chat_logs
+    DELETE FROM public.chat_logs
     WHERE created_at < NOW() - INTERVAL '30 days'
     RETURNING id
 ),
 deleted_feedback_logs AS (
-    DELETE FROM feedback_logs
+    DELETE FROM public.feedback_logs
     WHERE created_at < NOW() - INTERVAL '30 days'
     RETURNING id
 )
