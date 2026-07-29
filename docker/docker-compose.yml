@@ -11,6 +11,11 @@ services:
       - "127.0.0.1:${POSTGRES_PORT}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   n8n:
     image: n8nio/n8n:2.29.10
@@ -42,6 +47,11 @@ services:
       - ../data:/home/node/.n8n-files/data:ro
     depends_on:
       - postgres
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   postgres_data:
