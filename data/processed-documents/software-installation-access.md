@@ -4,7 +4,7 @@
 source_file_name: software-installation-access.md
 source_file_type: md
 content_hash: 0e344efeb550b3d9bbbf78b26c3050a0da5e5beac9531ebce26f6d957e86c075
-processed_at: 2026-07-27T16:48:21
+processed_at: 2026-07-29T16:54:55
 -->
 
 # Yazılım Kurulumu ve Uygulama Erişimi

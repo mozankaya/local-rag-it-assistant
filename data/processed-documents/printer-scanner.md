@@ -4,7 +4,7 @@
 source_file_name: printer-scanner.md
 source_file_type: md
 content_hash: 64f4c7d59abe320435725d749ca8ffe35170a85d26340d918d3287f10bbd1ea1
-processed_at: 2026-07-27T16:48:21
+processed_at: 2026-07-29T16:54:55
 -->
 
 # Yazıcı ve Tarayıcı Desteği

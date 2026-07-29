@@ -4,7 +4,7 @@
 source_file_name: meeting-room-av.md
 source_file_type: md
 content_hash: 23db616f33b6ddc86236cc21ad93ca7089702abf462b2517d8d7c0d098743f23
-processed_at: 2026-07-27T16:48:21
+processed_at: 2026-07-29T16:54:55
 -->
 
 # Toplantı Odası Görüntü ve Ses Desteği
