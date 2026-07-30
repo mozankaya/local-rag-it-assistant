@@ -15,6 +15,7 @@ interface AdminReviewItemsPageProps {
   onGoToReviewItems: () => void;
   onGoToUsers: () => void;
   onGoToDocuments: () => void;
+  onGoToSystemStatus: () => void;
   onGoToChat: () => void;
   onLogout: () => void;
 }
@@ -33,6 +34,7 @@ function AdminReviewItemsPage({
   onGoToReviewItems,
   onGoToUsers,
   onGoToDocuments,
+  onGoToSystemStatus,
   onGoToChat,
   onLogout,
 }: AdminReviewItemsPageProps) {
@@ -142,6 +144,7 @@ function AdminReviewItemsPage({
       onGoToReviewItems={onGoToReviewItems}
       onGoToUsers={onGoToUsers}
       onGoToDocuments={onGoToDocuments}
+      onGoToSystemStatus={onGoToSystemStatus}
       onGoToChat={onGoToChat}
       onLogout={onLogout}
     >

@@ -20,6 +20,7 @@ interface AdminUsersPageProps {
   onGoToReviewItems: () => void;
   onGoToUsers: () => void;
   onGoToDocuments: () => void;
+  onGoToSystemStatus: () => void;
   onGoToChat: () => void;
   onLogout: () => void;
 }
@@ -32,6 +33,7 @@ function AdminUsersPage({
   onGoToReviewItems,
   onGoToUsers,
   onGoToDocuments,
+  onGoToSystemStatus,
   onGoToChat,
   onLogout,
 }: AdminUsersPageProps) {
@@ -218,6 +220,7 @@ function AdminUsersPage({
       onGoToReviewItems={onGoToReviewItems}
       onGoToUsers={onGoToUsers}
       onGoToDocuments={onGoToDocuments}
+      onGoToSystemStatus={onGoToSystemStatus}
       onGoToChat={onGoToChat}
       onLogout={onLogout}
     >

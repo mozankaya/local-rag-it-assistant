@@ -4,13 +4,14 @@ import type { CurrentUserResponse } from "../../../api/authApi";
 interface AdminLayoutProps {
   user: CurrentUserResponse;
   children: ReactNode;
-  activePage: "dashboard" | "review-items" | "users" | "documents";
+  activePage: "dashboard" | "review-items" | "users" | "documents" | "system-status";
   pageTitle: string;
   pageDescription?: string;
   onGoToDashboard: () => void;
   onGoToReviewItems: () => void;
   onGoToUsers: () => void;
   onGoToDocuments: () => void;
+  onGoToSystemStatus: () => void;
   onGoToChat: () => void;
   onLogout: () => void;
 }
@@ -25,6 +26,7 @@ function AdminLayout({
   onGoToReviewItems,
   onGoToUsers,
   onGoToDocuments,
+  onGoToSystemStatus,
   onGoToChat,
   onLogout,
 }: AdminLayoutProps) {
@@ -71,6 +73,14 @@ function AdminLayout({
           >
             <span aria-hidden="true">▤</span>
             Doküman Yönetimi
+          </button>
+          <button
+            className={`admin-nav-item ${activePage === "system-status" ? "active" : ""}`}
+            type="button"
+            onClick={onGoToSystemStatus}
+          >
+            <span aria-hidden="true">◉</span>
+            Sistem Durumu
           </button>
           <button className="admin-nav-item" type="button" onClick={onGoToChat}>
             <span aria-hidden="true">◇</span>

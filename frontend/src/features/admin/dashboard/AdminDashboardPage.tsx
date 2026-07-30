@@ -23,6 +23,7 @@ interface AdminDashboardPageProps {
   onGoToReviewItems: () => void;
   onGoToUsers: () => void;
   onGoToDocuments: () => void;
+  onGoToSystemStatus: () => void;
   onGoToChat: () => void;
   onLogout: () => void;
 }
@@ -41,6 +42,7 @@ function AdminDashboardPage({
   onGoToReviewItems,
   onGoToUsers,
   onGoToDocuments,
+  onGoToSystemStatus,
   onGoToChat,
   onLogout,
 }: AdminDashboardPageProps) {
@@ -95,6 +97,7 @@ function AdminDashboardPage({
       onGoToReviewItems={onGoToReviewItems}
       onGoToUsers={onGoToUsers}
       onGoToDocuments={onGoToDocuments}
+      onGoToSystemStatus={onGoToSystemStatus}
       onGoToChat={onGoToChat}
       onLogout={onLogout}
     >
