@@ -1,0 +1,2 @@
+﻿model,total_run_count,passed_count,failed_count,request_error_count,average_response_time_seconds,max_response_time_seconds
+qwen3-4b-instruct-2507-security,18,18,0,0,10.255,22.269
