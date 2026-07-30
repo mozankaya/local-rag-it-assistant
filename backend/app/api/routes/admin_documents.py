@@ -358,7 +358,7 @@ def list_documents(
         AdminDocumentResponse(
             document_id=row["document_id"],
             title=row["title"],
-            category=category,
+            category=row["category"],
             file_type=row["file_type"],
             source_file_name=row["source_file_name"],
             last_updated=row["last_updated"],

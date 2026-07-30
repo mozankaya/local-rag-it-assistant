@@ -248,6 +248,7 @@ def test_admin_can_list_documents() -> None:
     assert len(body["items"]) == 2
     assert body["items"][0]["document_id"] == "vpn-guide"
     assert body["items"][0]["chunk_count"] == 4
+    assert body["items"][0]["category"] == "network"
 
     assert fake_db.execute_calls[0]["params"] == {
         "search": "VPN",
