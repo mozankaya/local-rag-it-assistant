@@ -37,6 +37,15 @@ export interface UploadDocumentResponse {
   source_path: string;
 }
 
+export interface DocumentUpdateResponse {
+  success: boolean;
+  message: string;
+  document_id: string;
+  file_name: string;
+  category: string;
+  source_path: string;
+}
+
 export interface DeleteDocumentResponse {
   success: boolean;
   message: string;
@@ -135,6 +144,19 @@ export function uploadAdminDocument(payload: UploadDocumentPayload) {
     method: "POST",
     body: formData,
   });
+}
+
+export function updateDocument(documentId: string, file: File) {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  return authorizedRequest<DocumentUpdateResponse>(
+    `/admin/documents/${encodeURIComponent(documentId)}`,
+    {
+      method: "PUT",
+      body: formData,
+    },
+  );
 }
 
 export function deleteAdminDocument(documentId: string) {

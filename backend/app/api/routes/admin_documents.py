@@ -28,6 +28,7 @@ from app.schemas.admin_documents import (
     AdminDocumentResponse,
     DocumentCategoryResponse,
     DocumentDeleteResponse,
+    DocumentUpdateResponse,
     DocumentUploadResponse,
     PaginatedAdminDocumentsResponse,
     ReindexResponse,
@@ -45,6 +46,8 @@ SOURCE_DOCUMENTS_DIR = PROJECT_ROOT_DIR / "data" / "source-documents"
 PROCESSED_DOCUMENTS_DIR = PROJECT_ROOT_DIR / "data" / "processed-documents"
 DOCUMENTS_MANIFEST_PATH = PROJECT_ROOT_DIR / "data" / "documents.json"
 PREPARE_DOCUMENTS_SCRIPT = PROJECT_ROOT_DIR / "scripts" / "prepare_documents.py"
+DELETE_BACKUP_DIR = PROJECT_ROOT_DIR / "data" / ".document-delete-backup"
+UPDATE_BACKUP_DIR = PROJECT_ROOT_DIR / "data" / ".document-update-backup"
 
 ALLOWED_UPLOAD_EXTENSIONS = {".md", ".txt", ".pdf", ".docx"}
 MAX_UPLOAD_SIZE_BYTES = 10 * 1024 * 1024
@@ -81,20 +84,6 @@ def find_source_document_path(
 
     return None
 
-
-def find_processed_document_path(document_id: str) -> Path | None:
-    safe_document_id = slugify_text(document_id)
-
-    if not safe_document_id:
-        return None
-
-    processed_root = PROCESSED_DOCUMENTS_DIR.resolve()
-    candidate = (processed_root / f"{safe_document_id}.md").resolve()
-
-    if candidate.is_file() and candidate.is_relative_to(processed_root):
-        return candidate
-
-    return None
 
 def remove_empty_directory(directory_path: Path, root_directory: Path) -> None:
     resolved_directory = directory_path.resolve()
@@ -145,6 +134,37 @@ def ensure_allowed_file(file_name: str) -> str:
     return suffix
 
 
+def save_uploaded_file(file: UploadFile, target_path: Path) -> None:
+    """Yüklenen dosyayı boyut kontrolüyle kaydeder."""
+
+    uploaded_size = 0
+
+    try:
+        with target_path.open("wb") as buffer:
+            while True:
+                chunk = file.file.read(1024 * 1024)
+
+                if not chunk:
+                    break
+
+                uploaded_size += len(chunk)
+
+                if uploaded_size > MAX_UPLOAD_SIZE_BYTES:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="Dosya boyutu 10 MB sınırını aşamaz.",
+                    )
+
+                buffer.write(chunk)
+
+    except Exception:
+        target_path.unlink(missing_ok=True)
+        raise
+
+    finally:
+        file.file.close()
+
+
 def load_documents_manifest() -> list[dict]:
     if not DOCUMENTS_MANIFEST_PATH.exists():
         return []
@@ -168,49 +188,50 @@ def load_documents_manifest() -> list[dict]:
     return data
 
 
-def save_documents_manifest(documents: list[dict]) -> None:
-    DOCUMENTS_MANIFEST_PATH.parent.mkdir(parents=True, exist_ok=True)
+def run_prepare_documents_script(allow_empty: bool = False) -> None:
+    """prepare_documents.py scriptini çalıştırır."""
 
-    with DOCUMENTS_MANIFEST_PATH.open("w", encoding="utf-8") as file:
-        json.dump(documents, file, ensure_ascii=False, indent=2)
-
-
-def remove_document_from_manifest(document_id: str) -> bool:
-    documents = load_documents_manifest()
-
-    filtered_documents = [
-        document
-        for document in documents
-        if document.get("document_id") != document_id
-    ]
-
-    changed = len(filtered_documents) != len(documents)
-
-    if changed:
-        save_documents_manifest(filtered_documents)
-
-    return changed
-
-
-def run_prepare_documents_script() -> None:
     if not PREPARE_DOCUMENTS_SCRIPT.is_file():
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="prepare_documents.py scripti bulunamadı.",
         )
 
-    result = subprocess.run(
-        [sys.executable, str(PREPARE_DOCUMENTS_SCRIPT)],
-        cwd=str(PROJECT_ROOT_DIR),
-        capture_output=True,
-        text=True,
-        timeout=120,
-    )
+    command = [
+        sys.executable,
+        str(PREPARE_DOCUMENTS_SCRIPT),
+    ]
+
+    if allow_empty:
+        command.append("--allow-empty")
+
+    try:
+        result = subprocess.run(
+            command,
+            cwd=str(PROJECT_ROOT_DIR),
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+    except subprocess.TimeoutExpired as error:
+        raise HTTPException(
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+            detail="Doküman ön işleme işlemi zaman aşımına uğradı.",
+        ) from error
 
     if result.returncode != 0:
+        error_message = (
+            result.stderr.strip()
+            or result.stdout.strip()
+            or "Bilinmeyen doküman işleme hatası."
+        )
+
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Doküman ön işleme sırasında hata oluştu: {result.stderr or result.stdout}",
+            detail=(
+                "Doküman ön işleme sırasında hata oluştu: "
+                f"{error_message}"
+            ),
         )
 
 
@@ -337,7 +358,7 @@ def list_documents(
         AdminDocumentResponse(
             document_id=row["document_id"],
             title=row["title"],
-            category=row["category"],
+            category=category,
             file_type=row["file_type"],
             source_file_name=row["source_file_name"],
             last_updated=row["last_updated"],
@@ -477,32 +498,7 @@ def upload_document(
             ),
         )
 
-    uploaded_size = 0
-
-    try:
-        with target_file_path.open("wb") as buffer:
-            while True:
-                chunk = file.file.read(1024 * 1024)
-
-                if not chunk:
-                    break
-
-                uploaded_size += len(chunk)
-
-                if uploaded_size > MAX_UPLOAD_SIZE_BYTES:
-                    raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        detail="Dosya boyutu 10 MB sınırını aşamaz.",
-                    )
-
-                buffer.write(chunk)
-
-    except Exception:
-        target_file_path.unlink(missing_ok=True)
-        raise
-
-    finally:
-        file.file.close()
+    save_uploaded_file(file, target_file_path)
 
     try:
         run_prepare_documents_script()
@@ -527,12 +523,123 @@ def upload_document(
     )
 
 
+@router.put("/{document_id}", response_model=DocumentUpdateResponse)
+def update_document(
+    document_id: str,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    _current_admin: User = Depends(require_admin),
+):
+    """Mevcut dokümanın kaynak dosyasını güvenli şekilde değiştirir."""
+
+    row = db.execute(
+        text(
+            """
+            SELECT
+                COALESCE(
+                    metadata->>'source_file_name',
+                    metadata->>'file_name'
+                ) AS source_file_name,
+                COALESCE(metadata->>'category', 'unknown') AS category
+            FROM langchain_document_chunks
+            WHERE metadata->>'document_id' = :document_id
+            LIMIT 1
+            """
+        ),
+        {"document_id": document_id},
+    ).mappings().first()
+
+    if not row:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Güncellenecek doküman bulunamadı.",
+        )
+
+    source_file_name = row["source_file_name"]
+    category = row["category"]
+
+    if not source_file_name:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Doküman kaynak dosya bilgisi bulunamadı.",
+        )
+
+    source_file_path = find_source_document_path(
+        source_file_name=source_file_name,
+        category=category,
+    )
+
+    if not source_file_path:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Güncellenecek kaynak doküman dosyası bulunamadı.",
+        )
+
+    new_suffix = ensure_allowed_file(file.filename or "")
+
+    if new_suffix != source_file_path.suffix.lower():
+        file.file.close()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                "Güncelleme sırasında dosya türü değiştirilemez. "
+                "Aynı dosya türünü kullanın."
+            ),
+        )
+
+    UPDATE_BACKUP_DIR.mkdir(parents=True, exist_ok=True)
+    backup_file_path = UPDATE_BACKUP_DIR / source_file_path.name
+    backup_file_path.unlink(missing_ok=True)
+
+    # Eski dosyayı işlem tamamlanana kadar geçici klasörde tutarız.
+    source_file_path.replace(backup_file_path)
+
+    try:
+        save_uploaded_file(file, source_file_path)
+        run_prepare_documents_script()
+
+    except Exception:
+        source_file_path.unlink(missing_ok=True)
+
+        if backup_file_path.exists():
+            backup_file_path.replace(source_file_path)
+
+        remove_empty_directory(
+            UPDATE_BACKUP_DIR,
+            PROJECT_ROOT_DIR / "data",
+        )
+        raise
+
+    backup_file_path.unlink(missing_ok=True)
+    remove_empty_directory(
+        UPDATE_BACKUP_DIR,
+        PROJECT_ROOT_DIR / "data",
+    )
+
+    return DocumentUpdateResponse(
+        success=True,
+        message=(
+            "Doküman dosyası başarıyla güncellendi ve ön işleme alındı. "
+            "Vektör veritabanını güncellemek için yeniden "
+            "indeksleme çalıştırılmalıdır."
+        ),
+        document_id=document_id,
+        file_name=source_file_path.name,
+        category=category,
+        source_path=str(
+            source_file_path.relative_to(PROJECT_ROOT_DIR)
+        ),
+    )
+
+
 @router.delete("/{document_id}", response_model=DocumentDeleteResponse)
 def delete_document(
     document_id: str,
     db: Session = Depends(get_db),
     _current_admin: User = Depends(require_admin),
 ):
+    """Dokümanı güvenli şekilde siler."""
+
     row = db.execute(
         text(
             """
@@ -570,37 +677,90 @@ def delete_document(
         category=category,
     )
 
-    processed_file_path = find_processed_document_path(document_id)
+    if not source_file_path:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Silinecek kaynak doküman dosyası bulunamadı.",
+        )
 
-    if source_file_path:
-        source_parent_dir = source_file_path.parent
-        source_file_path.unlink(missing_ok=True)
-        remove_empty_directory(source_parent_dir, SOURCE_DOCUMENTS_DIR)
+    source_parent_dir = source_file_path.parent
 
-    if processed_file_path:
-        processed_file_path.unlink(missing_ok=True)
+    DELETE_BACKUP_DIR.mkdir(parents=True, exist_ok=True)
 
-    remove_document_from_manifest(document_id)
+    backup_file_path = (
+        DELETE_BACKUP_DIR
+        / f"{document_id}{source_file_path.suffix}"
+    )
+
+    backup_file_path.unlink(missing_ok=True)
+
+    # Dosyayı hemen silmek yerine geçici klasöre taşıyoruz.
+    source_file_path.replace(backup_file_path)
+
+    preparation_completed = False
 
     try:
-        run_prepare_documents_script()
-    except HTTPException:
+        # Kalan kaynaklara göre processed dosyaları ve manifesti yeniler.
+        # Son doküman siliniyorsa boş duruma izin verir.
+        run_prepare_documents_script(allow_empty=True)
+        preparation_completed = True
+
+        db.execute(
+            text(
+                """
+                DELETE FROM langchain_document_chunks
+                WHERE metadata->>'document_id' = :document_id
+                """
+            ),
+            {"document_id": document_id},
+        )
+        db.commit()
+
+    except Exception:
+        db.rollback()
+
+        # İşlem başarısızsa kaynak dosyayı eski yerine getir.
+        source_parent_dir.mkdir(parents=True, exist_ok=True)
+
+        if backup_file_path.exists():
+            backup_file_path.replace(source_file_path)
+
+        # Script başarılı olup DB işlemi başarısız olduysa
+        # processed dosyaları geri getirilen kaynağa göre yenile.
+        if preparation_completed:
+            try:
+                run_prepare_documents_script()
+            except Exception as recovery_error:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=(
+                        "Doküman silinemedi. Kaynak dosya geri getirildi "
+                        "ancak processed dokümanlar yeniden hazırlanamadı: "
+                        f"{recovery_error}"
+                    ),
+                ) from recovery_error
+
         raise
 
-    db.execute(
-        text(
-            """
-            DELETE FROM langchain_document_chunks
-            WHERE metadata->>'document_id' = :document_id
-            """
-        ),
-        {"document_id": document_id},
+    # Her şey başarılıysa geçici yedeğe artık gerek yok.
+    backup_file_path.unlink(missing_ok=True)
+
+    remove_empty_directory(
+        source_parent_dir,
+        SOURCE_DOCUMENTS_DIR,
     )
-    db.commit()
+    remove_empty_directory(
+        DELETE_BACKUP_DIR,
+        PROJECT_ROOT_DIR / "data",
+    )
 
     return DocumentDeleteResponse(
         success=True,
-        message="Doküman başarıyla silindi. Kaynak dosya, işlenmiş dosya, manifest kaydı ve indeks kayıtları kaldırıldı.",
+        message=(
+            "Doküman başarıyla silindi. Kaynak dosya, "
+            "işlenmiş dosya, manifest kaydı ve indeks "
+            "kayıtları kaldırıldı."
+        ),
         document_id=document_id,
     )
 
