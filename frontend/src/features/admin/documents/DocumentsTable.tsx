@@ -1,5 +1,4 @@
 import type { AdminDocument } from "../../../api/adminDocumentsApi";
-import { formatDate } from "../../../utils/formatDate";
 
 interface DocumentsTableProps {
   documents: AdminDocument[];
@@ -13,6 +12,34 @@ interface DocumentsTableProps {
 
 function displayValue(value?: string | null) {
   return value?.trim() || "—";
+}
+
+function displayCategory(value?: string | null) {
+  return value?.trim() || "-";
+}
+
+function formatDocumentDate(value?: string | null) {
+  const match = value?.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return "-";
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(year, month - 1, day);
+
+  if (
+    date.getFullYear() !== year
+    || date.getMonth() !== month - 1
+    || date.getDate() !== day
+  ) {
+    return "-";
+  }
+
+  return new Intl.DateTimeFormat("tr-TR", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(date);
 }
 
 function DocumentsTable({
@@ -60,7 +87,7 @@ function DocumentsTable({
               <td><code>{document.document_id}</code></td>
               <td>
                 <span className="document-category-badge">
-                  {displayValue(document.category)}
+                  {displayCategory(document.category)}
                 </span>
               </td>
               <td>
@@ -74,7 +101,7 @@ function DocumentsTable({
               <td>
                 <strong className="document-chunk-count">{document.chunk_count}</strong>
               </td>
-              <td className="document-date">{formatDate(document.last_updated)}</td>
+              <td className="document-date">{formatDocumentDate(document.last_updated)}</td>
               <td>
                 <div className="document-row-actions">
                   <button
