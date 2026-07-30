@@ -31,6 +31,23 @@ export interface FeedbackSummary {
   not_useful_feedback: number;
 }
 
+export type ServiceStatus = "healthy" | "unavailable";
+
+export interface ServiceStatusDetail {
+  status: ServiceStatus;
+  message: string;
+}
+
+export interface SystemStatusResponse {
+  overall_status: "healthy" | "degraded";
+  services: {
+    api: ServiceStatusDetail;
+    database: ServiceStatusDetail;
+    n8n: ServiceStatusDetail;
+    ollama: ServiceStatusDetail;
+  };
+}
+
 export type ReviewItemType = "feedback" | "chat_log" | (string & {});
 
 export type ReviewReason =
@@ -74,7 +91,7 @@ async function adminRequest<T>(path: string): Promise<T> {
     throw new Error("Admin API URL or access token is missing.");
   }
 
-  const response = await fetch(`${ADMIN_API_URL}/admin/dashboard${path}`, {
+  const response = await fetch(`${ADMIN_API_URL}${path}`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -88,19 +105,19 @@ async function adminRequest<T>(path: string): Promise<T> {
 }
 
 export function getDashboardSummary() {
-  return adminRequest<DashboardSummary>("/summary");
+  return adminRequest<DashboardSummary>("/admin/dashboard/summary");
 }
 
 export function getResponseTypes() {
-  return adminRequest<ResponseTypeCount[]>("/response-types");
+  return adminRequest<ResponseTypeCount[]>("/admin/dashboard/response-types");
 }
 
 export function getCategories() {
-  return adminRequest<CategoryCount[]>("/categories");
+  return adminRequest<CategoryCount[]>("/admin/dashboard/categories");
 }
 
 export function getFeedbackSummary() {
-  return adminRequest<FeedbackSummary>("/feedback-summary");
+  return adminRequest<FeedbackSummary>("/admin/dashboard/feedback-summary");
 }
 
 export function getReviewItems(
@@ -118,6 +135,10 @@ export function getReviewItems(
   }
 
   return adminRequest<PaginatedReviewItems>(
-    `/review-items?${query.toString()}`,
+    `/admin/dashboard/review-items?${query.toString()}`,
   );
+}
+
+export function getSystemStatus() {
+  return adminRequest<SystemStatusResponse>("/admin/system-status");
 }

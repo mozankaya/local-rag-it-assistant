@@ -8,6 +8,7 @@ import {
 import AdminDashboardPage from "../features/admin/dashboard/AdminDashboardPage";
 import AdminDocumentsPage from "../features/admin/documents/AdminDocumentsPage";
 import AdminReviewItemsPage from "../features/admin/review-queue/AdminReviewItemsPage";
+import AdminSystemStatusPage from "../features/admin/system-status/AdminSystemStatusPage";
 import AdminUsersPage from "../features/admin/users/AdminUsersPage";
 import LoginPage from "../features/auth/LoginPage";
 import ChatPage from "../features/chat/ChatPage";
@@ -79,7 +80,8 @@ function App() {
     const isKnownAdminRoute = pathname === "/admin/dashboard"
       || pathname === "/admin/review-items"
       || pathname === "/admin/users"
-      || pathname === "/admin/documents";
+      || pathname === "/admin/documents"
+      || pathname === "/admin/system-status";
 
     if (!isKnownAdminRoute) {
       window.location.replace("/admin/dashboard");
@@ -127,6 +129,10 @@ function App() {
     navigate("/admin/documents");
   }, [navigate]);
 
+  const handleGoToSystemStatus = useCallback(() => {
+    navigate("/admin/system-status");
+  }, [navigate]);
+
   if (isCheckingAuth) {
     return (
       <div className="auth-loading">
@@ -148,6 +154,7 @@ function App() {
         onGoToReviewItems={handleGoToReviewItems}
         onGoToUsers={handleGoToUsers}
         onGoToDocuments={handleGoToDocuments}
+        onGoToSystemStatus={handleGoToSystemStatus}
         onGoToChat={handleGoToChat}
         onLogout={handleLogout}
       />
@@ -162,6 +169,7 @@ function App() {
         onGoToReviewItems={handleGoToReviewItems}
         onGoToUsers={handleGoToUsers}
         onGoToDocuments={handleGoToDocuments}
+        onGoToSystemStatus={handleGoToSystemStatus}
         onGoToChat={handleGoToChat}
         onLogout={handleLogout}
       />
@@ -176,6 +184,7 @@ function App() {
         onGoToReviewItems={handleGoToReviewItems}
         onGoToUsers={handleGoToUsers}
         onGoToDocuments={handleGoToDocuments}
+        onGoToSystemStatus={handleGoToSystemStatus}
         onGoToChat={handleGoToChat}
         onLogout={handleLogout}
       />
@@ -190,6 +199,22 @@ function App() {
         onGoToReviewItems={handleGoToReviewItems}
         onGoToUsers={handleGoToUsers}
         onGoToDocuments={handleGoToDocuments}
+        onGoToSystemStatus={handleGoToSystemStatus}
+        onGoToChat={handleGoToChat}
+        onLogout={handleLogout}
+      />
+    );
+  }
+
+  if (currentUser.role === "admin" && pathname === "/admin/system-status") {
+    return (
+      <AdminSystemStatusPage
+        user={currentUser}
+        onGoToDashboard={handleGoToDashboard}
+        onGoToReviewItems={handleGoToReviewItems}
+        onGoToUsers={handleGoToUsers}
+        onGoToDocuments={handleGoToDocuments}
+        onGoToSystemStatus={handleGoToSystemStatus}
         onGoToChat={handleGoToChat}
         onLogout={handleLogout}
       />

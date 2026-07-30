@@ -1187,6 +1187,154 @@
 .load-more-button:disabled { opacity: 0.55; cursor: not-allowed; }
 .load-more-button[aria-busy="true"] { cursor: wait; }
 
+.system-status-content {
+  display: grid;
+  gap: 18px;
+}
+
+.system-status-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.system-status-refresh {
+  min-width: 112px;
+  min-height: 40px;
+  padding: 9px 15px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  border: 1px solid var(--admin-red);
+  border-radius: 10px;
+  color: #fff;
+  background: var(--admin-red);
+  font-weight: 800;
+}
+
+.system-status-refresh:hover:not(:disabled) { background: #c9000c; }
+.system-status-refresh:disabled { opacity: 0.65; cursor: wait; }
+.system-status-refresh > span {
+  width: 15px;
+  height: 15px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: admin-spin 700ms linear infinite;
+}
+
+.system-overall-status {
+  padding: 22px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  border: 1px solid var(--admin-border);
+  border-radius: 16px;
+  background: var(--admin-surface);
+}
+
+.system-overall-status.healthy {
+  border-color: rgba(41, 188, 112, 0.32);
+  background: rgba(41, 188, 112, 0.08);
+}
+
+.system-overall-status.degraded {
+  border-color: rgba(224, 142, 18, 0.4);
+  background: rgba(224, 142, 18, 0.1);
+}
+
+.system-overall-icon {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.system-overall-status.healthy .system-overall-icon { color: #69dfa0; }
+.system-overall-status.degraded .system-overall-icon { color: #ffd18a; }
+.system-overall-status small {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--admin-muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+.system-overall-status strong { font-size: 18px; }
+
+.system-service-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.system-service-card {
+  min-width: 0;
+  padding: 20px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  border: 1px solid var(--admin-border);
+  border-radius: 16px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.035), transparent 65%), var(--admin-surface);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.17);
+}
+
+.system-service-heading {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.system-service-icon {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border: 1px solid rgba(227, 6, 19, 0.24);
+  border-radius: 10px;
+  color: #fff;
+  background: var(--admin-red-soft);
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.system-service-heading h2 { margin: 0; font-size: 16px; }
+.system-service-badge {
+  padding: 6px 9px;
+  border: 1px solid var(--admin-border);
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.system-service-badge.healthy {
+  color: #69dfa0;
+  border-color: rgba(41, 188, 112, 0.3);
+  background: rgba(41, 188, 112, 0.09);
+}
+.system-service-badge.unavailable {
+  color: #ff9ca2;
+  border-color: rgba(227, 6, 19, 0.4);
+  background: var(--admin-red-soft);
+}
+.system-service-card p {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--admin-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .admin-loading,
 .admin-error,
 .admin-empty {
@@ -1255,6 +1403,7 @@
   .admin-nav { flex-wrap: wrap; }
   .admin-nav-item { width: auto; }
   .admin-distribution-grid { grid-template-columns: 1fr; }
+  .system-service-grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 600px) {
@@ -1272,6 +1421,8 @@
   .admin-user-search { grid-template-columns: 1fr; }
   .document-toolbar { grid-template-columns: 1fr; }
   .document-update-details { grid-template-columns: 1fr; }
+  .system-status-actions { justify-content: stretch; }
+  .system-status-refresh { width: 100%; }
 }
 
 @media (prefers-reduced-motion: reduce) {
