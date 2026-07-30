@@ -7,6 +7,7 @@ import {
   getAdminDocuments,
   getDocumentCategories,
   reindexAdminDocuments,
+  updateDocument,
   uploadAdminDocument,
   type AdminDocument,
   type DocumentCategory,
@@ -16,6 +17,7 @@ import type { CurrentUserResponse } from "../../../api/authApi";
 import { downloadBlob } from "../../../utils/downloadBlob";
 import AdminLayout from "../shared/AdminLayout";
 import DocumentUploadModal from "./DocumentUploadModal";
+import DocumentUpdateModal from "./DocumentUpdateModal";
 import DocumentsTable from "./DocumentsTable";
 import "../../../components/admin/admin.css";
 
@@ -55,6 +57,9 @@ function AdminDocumentsPage({
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
+  const [documentToUpdate, setDocumentToUpdate] = useState<AdminDocument | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [updateError, setUpdateError] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [downloadingDocumentId, setDownloadingDocumentId] = useState("");
@@ -414,6 +419,79 @@ function AdminDocumentsPage({
     return true;
   }
 
+  function openUpdateModal(document: AdminDocument) {
+    setUpdateError("");
+    setDocumentToUpdate(document);
+  }
+
+  function closeUpdateModal() {
+    if (isUpdating) return;
+    setUpdateError("");
+    setIsUpdating(false);
+    setDocumentToUpdate(null);
+  }
+
+  async function handleUpdate(file: File): Promise<boolean> {
+    if (!documentToUpdate || isUpdating) return false;
+
+    setError("");
+    setSuccess("");
+    setUpdateError("");
+    setIsUpdating(true);
+
+    try {
+      await updateDocument(documentToUpdate.document_id, file);
+    } catch (requestError) {
+      if (requestError instanceof AdminDocumentsApiError && requestError.status === 401) {
+        setIsUpdating(false);
+        onLogout();
+        return false;
+      }
+      if (requestError instanceof AdminDocumentsApiError && requestError.status === 403) {
+        setIsUpdating(false);
+        onGoToChat();
+        return false;
+      }
+
+      const detail = requestError instanceof AdminDocumentsApiError
+        ? requestError.detail
+        : undefined;
+      setUpdateError(detail || "Doküman güncellenemedi.");
+      setIsUpdating(false);
+      return false;
+    }
+
+    setSuccess("Doküman güncellendi. Değişikliklerin chatbot'a yansıması için yeniden indeksleme işlemini çalıştırın.");
+    setIsLoading(true);
+
+    try {
+      const documentsData = await getAdminDocuments(
+        PAGE_SIZE,
+        0,
+        activeSearch,
+        activeCategory,
+      );
+
+      setDocuments(documentsData.items);
+      setTotal(documentsData.total);
+      setNextOffset(documentsData.offset + PAGE_SIZE);
+      setHasMore(documentsData.has_more);
+    } catch (requestError) {
+      if (requestError instanceof AdminDocumentsApiError && requestError.status === 401) {
+        onLogout();
+      } else if (requestError instanceof AdminDocumentsApiError && requestError.status === 403) {
+        onGoToChat();
+      } else {
+        setError("Doküman güncellendi ancak liste yenilenemedi. Lütfen tekrar deneyin.");
+      }
+    } finally {
+      setIsLoading(false);
+      setIsUpdating(false);
+    }
+
+    return true;
+  }
+
   return (
     <AdminLayout
       user={user}
@@ -493,7 +571,9 @@ function AdminDocumentsPage({
               documents={documents}
               downloadingDocumentId={downloadingDocumentId}
               deletingDocumentId={deletingDocumentId}
+              updatingDocumentId={documentToUpdate && isUpdating ? documentToUpdate.document_id : ""}
               onDownload={handleDownload}
+              onUpdate={openUpdateModal}
               onDelete={handleDelete}
             />
           )}
@@ -519,6 +599,13 @@ function AdminDocumentsPage({
         categorySuggestions={categories.map((category) => category.category)}
         onClose={closeUploadModal}
         onSubmit={handleUpload}
+      />
+      <DocumentUpdateModal
+        document={documentToUpdate}
+        isUpdating={isUpdating}
+        error={updateError}
+        onClose={closeUpdateModal}
+        onSubmit={handleUpdate}
       />
     </AdminLayout>
   );

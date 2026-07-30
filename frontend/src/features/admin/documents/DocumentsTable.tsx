@@ -5,7 +5,9 @@ interface DocumentsTableProps {
   documents: AdminDocument[];
   downloadingDocumentId: string;
   deletingDocumentId: string;
+  updatingDocumentId: string;
   onDownload: (document: AdminDocument) => void;
+  onUpdate: (document: AdminDocument) => void;
   onDelete: (document: AdminDocument) => void;
 }
 
@@ -17,7 +19,9 @@ function DocumentsTable({
   documents,
   downloadingDocumentId,
   deletingDocumentId,
+  updatingDocumentId,
   onDownload,
+  onUpdate,
   onDelete,
 }: DocumentsTableProps) {
   if (documents.length === 0) {
@@ -43,6 +47,7 @@ function DocumentsTable({
           {documents.map((document) => {
             const isDownloading = downloadingDocumentId === document.document_id;
             const isDeleting = deletingDocumentId === document.document_id;
+            const isUpdating = updatingDocumentId === document.document_id;
 
             return (
             <tr key={`${document.document_id}-${document.source_file_name ?? ""}`}>
@@ -81,6 +86,16 @@ function DocumentsTable({
                   >
                     <span aria-hidden="true">↓</span>
                     {isDownloading ? "İndiriliyor..." : "İndir"}
+                  </button>
+                  <button
+                    className="document-update-button"
+                    type="button"
+                    disabled={Boolean(updatingDocumentId)}
+                    aria-busy={isUpdating}
+                    onClick={() => onUpdate(document)}
+                  >
+                    <span aria-hidden="true">↻</span>
+                    {isUpdating ? "Güncelleniyor..." : "Güncelle"}
                   </button>
                   <button
                     className="document-delete-button"
