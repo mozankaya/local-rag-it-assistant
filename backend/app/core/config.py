@@ -11,8 +11,12 @@ class Settings(BaseSettings):
     n8n_feedback_webhook_url: str
     n8n_reindex_webhook_url: str | None = None
 
+    n8n_health_url: str = "http://localhost:5678/healthz"
+    ollama_health_url: str = "http://localhost:11434/api/tags"
+
     request_timeout_seconds: float = 60.0
     reindex_timeout_seconds: float = 300.0
+    service_status_timeout_seconds: float = 3.0
     max_question_length: int = 1000
 
     database_url: str
