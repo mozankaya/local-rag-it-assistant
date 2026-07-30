@@ -125,6 +125,9 @@ def configure_temporary_paths(
     delete_backup_directory = (
         project_root / "data" / ".document-delete-backup"
     )
+    update_backup_directory = (
+        project_root / "data" / ".document-update-backup"
+    )
 
     source_directory.mkdir(parents=True)
     processed_directory.mkdir(parents=True)
@@ -161,6 +164,11 @@ def configure_temporary_paths(
         "DELETE_BACKUP_DIR",
         delete_backup_directory,
     )
+    monkeypatch.setattr(
+        document_routes,
+        "UPDATE_BACKUP_DIR",
+        update_backup_directory,
+    )
 
     return {
         "project_root": project_root,
@@ -169,6 +177,7 @@ def configure_temporary_paths(
         "manifest_path": manifest_path,
         "prepare_script": prepare_script,
         "delete_backup_directory": delete_backup_directory,
+        "update_backup_directory": update_backup_directory,
     }
 
 
@@ -573,6 +582,150 @@ def test_download_does_not_access_file_outside_source_directory(
     assert outside_file.exists()
 
 
+def test_admin_can_update_document(
+    monkeypatch: MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    paths = configure_temporary_paths(monkeypatch, tmp_path)
+
+    source_directory = paths["source_directory"] / "network"
+    source_directory.mkdir()
+
+    source_file = source_directory / "vpn-guide.txt"
+    source_file.write_text("old content", encoding="utf-8")
+
+    prepare_calls: list[bool] = []
+    monkeypatch.setattr(
+        document_routes,
+        "run_prepare_documents_script",
+        lambda: prepare_calls.append(True),
+    )
+
+    fake_db = FakeSession(
+        FakeResult(
+            first_result={
+                "source_file_name": "vpn-guide.txt",
+                "category": "network",
+            }
+        )
+    )
+
+    with create_client(
+        current_user=create_user(),
+        fake_db=fake_db,
+    ) as client:
+        response = client.put(
+            "/admin/documents/vpn-guide",
+            files={
+                "file": (
+                    "vpn-guide.txt",
+                    b"new content",
+                    "text/plain",
+                )
+            },
+        )
+
+    assert response.status_code == 200
+    assert response.json()["success"] is True
+    assert response.json()["document_id"] == "vpn-guide"
+    assert source_file.read_bytes() == b"new content"
+    assert prepare_calls == [True]
+    assert not paths["update_backup_directory"].exists()
+
+
+def test_update_restores_old_file_when_preprocessing_fails(
+    monkeypatch: MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    paths = configure_temporary_paths(monkeypatch, tmp_path)
+
+    source_directory = paths["source_directory"] / "network"
+    source_directory.mkdir()
+
+    source_file = source_directory / "vpn-guide.txt"
+    source_file.write_text("old content", encoding="utf-8")
+
+    def fail_preprocessing() -> None:
+        raise HTTPException(
+            status_code=500,
+            detail="Test preprocessing failure.",
+        )
+
+    monkeypatch.setattr(
+        document_routes,
+        "run_prepare_documents_script",
+        fail_preprocessing,
+    )
+
+    fake_db = FakeSession(
+        FakeResult(
+            first_result={
+                "source_file_name": "vpn-guide.txt",
+                "category": "network",
+            }
+        )
+    )
+
+    with create_client(
+        current_user=create_user(),
+        fake_db=fake_db,
+    ) as client:
+        response = client.put(
+            "/admin/documents/vpn-guide",
+            files={
+                "file": (
+                    "vpn-guide.txt",
+                    b"new content",
+                    "text/plain",
+                )
+            },
+        )
+
+    assert response.status_code == 500
+    assert source_file.read_text(encoding="utf-8") == "old content"
+    assert not paths["update_backup_directory"].exists()
+
+
+def test_update_rejects_file_type_change(
+    monkeypatch: MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    paths = configure_temporary_paths(monkeypatch, tmp_path)
+
+    source_directory = paths["source_directory"] / "network"
+    source_directory.mkdir()
+
+    source_file = source_directory / "vpn-guide.txt"
+    source_file.write_text("old content", encoding="utf-8")
+
+    fake_db = FakeSession(
+        FakeResult(
+            first_result={
+                "source_file_name": "vpn-guide.txt",
+                "category": "network",
+            }
+        )
+    )
+
+    with create_client(
+        current_user=create_user(),
+        fake_db=fake_db,
+    ) as client:
+        response = client.put(
+            "/admin/documents/vpn-guide",
+            files={
+                "file": (
+                    "vpn-guide.md",
+                    b"# New content",
+                    "text/markdown",
+                )
+            },
+        )
+
+    assert response.status_code == 400
+    assert source_file.read_text(encoding="utf-8") == "old content"
+
+
 def test_admin_can_delete_document(
     monkeypatch: MonkeyPatch,
     tmp_path: Path,
@@ -609,7 +762,11 @@ def test_admin_can_delete_document(
     def fake_prepare_documents_script(
         allow_empty: bool = False,
     ) -> None:
+        # Silme endpoint'i bu seçeneği True göndermelidir.
         assert allow_empty is True
+
+        # Gerçek prepare_documents.py çalışsaydı,
+        # silinen dokümanın processed çıktısı kaldırılırdı.
         processed_file.unlink(missing_ok=True)
 
         documents = json.loads(

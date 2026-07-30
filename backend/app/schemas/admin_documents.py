@@ -39,6 +39,15 @@ class DocumentUploadResponse(BaseModel):
     source_path: str
     
     
+class DocumentUpdateResponse(BaseModel):
+    success: bool
+    message: str
+    document_id: str
+    file_name: str
+    category: str
+    source_path: str
+
+
 class DocumentDeleteResponse(BaseModel):
     success: bool
     message: str

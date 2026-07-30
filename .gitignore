@@ -40,3 +40,10 @@ docker/volumes/
 postgres-data/
 n8n-data/
 ollama-data/
+
+#Temporary staging and backup files
+data/processed-documents-staging/
+data/processed-documents-backup/
+data/documents.staging.json
+data/documents.backup.json
+data/.document-delete-backup/
