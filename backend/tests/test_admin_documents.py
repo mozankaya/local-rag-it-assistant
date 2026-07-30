@@ -44,6 +44,7 @@ class FakeSession:
         self.results = list(results)
         self.execute_calls: list[dict[str, Any]] = []
         self.commit_count = 0
+        self.rollback_count = 0
 
     def execute(
         self,
@@ -64,6 +65,9 @@ class FakeSession:
 
     def commit(self) -> None:
         self.commit_count += 1
+
+    def rollback(self) -> None:
+        self.rollback_count += 1
 
 
 class FakeHTTPResponse:
@@ -118,6 +122,9 @@ def configure_temporary_paths(
     processed_directory = project_root / "data" / "processed-documents"
     manifest_path = project_root / "data" / "documents.json"
     prepare_script = project_root / "scripts" / "prepare_documents.py"
+    delete_backup_directory = (
+        project_root / "data" / ".document-delete-backup"
+    )
 
     source_directory.mkdir(parents=True)
     processed_directory.mkdir(parents=True)
@@ -149,6 +156,11 @@ def configure_temporary_paths(
         "PREPARE_DOCUMENTS_SCRIPT",
         prepare_script,
     )
+    monkeypatch.setattr(
+        document_routes,
+        "DELETE_BACKUP_DIR",
+        delete_backup_directory,
+    )
 
     return {
         "project_root": project_root,
@@ -156,6 +168,7 @@ def configure_temporary_paths(
         "processed_directory": processed_directory,
         "manifest_path": manifest_path,
         "prepare_script": prepare_script,
+        "delete_backup_directory": delete_backup_directory,
     }
 
 
@@ -593,10 +606,33 @@ def test_admin_can_delete_document(
         encoding="utf-8",
     )
 
+    def fake_prepare_documents_script(
+        allow_empty: bool = False,
+    ) -> None:
+        assert allow_empty is True
+        processed_file.unlink(missing_ok=True)
+
+        documents = json.loads(
+            paths["manifest_path"].read_text(encoding="utf-8")
+        )
+        remaining_documents = [
+            document
+            for document in documents
+            if document.get("document_id") != "vpn-guide"
+        ]
+        paths["manifest_path"].write_text(
+            json.dumps(
+                remaining_documents,
+                ensure_ascii=False,
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+
     monkeypatch.setattr(
         document_routes,
         "run_prepare_documents_script",
-        lambda: None,
+        fake_prepare_documents_script,
     )
 
     fake_db = FakeSession(
@@ -624,6 +660,7 @@ def test_admin_can_delete_document(
     assert not source_file.exists()
     assert not processed_file.exists()
     assert not source_directory.exists()
+    assert not paths["delete_backup_directory"].exists()
 
     remaining_manifest = json.loads(
         paths["manifest_path"].read_text(encoding="utf-8")
