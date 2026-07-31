@@ -1,10 +1,4 @@
-import json
-import re
-import subprocess
-import sys
 from pathlib import Path
-from urllib.error import HTTPError, URLError
-from urllib.request import Request, urlopen
 
 from fastapi import (
     APIRouter,
@@ -33,24 +27,111 @@ from app.schemas.admin_documents import (
     PaginatedAdminDocumentsResponse,
     ReindexResponse,
 )
-
+from app.services import document_preprocessing
+from app.services.document_files import (
+    ensure_allowed_file,
+    find_source_document_path,
+    remove_empty_directory,
+    save_uploaded_file,
+    slugify_text,
+)
+from app.services.n8n_client import (
+    N8nClientError,
+    N8nTimeoutError,
+    trigger_n8n_webhook,
+)
 
 router = APIRouter(
     prefix="/admin/documents",
     tags=["Admin Documents"],
 )
 
-
 PROJECT_ROOT_DIR = Path(__file__).resolve().parents[4]
-SOURCE_DOCUMENTS_DIR = PROJECT_ROOT_DIR / "data" / "source-documents"
-PROCESSED_DOCUMENTS_DIR = PROJECT_ROOT_DIR / "data" / "processed-documents"
-DOCUMENTS_MANIFEST_PATH = PROJECT_ROOT_DIR / "data" / "documents.json"
-PREPARE_DOCUMENTS_SCRIPT = PROJECT_ROOT_DIR / "scripts" / "prepare_documents.py"
-DELETE_BACKUP_DIR = PROJECT_ROOT_DIR / "data" / ".document-delete-backup"
-UPDATE_BACKUP_DIR = PROJECT_ROOT_DIR / "data" / ".document-update-backup"
+
+DATA_DIR = PROJECT_ROOT_DIR / "data"
+SCRIPTS_DIR = PROJECT_ROOT_DIR / "scripts"
+
+SOURCE_DOCUMENTS_DIR = DATA_DIR / "source-documents"
+DOCUMENTS_MANIFEST_PATH = DATA_DIR / "documents.json"
+PREPARE_DOCUMENTS_SCRIPT = SCRIPTS_DIR / "prepare_documents.py"
+DELETE_BACKUP_DIR = DATA_DIR / ".document-delete-backup"
+UPDATE_BACKUP_DIR = DATA_DIR / ".document-update-backup"
+
 
 ALLOWED_UPLOAD_EXTENSIONS = {".md", ".txt", ".pdf", ".docx"}
 MAX_UPLOAD_SIZE_BYTES = 10 * 1024 * 1024
+
+
+DOCUMENTS_CTE = """
+WITH documents AS (
+    SELECT
+        COALESCE(
+            metadata->>'document_id',
+            'unknown'
+        ) AS document_id,
+        COALESCE(
+            metadata->>'title',
+            'Başlıksız Doküman'
+        ) AS title,
+        COALESCE(
+            metadata->>'category',
+            'unknown'
+        ) AS category,
+        COALESCE(
+            metadata->>'file_type',
+            'unknown'
+        ) AS file_type,
+        COALESCE(
+            metadata->>'source_file_name',
+            metadata->>'file_name',
+            'unknown'
+        ) AS source_file_name,
+        MAX(
+            metadata->>'last_updated'
+        ) AS last_updated,
+        COUNT(*) AS chunk_count
+    FROM langchain_document_chunks
+    GROUP BY
+        COALESCE(
+            metadata->>'document_id',
+            'unknown'
+        ),
+        COALESCE(
+            metadata->>'title',
+            'Başlıksız Doküman'
+        ),
+        COALESCE(
+            metadata->>'category',
+            'unknown'
+        ),
+        COALESCE(
+            metadata->>'file_type',
+            'unknown'
+        ),
+        COALESCE(
+            metadata->>'source_file_name',
+            metadata->>'file_name',
+            'unknown'
+        )
+)
+"""
+
+
+DOCUMENTS_FILTER = """
+WHERE
+    (
+        CAST(:category AS text) IS NULL
+        OR category = :category
+    )
+    AND
+    (
+        CAST(:search AS text) IS NULL
+        OR document_id ILIKE '%' || :search || '%'
+        OR title ILIKE '%' || :search || '%'
+        OR category ILIKE '%' || :search || '%'
+        OR source_file_name ILIKE '%' || :search || '%'
+    )
+"""
 
 
 def get_scalar_value(db: Session, query: str, params: dict | None = None) -> int:
@@ -58,181 +139,55 @@ def get_scalar_value(db: Session, query: str, params: dict | None = None) -> int
     return int(result or 0)
 
 
-def find_source_document_path(
-    source_file_name: str,
-    category: str | None = None,
-) -> Path | None:
-    safe_file_name = Path(source_file_name).name
+def get_document_metadata(
+    db: Session,
+    document_id: str,
+):
+    """Dokümanın kaynak dosya adını ve kategorisini getirir."""
 
-    if not safe_file_name:
-        return None
-
-    source_root = SOURCE_DOCUMENTS_DIR.resolve()
-
-    if category and category != "unknown":
-        category_candidate = (source_root / category / safe_file_name).resolve()
-
-        if category_candidate.is_file() and category_candidate.is_relative_to(source_root):
-            return category_candidate
-
-    for file_path in source_root.rglob("*"):
-        if file_path.is_file() and file_path.name == safe_file_name:
-            resolved_path = file_path.resolve()
-
-            if resolved_path.is_relative_to(source_root):
-                return resolved_path
-
-    return None
-
-
-def remove_empty_directory(directory_path: Path, root_directory: Path) -> None:
-    resolved_directory = directory_path.resolve()
-    resolved_root = root_directory.resolve()
-
-    if resolved_directory == resolved_root:
-        return
-
-    if not resolved_directory.is_relative_to(resolved_root):
-        return
-
-    try:
-        resolved_directory.rmdir()
-    except OSError:
-        pass
-
-
-def slugify_text(value: str) -> str:
-    value = value.strip().lower()
-
-    replacements = {
-        "ç": "c",
-        "ğ": "g",
-        "ı": "i",
-        "ö": "o",
-        "ş": "s",
-        "ü": "u",
-    }
-
-    for source, target in replacements.items():
-        value = value.replace(source, target)
-
-    value = re.sub(r"[^a-z0-9]+", "-", value)
-    value = value.strip("-")
-
-    return value or "document"
-
-
-def ensure_allowed_file(file_name: str) -> str:
-    suffix = Path(file_name).suffix.lower()
-
-    if suffix not in ALLOWED_UPLOAD_EXTENSIONS:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Desteklenmeyen dosya türü. Sadece .md, .txt, .pdf ve .docx desteklenmektedir.",
+    return (
+        db.execute(
+            text("""
+            SELECT
+                COALESCE(
+                    metadata->>'source_file_name',
+                    metadata->>'file_name'
+                ) AS source_file_name,
+                COALESCE(
+                    metadata->>'category',
+                    'unknown'
+                ) AS category
+            FROM langchain_document_chunks
+            WHERE metadata->>'document_id' = :document_id
+            LIMIT 1
+            """),
+            {
+                "document_id": document_id,
+            },
         )
-
-    return suffix
-
-
-def save_uploaded_file(file: UploadFile, target_path: Path) -> None:
-    """Yüklenen dosyayı boyut kontrolüyle kaydeder."""
-
-    uploaded_size = 0
-
-    try:
-        with target_path.open("wb") as buffer:
-            while True:
-                chunk = file.file.read(1024 * 1024)
-
-                if not chunk:
-                    break
-
-                uploaded_size += len(chunk)
-
-                if uploaded_size > MAX_UPLOAD_SIZE_BYTES:
-                    raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        detail="Dosya boyutu 10 MB sınırını aşamaz.",
-                    )
-
-                buffer.write(chunk)
-
-    except Exception:
-        target_path.unlink(missing_ok=True)
-        raise
-
-    finally:
-        file.file.close()
+        .mappings()
+        .first()
+    )
 
 
 def load_documents_manifest() -> list[dict]:
-    if not DOCUMENTS_MANIFEST_PATH.exists():
-        return []
+    """Projenin documents.json manifest dosyasını okur."""
 
-    try:
-        with DOCUMENTS_MANIFEST_PATH.open("r", encoding="utf-8") as file:
-            data = json.load(file)
-
-    except json.JSONDecodeError:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="documents.json dosyası okunamadı. JSON formatı geçersiz.",
-        )
-
-    if not isinstance(data, list):
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="documents.json beklenen liste formatında değil.",
-        )
-
-    return data
+    return document_preprocessing.load_documents_manifest(
+        manifest_path=DOCUMENTS_MANIFEST_PATH,
+    )
 
 
-def run_prepare_documents_script(allow_empty: bool = False) -> None:
-    """prepare_documents.py scriptini çalıştırır."""
+def run_prepare_documents_script(
+    allow_empty: bool = False,
+) -> None:
+    """Projenin doküman ön işleme scriptini çalıştırır."""
 
-    if not PREPARE_DOCUMENTS_SCRIPT.is_file():
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="prepare_documents.py scripti bulunamadı.",
-        )
-
-    command = [
-        sys.executable,
-        str(PREPARE_DOCUMENTS_SCRIPT),
-    ]
-
-    if allow_empty:
-        command.append("--allow-empty")
-
-    try:
-        result = subprocess.run(
-            command,
-            cwd=str(PROJECT_ROOT_DIR),
-            capture_output=True,
-            text=True,
-            timeout=120,
-        )
-    except subprocess.TimeoutExpired as error:
-        raise HTTPException(
-            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
-            detail="Doküman ön işleme işlemi zaman aşımına uğradı.",
-        ) from error
-
-    if result.returncode != 0:
-        error_message = (
-            result.stderr.strip()
-            or result.stdout.strip()
-            or "Bilinmeyen doküman işleme hatası."
-        )
-
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=(
-                "Doküman ön işleme sırasında hata oluştu: "
-                f"{error_message}"
-            ),
-        )
+    document_preprocessing.run_prepare_documents_script(
+        project_root_dir=PROJECT_ROOT_DIR,
+        prepare_documents_script=PREPARE_DOCUMENTS_SCRIPT,
+        allow_empty=allow_empty,
+    )
 
 
 @router.get("", response_model=PaginatedAdminDocumentsResponse)
@@ -244,115 +199,58 @@ def list_documents(
     db: Session = Depends(get_db),
     _current_admin: User = Depends(require_admin),
 ):
+    """Dokümanları filtreleyerek ve sayfalayarak listeler."""
+
     search_value = search.strip() if search else None
     category_value = category.strip() if category else None
 
-    params = {
+    count_params = {
+        "search": search_value,
+        "category": category_value,
+    }
+
+    list_params = {
         "limit": limit,
         "offset": offset,
         "search": search_value,
         "category": category_value,
     }
 
+    count_query = f"""
+    {DOCUMENTS_CTE}
+
+    SELECT COUNT(*)
+    FROM documents
+
+    {DOCUMENTS_FILTER}
+    """
+
     total = get_scalar_value(
-        db,
-        """
-        WITH documents AS (
-            SELECT
-                COALESCE(metadata->>'document_id', 'unknown') AS document_id,
-                COALESCE(metadata->>'title', 'Başlıksız Doküman') AS title,
-                COALESCE(metadata->>'category', 'unknown') AS category,
-                COALESCE(metadata->>'file_type', 'unknown') AS file_type,
-                COALESCE(
-                    metadata->>'source_file_name',
-                    metadata->>'file_name',
-                    'unknown'
-                ) AS source_file_name,
-                MAX(metadata->>'last_updated') AS last_updated,
-                COUNT(*) AS chunk_count
-            FROM langchain_document_chunks
-            GROUP BY
-                COALESCE(metadata->>'document_id', 'unknown'),
-                COALESCE(metadata->>'title', 'Başlıksız Doküman'),
-                COALESCE(metadata->>'category', 'unknown'),
-                COALESCE(metadata->>'file_type', 'unknown'),
-                COALESCE(
-                    metadata->>'source_file_name',
-                    metadata->>'file_name',
-                    'unknown'
-                )
-        )
-        SELECT COUNT(*)
-        FROM documents
-        WHERE
-            (
-                CAST(:category AS text) IS NULL
-                OR category = :category
-            )
-            AND
-            (
-                CAST(:search AS text) IS NULL
-                OR document_id ILIKE '%' || :search || '%'
-                OR title ILIKE '%' || :search || '%'
-                OR category ILIKE '%' || :search || '%'
-                OR source_file_name ILIKE '%' || :search || '%'
-            )
-        """,
-        {
-            "search": search_value,
-            "category": category_value,
-        },
+        db=db,
+        query=count_query,
+        params=count_params,
     )
 
-    rows = db.execute(
-        text(
-            """
-            WITH documents AS (
-                SELECT
-                    COALESCE(metadata->>'document_id', 'unknown') AS document_id,
-                    COALESCE(metadata->>'title', 'Başlıksız Doküman') AS title,
-                    COALESCE(metadata->>'category', 'unknown') AS category,
-                    COALESCE(metadata->>'file_type', 'unknown') AS file_type,
-                    COALESCE(
-                        metadata->>'source_file_name',
-                        metadata->>'file_name',
-                        'unknown'
-                    ) AS source_file_name,
-                    MAX(metadata->>'last_updated') AS last_updated,
-                    COUNT(*) AS chunk_count
-                FROM langchain_document_chunks
-                GROUP BY
-                    COALESCE(metadata->>'document_id', 'unknown'),
-                    COALESCE(metadata->>'title', 'Başlıksız Doküman'),
-                    COALESCE(metadata->>'category', 'unknown'),
-                    COALESCE(metadata->>'file_type', 'unknown'),
-                    COALESCE(
-                        metadata->>'source_file_name',
-                        metadata->>'file_name',
-                        'unknown'
-                    )
-            )
-            SELECT *
-            FROM documents
-            WHERE
-                (
-                    CAST(:category AS text) IS NULL
-                    OR category = :category
-                )
-                AND
-                (
-                    CAST(:search AS text) IS NULL
-                    OR document_id ILIKE '%' || :search || '%'
-                    OR title ILIKE '%' || :search || '%'
-                    OR category ILIKE '%' || :search || '%'
-                    OR source_file_name ILIKE '%' || :search || '%'
-                )
-            ORDER BY category ASC, title ASC
-            LIMIT :limit OFFSET :offset
-            """
-        ),
-        params,
-    ).mappings().all()
+    list_query = f"""
+    {DOCUMENTS_CTE}
+
+    SELECT *
+    FROM documents
+
+    {DOCUMENTS_FILTER}
+
+    ORDER BY category ASC, title ASC
+    LIMIT :limit OFFSET :offset
+    """
+
+    rows = (
+        db.execute(
+            text(list_query),
+            list_params,
+        )
+        .mappings()
+        .all()
+    )
 
     items = [
         AdminDocumentResponse(
@@ -381,9 +279,7 @@ def list_document_categories(
     db: Session = Depends(get_db),
     _current_admin: User = Depends(require_admin),
 ):
-    rows = db.execute(
-        text(
-            """
+    rows = db.execute(text("""
             WITH documents AS (
                 SELECT DISTINCT
                     COALESCE(metadata->>'document_id', 'unknown') AS document_id,
@@ -396,9 +292,7 @@ def list_document_categories(
             FROM documents
             GROUP BY category
             ORDER BY category ASC
-            """
-        )
-    ).mappings().all()
+            """)).mappings().all()
 
     return [
         DocumentCategoryResponse(
@@ -415,22 +309,10 @@ def download_document(
     db: Session = Depends(get_db),
     _current_admin: User = Depends(require_admin),
 ):
-    row = db.execute(
-        text(
-            """
-            SELECT
-                COALESCE(
-                    metadata->>'source_file_name',
-                    metadata->>'file_name'
-                ) AS source_file_name,
-                COALESCE(metadata->>'category', 'unknown') AS category
-            FROM langchain_document_chunks
-            WHERE metadata->>'document_id' = :document_id
-            LIMIT 1
-            """
-        ),
-        {"document_id": document_id},
-    ).mappings().first()
+    row = get_document_metadata(
+        db=db,
+        document_id=document_id,
+    )
 
     if not row:
         raise HTTPException(
@@ -448,6 +330,7 @@ def download_document(
         )
 
     file_path = find_source_document_path(
+        source_documents_dir=SOURCE_DOCUMENTS_DIR,
         source_file_name=source_file_name,
         category=category,
     )
@@ -481,7 +364,10 @@ def upload_document(
             detail="Doküman başlığı boş olamaz.",
         )
 
-    suffix = ensure_allowed_file(file.filename or "")
+    suffix = ensure_allowed_file(
+        file_name=file.filename or "",
+        allowed_extensions=ALLOWED_UPLOAD_EXTENSIONS,
+    )
 
     file_base_name = slugify_text(clean_title)
     target_dir = SOURCE_DOCUMENTS_DIR / clean_category
@@ -493,12 +379,15 @@ def upload_document(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=(
-                "Bu başlık ve kategoriyle aynı isimde "
-                "bir doküman zaten mevcut."
+                "Bu başlık ve kategoriyle aynı isimde bir doküman zaten mevcut."
             ),
         )
 
-    save_uploaded_file(file, target_file_path)
+    save_uploaded_file(
+        file=file,
+        target_path=target_file_path,
+        max_upload_size_bytes=MAX_UPLOAD_SIZE_BYTES,
+    )
 
     try:
         run_prepare_documents_script()
@@ -517,9 +406,7 @@ def upload_document(
         ),
         file_name=target_file_path.name,
         category=clean_category,
-        source_path=str(
-            target_file_path.relative_to(PROJECT_ROOT_DIR)
-        ),
+        source_path=str(target_file_path.relative_to(PROJECT_ROOT_DIR)),
     )
 
 
@@ -532,22 +419,10 @@ def update_document(
 ):
     """Mevcut dokümanın kaynak dosyasını güvenli şekilde değiştirir."""
 
-    row = db.execute(
-        text(
-            """
-            SELECT
-                COALESCE(
-                    metadata->>'source_file_name',
-                    metadata->>'file_name'
-                ) AS source_file_name,
-                COALESCE(metadata->>'category', 'unknown') AS category
-            FROM langchain_document_chunks
-            WHERE metadata->>'document_id' = :document_id
-            LIMIT 1
-            """
-        ),
-        {"document_id": document_id},
-    ).mappings().first()
+    row = get_document_metadata(
+        db=db,
+        document_id=document_id,
+    )
 
     if not row:
         raise HTTPException(
@@ -565,6 +440,7 @@ def update_document(
         )
 
     source_file_path = find_source_document_path(
+        source_documents_dir=SOURCE_DOCUMENTS_DIR,
         source_file_name=source_file_name,
         category=category,
     )
@@ -575,7 +451,10 @@ def update_document(
             detail="Güncellenecek kaynak doküman dosyası bulunamadı.",
         )
 
-    new_suffix = ensure_allowed_file(file.filename or "")
+    new_suffix = ensure_allowed_file(
+        file_name=file.filename or "",
+        allowed_extensions=ALLOWED_UPLOAD_EXTENSIONS,
+    )
 
     if new_suffix != source_file_path.suffix.lower():
         file.file.close()
@@ -595,7 +474,11 @@ def update_document(
     source_file_path.replace(backup_file_path)
 
     try:
-        save_uploaded_file(file, source_file_path)
+        save_uploaded_file(
+            file=file,
+            target_path=source_file_path,
+            max_upload_size_bytes=MAX_UPLOAD_SIZE_BYTES,
+        )
         run_prepare_documents_script()
 
     except Exception:
@@ -606,14 +489,14 @@ def update_document(
 
         remove_empty_directory(
             UPDATE_BACKUP_DIR,
-            PROJECT_ROOT_DIR / "data",
+            DATA_DIR,
         )
         raise
 
     backup_file_path.unlink(missing_ok=True)
     remove_empty_directory(
         UPDATE_BACKUP_DIR,
-        PROJECT_ROOT_DIR / "data",
+        DATA_DIR,
     )
 
     return DocumentUpdateResponse(
@@ -626,9 +509,7 @@ def update_document(
         document_id=document_id,
         file_name=source_file_path.name,
         category=category,
-        source_path=str(
-            source_file_path.relative_to(PROJECT_ROOT_DIR)
-        ),
+        source_path=str(source_file_path.relative_to(PROJECT_ROOT_DIR)),
     )
 
 
@@ -640,22 +521,10 @@ def delete_document(
 ):
     """Dokümanı güvenli şekilde siler."""
 
-    row = db.execute(
-        text(
-            """
-            SELECT
-                COALESCE(
-                    metadata->>'source_file_name',
-                    metadata->>'file_name'
-                ) AS source_file_name,
-                COALESCE(metadata->>'category', 'unknown') AS category
-            FROM langchain_document_chunks
-            WHERE metadata->>'document_id' = :document_id
-            LIMIT 1
-            """
-        ),
-        {"document_id": document_id},
-    ).mappings().first()
+    row = get_document_metadata(
+        db=db,
+        document_id=document_id,
+    )
 
     if not row:
         raise HTTPException(
@@ -673,6 +542,7 @@ def delete_document(
         )
 
     source_file_path = find_source_document_path(
+        source_documents_dir=SOURCE_DOCUMENTS_DIR,
         source_file_name=source_file_name,
         category=category,
     )
@@ -687,10 +557,7 @@ def delete_document(
 
     DELETE_BACKUP_DIR.mkdir(parents=True, exist_ok=True)
 
-    backup_file_path = (
-        DELETE_BACKUP_DIR
-        / f"{document_id}{source_file_path.suffix}"
-    )
+    backup_file_path = DELETE_BACKUP_DIR / f"{document_id}{source_file_path.suffix}"
 
     backup_file_path.unlink(missing_ok=True)
 
@@ -706,12 +573,10 @@ def delete_document(
         preparation_completed = True
 
         db.execute(
-            text(
-                """
+            text("""
                 DELETE FROM langchain_document_chunks
                 WHERE metadata->>'document_id' = :document_id
-                """
-            ),
+                """),
             {"document_id": document_id},
         )
         db.commit()
@@ -751,7 +616,7 @@ def delete_document(
     )
     remove_empty_directory(
         DELETE_BACKUP_DIR,
-        PROJECT_ROOT_DIR / "data",
+        DATA_DIR,
     )
 
     return DocumentDeleteResponse(
@@ -765,31 +630,38 @@ def delete_document(
     )
 
 
-@router.post("/reindex", response_model=ReindexResponse)
+@router.post(
+    "/reindex",
+    response_model=ReindexResponse,
+)
 def reindex_documents(
     db: Session = Depends(get_db),
     _current_admin: User = Depends(require_admin),
 ):
+    """Dokümanları hazırlar ve n8n reindex workflow'unu çalıştırır."""
+
     run_prepare_documents_script()
 
     manifest = load_documents_manifest()
 
     if not manifest:
-        db.execute(
-            text(
-                """
-                TRUNCATE TABLE langchain_document_chunks RESTART IDENTITY
-                """
-            )
-        )
+        db.execute(text("""
+                TRUNCATE TABLE
+                    langchain_document_chunks
+                RESTART IDENTITY
+                """))
+
         db.commit()
 
         return ReindexResponse(
             success=True,
-            message="Kaynak doküman bulunmadı. Vektör indeks kayıtları temizlendi.",
+            message=(
+                "Kaynak doküman bulunmadı. Vektör indeks kayıtları temizlendi."
+            ),
         )
 
     app_settings = get_settings()
+
     webhook_url = app_settings.n8n_reindex_webhook_url
     timeout_seconds = app_settings.reindex_timeout_seconds
 
@@ -799,43 +671,25 @@ def reindex_documents(
             detail="N8N_REINDEX_WEBHOOK_URL tanımlı değil.",
         )
 
-    request = Request(
-        webhook_url,
-        data=b"",
-        method="POST",
-    )
-
     try:
-        with urlopen(request, timeout=timeout_seconds) as response:
-            response_body = response.read().decode("utf-8", errors="ignore")
+        trigger_n8n_webhook(
+            url=webhook_url,
+            timeout_seconds=timeout_seconds,
+        )
 
-            if response.status >= 400:
-                raise HTTPException(
-                    status_code=status.HTTP_502_BAD_GATEWAY,
-                    detail=f"n8n reindex workflow hata döndürdü: {response_body}",
-                )
-
-    except HTTPError as exc:
-        error_body = exc.read().decode("utf-8", errors="ignore")
-
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"n8n reindex workflow HTTP hatası döndürdü: {error_body}",
-        ) from exc
-
-    except URLError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail="n8n reindex webhook adresine ulaşılamadı.",
-        ) from exc
-
-    except TimeoutError as exc:
+    except N8nTimeoutError as exc:
         raise HTTPException(
             status_code=status.HTTP_504_GATEWAY_TIMEOUT,
             detail="Reindex işlemi zaman aşımına uğradı.",
         ) from exc
 
+    except N8nClientError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="n8n reindex webhook adresine ulaşılamadı.",
+        ) from exc
+
     return ReindexResponse(
         success=True,
-        message="Dokümanlar için yeniden indeksleme işlemi başarıyla tamamlandı.",
+        message=("Dokümanlar için yeniden indeksleme işlemi başarıyla tamamlandı."),
     )
