@@ -6,6 +6,7 @@ from urllib.error import URLError
 
 from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
+import pytest
 from pytest import MonkeyPatch
 
 from app.api.routes import admin_documents as document_routes
@@ -836,6 +837,182 @@ def test_admin_can_delete_document(
         "DELETE FROM langchain_document_chunks" in call["query"]
         for call in fake_db.execute_calls
     )
+
+
+
+def test_delete_restores_document_when_database_commit_fails(
+    monkeypatch: MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    paths = configure_temporary_paths(monkeypatch, tmp_path)
+
+    source_directory = paths["source_directory"] / "network"
+    source_directory.mkdir()
+
+    source_file = source_directory / "vpn-guide.txt"
+    source_file.write_text(
+        "source content",
+        encoding="utf-8",
+    )
+
+    processed_file = (
+        paths["processed_directory"] / "vpn-guide.md"
+    )
+    processed_file.write_text(
+        "processed content",
+        encoding="utf-8",
+    )
+
+    original_manifest = [
+        {
+            "document_id": "vpn-guide",
+            "title": "VPN Guide",
+        },
+        {
+            "document_id": "other-guide",
+            "title": "Other Guide",
+        },
+    ]
+
+    paths["manifest_path"].write_text(
+        json.dumps(
+            original_manifest,
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+    prepare_calls: list[bool] = []
+
+    def fake_prepare_documents_script(
+        allow_empty: bool = False,
+    ) -> None:
+        prepare_calls.append(allow_empty)
+
+        if allow_empty:
+            # Silme hazırlığı sırasında kaynak dosya geçici
+            # yedek klasörüne taşınmış olmalıdır.
+            assert not source_file.exists()
+
+            # Gerçek preprocessing işleminin silinen dokümanın
+            # processed çıktısını ve manifest kaydını kaldırdığını
+            # taklit eder.
+            processed_file.unlink(missing_ok=True)
+
+            paths["manifest_path"].write_text(
+                json.dumps(
+                    [
+                        {
+                            "document_id": "other-guide",
+                            "title": "Other Guide",
+                        }
+                    ],
+                    ensure_ascii=False,
+                    indent=2,
+                ),
+                encoding="utf-8",
+            )
+
+            return
+
+        # Commit başarısız olduktan sonra kaynak dosyanın
+        # preprocessing tekrar çalışmadan önce geri getirilmiş
+        # olması gerekir.
+        assert source_file.exists()
+
+        # Kurtarma preprocessing işlemini taklit eder.
+        processed_file.write_text(
+            "processed content",
+            encoding="utf-8",
+        )
+
+        paths["manifest_path"].write_text(
+            json.dumps(
+                original_manifest,
+                ensure_ascii=False,
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+
+    monkeypatch.setattr(
+        document_routes,
+        "run_prepare_documents_script",
+        fake_prepare_documents_script,
+    )
+
+    class CommitFailingSession(FakeSession):
+        def commit(self) -> None:
+            self.commit_count += 1
+
+            raise RuntimeError(
+                "Test database commit failure."
+            )
+
+    fake_db = CommitFailingSession(
+        FakeResult(
+            first_result={
+                "source_file_name": "vpn-guide.txt",
+                "category": "network",
+            }
+        ),
+        FakeResult(),
+    )
+
+    with create_client(
+        current_user=create_user(),
+        fake_db=fake_db,
+    ) as client:
+        with pytest.raises(
+            RuntimeError,
+            match="Test database commit failure",
+        ):
+            client.delete(
+                "/admin/documents/vpn-guide"
+            )
+
+    # Kaynak dosya eski konumuna ve içeriğine dönmelidir.
+    assert source_file.exists()
+    assert source_file.read_text(
+        encoding="utf-8"
+    ) == "source content"
+
+    # Processed çıktı kurtarma preprocessing işlemiyle
+    # yeniden oluşturulmalıdır.
+    assert processed_file.exists()
+    assert processed_file.read_text(
+        encoding="utf-8"
+    ) == "processed content"
+
+    restored_manifest = json.loads(
+        paths["manifest_path"].read_text(
+            encoding="utf-8"
+        )
+    )
+
+    assert restored_manifest == original_manifest
+
+    # İlk çağrı silme hazırlığı, ikinci çağrı kurtarma içindir.
+    assert prepare_calls == [True, False]
+
+    assert fake_db.commit_count == 1
+    assert fake_db.rollback_count == 1
+
+    assert any(
+        "DELETE FROM langchain_document_chunks"
+        in call["query"]
+        for call in fake_db.execute_calls
+    )
+
+    backup_file = (
+        paths["delete_backup_directory"]
+        / "vpn-guide.txt"
+    )
+
+    assert not backup_file.exists()
+
+
 
 
 def test_reindex_clears_database_when_manifest_is_empty(
