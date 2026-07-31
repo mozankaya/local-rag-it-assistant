@@ -44,14 +44,18 @@ router = APIRouter(
     tags=["Admin Documents"],
 )
 
-
 PROJECT_ROOT_DIR = Path(__file__).resolve().parents[4]
-SOURCE_DOCUMENTS_DIR = PROJECT_ROOT_DIR / "data" / "source-documents"
-PROCESSED_DOCUMENTS_DIR = PROJECT_ROOT_DIR / "data" / "processed-documents"
-DOCUMENTS_MANIFEST_PATH = PROJECT_ROOT_DIR / "data" / "documents.json"
-PREPARE_DOCUMENTS_SCRIPT = PROJECT_ROOT_DIR / "scripts" / "prepare_documents.py"
-DELETE_BACKUP_DIR = PROJECT_ROOT_DIR / "data" / ".document-delete-backup"
-UPDATE_BACKUP_DIR = PROJECT_ROOT_DIR / "data" / ".document-update-backup"
+
+DATA_DIR = PROJECT_ROOT_DIR / "data"
+SCRIPTS_DIR = PROJECT_ROOT_DIR / "scripts"
+
+SOURCE_DOCUMENTS_DIR = DATA_DIR / "source-documents"
+PROCESSED_DOCUMENTS_DIR = DATA_DIR / "processed-documents"
+DOCUMENTS_MANIFEST_PATH = DATA_DIR / "documents.json"
+PREPARE_DOCUMENTS_SCRIPT = SCRIPTS_DIR / "prepare_documents.py"
+DELETE_BACKUP_DIR = DATA_DIR / ".document-delete-backup"
+UPDATE_BACKUP_DIR = DATA_DIR / ".document-update-backup"
+
 
 ALLOWED_UPLOAD_EXTENSIONS = {".md", ".txt", ".pdf", ".docx"}
 MAX_UPLOAD_SIZE_BYTES = 10 * 1024 * 1024
@@ -60,6 +64,34 @@ MAX_UPLOAD_SIZE_BYTES = 10 * 1024 * 1024
 def get_scalar_value(db: Session, query: str, params: dict | None = None) -> int:
     result = db.execute(text(query), params or {}).scalar()
     return int(result or 0)
+
+def get_document_metadata(
+    db: Session,
+    document_id: str,
+):
+    """Dokümanın kaynak dosya adını ve kategorisini getirir."""
+
+    return db.execute(
+        text(
+            """
+            SELECT
+                COALESCE(
+                    metadata->>'source_file_name',
+                    metadata->>'file_name'
+                ) AS source_file_name,
+                COALESCE(
+                    metadata->>'category',
+                    'unknown'
+                ) AS category
+            FROM langchain_document_chunks
+            WHERE metadata->>'document_id' = :document_id
+            LIMIT 1
+            """
+        ),
+        {
+            "document_id": document_id,
+        },
+    ).mappings().first()
 
 def load_documents_manifest() -> list[dict]:
     """Projenin documents.json manifest dosyasını okur."""
@@ -260,22 +292,10 @@ def download_document(
     db: Session = Depends(get_db),
     _current_admin: User = Depends(require_admin),
 ):
-    row = db.execute(
-        text(
-            """
-            SELECT
-                COALESCE(
-                    metadata->>'source_file_name',
-                    metadata->>'file_name'
-                ) AS source_file_name,
-                COALESCE(metadata->>'category', 'unknown') AS category
-            FROM langchain_document_chunks
-            WHERE metadata->>'document_id' = :document_id
-            LIMIT 1
-            """
-        ),
-        {"document_id": document_id},
-    ).mappings().first()
+    row = get_document_metadata(
+        db=db,
+        document_id=document_id,
+    )
 
     if not row:
         raise HTTPException(
@@ -385,22 +405,10 @@ def update_document(
 ):
     """Mevcut dokümanın kaynak dosyasını güvenli şekilde değiştirir."""
 
-    row = db.execute(
-        text(
-            """
-            SELECT
-                COALESCE(
-                    metadata->>'source_file_name',
-                    metadata->>'file_name'
-                ) AS source_file_name,
-                COALESCE(metadata->>'category', 'unknown') AS category
-            FROM langchain_document_chunks
-            WHERE metadata->>'document_id' = :document_id
-            LIMIT 1
-            """
-        ),
-        {"document_id": document_id},
-    ).mappings().first()
+    row = get_document_metadata(
+        db=db,
+        document_id=document_id,
+    )
 
     if not row:
         raise HTTPException(
@@ -467,14 +475,14 @@ def update_document(
 
         remove_empty_directory(
             UPDATE_BACKUP_DIR,
-            PROJECT_ROOT_DIR / "data",
+            DATA_DIR,
         )
         raise
 
     backup_file_path.unlink(missing_ok=True)
     remove_empty_directory(
         UPDATE_BACKUP_DIR,
-        PROJECT_ROOT_DIR / "data",
+        DATA_DIR,
     )
 
     return DocumentUpdateResponse(
@@ -501,22 +509,10 @@ def delete_document(
 ):
     """Dokümanı güvenli şekilde siler."""
 
-    row = db.execute(
-        text(
-            """
-            SELECT
-                COALESCE(
-                    metadata->>'source_file_name',
-                    metadata->>'file_name'
-                ) AS source_file_name,
-                COALESCE(metadata->>'category', 'unknown') AS category
-            FROM langchain_document_chunks
-            WHERE metadata->>'document_id' = :document_id
-            LIMIT 1
-            """
-        ),
-        {"document_id": document_id},
-    ).mappings().first()
+    row = get_document_metadata(
+        db=db,
+        document_id=document_id,
+    )
 
     if not row:
         raise HTTPException(
@@ -613,7 +609,7 @@ def delete_document(
     )
     remove_empty_directory(
         DELETE_BACKUP_DIR,
-        PROJECT_ROOT_DIR / "data",
+        DATA_DIR,
     )
 
     return DocumentDeleteResponse(

@@ -119,52 +119,80 @@ def configure_temporary_paths(
     tmp_path: Path,
 ) -> dict[str, Path]:
     project_root = tmp_path
-    source_directory = project_root / "data" / "source-documents"
-    processed_directory = project_root / "data" / "processed-documents"
-    manifest_path = project_root / "data" / "documents.json"
-    prepare_script = project_root / "scripts" / "prepare_documents.py"
+
+    data_directory = project_root / "data"
+    scripts_directory = project_root / "scripts"
+
+    source_directory = data_directory / "source-documents"
+    processed_directory = data_directory / "processed-documents"
+    manifest_path = data_directory / "documents.json"
+    prepare_script = scripts_directory / "prepare_documents.py"
+
     delete_backup_directory = (
-        project_root / "data" / ".document-delete-backup"
+        data_directory / ".document-delete-backup"
     )
+
     update_backup_directory = (
-        project_root / "data" / ".document-update-backup"
+        data_directory / ".document-update-backup"
     )
 
     source_directory.mkdir(parents=True)
     processed_directory.mkdir(parents=True)
-    prepare_script.parent.mkdir(parents=True)
-    prepare_script.write_text("# test script", encoding="utf-8")
+    scripts_directory.mkdir(parents=True)
+
+    prepare_script.write_text(
+        "# test script",
+        encoding="utf-8",
+    )
 
     monkeypatch.setattr(
         document_routes,
         "PROJECT_ROOT_DIR",
         project_root,
     )
+
+    monkeypatch.setattr(
+        document_routes,
+        "DATA_DIR",
+        data_directory,
+    )
+
+    monkeypatch.setattr(
+        document_routes,
+        "SCRIPTS_DIR",
+        scripts_directory,
+    )
+
     monkeypatch.setattr(
         document_routes,
         "SOURCE_DOCUMENTS_DIR",
         source_directory,
     )
+
     monkeypatch.setattr(
         document_routes,
         "PROCESSED_DOCUMENTS_DIR",
         processed_directory,
     )
+
     monkeypatch.setattr(
         document_routes,
         "DOCUMENTS_MANIFEST_PATH",
         manifest_path,
     )
+
     monkeypatch.setattr(
         document_routes,
         "PREPARE_DOCUMENTS_SCRIPT",
         prepare_script,
     )
+
     monkeypatch.setattr(
         document_routes,
         "DELETE_BACKUP_DIR",
         delete_backup_directory,
     )
+
     monkeypatch.setattr(
         document_routes,
         "UPDATE_BACKUP_DIR",
