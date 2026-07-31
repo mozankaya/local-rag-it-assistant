@@ -70,8 +70,6 @@ class FakeSession:
         self.rollback_count += 1
 
 
-
-
 def create_user(*, role: str = "admin") -> User:
     return User(
         id=1,
@@ -111,13 +109,9 @@ def configure_temporary_paths(
     manifest_path = data_directory / "documents.json"
     prepare_script = scripts_directory / "prepare_documents.py"
 
-    delete_backup_directory = (
-        data_directory / ".document-delete-backup"
-    )
+    delete_backup_directory = data_directory / ".document-delete-backup"
 
-    update_backup_directory = (
-        data_directory / ".document-update-backup"
-    )
+    update_backup_directory = data_directory / ".document-update-backup"
 
     source_directory.mkdir(parents=True)
     processed_directory.mkdir(parents=True)
@@ -150,12 +144,6 @@ def configure_temporary_paths(
         document_routes,
         "SOURCE_DOCUMENTS_DIR",
         source_directory,
-    )
-
-    monkeypatch.setattr(
-        document_routes,
-        "PROCESSED_DOCUMENTS_DIR",
-        processed_directory,
     )
 
     monkeypatch.setattr(

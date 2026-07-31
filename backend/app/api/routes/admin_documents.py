@@ -52,7 +52,6 @@ DATA_DIR = PROJECT_ROOT_DIR / "data"
 SCRIPTS_DIR = PROJECT_ROOT_DIR / "scripts"
 
 SOURCE_DOCUMENTS_DIR = DATA_DIR / "source-documents"
-PROCESSED_DOCUMENTS_DIR = DATA_DIR / "processed-documents"
 DOCUMENTS_MANIFEST_PATH = DATA_DIR / "documents.json"
 PREPARE_DOCUMENTS_SCRIPT = SCRIPTS_DIR / "prepare_documents.py"
 DELETE_BACKUP_DIR = DATA_DIR / ".document-delete-backup"
