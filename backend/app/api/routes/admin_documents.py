@@ -38,7 +38,6 @@ from app.services.document_files import (
     slugify_text,
 )
 
-
 router = APIRouter(
     prefix="/admin/documents",
     tags=["Admin Documents"],
@@ -61,9 +60,82 @@ ALLOWED_UPLOAD_EXTENSIONS = {".md", ".txt", ".pdf", ".docx"}
 MAX_UPLOAD_SIZE_BYTES = 10 * 1024 * 1024
 
 
+DOCUMENTS_CTE = """
+WITH documents AS (
+    SELECT
+        COALESCE(
+            metadata->>'document_id',
+            'unknown'
+        ) AS document_id,
+        COALESCE(
+            metadata->>'title',
+            'Başlıksız Doküman'
+        ) AS title,
+        COALESCE(
+            metadata->>'category',
+            'unknown'
+        ) AS category,
+        COALESCE(
+            metadata->>'file_type',
+            'unknown'
+        ) AS file_type,
+        COALESCE(
+            metadata->>'source_file_name',
+            metadata->>'file_name',
+            'unknown'
+        ) AS source_file_name,
+        MAX(
+            metadata->>'last_updated'
+        ) AS last_updated,
+        COUNT(*) AS chunk_count
+    FROM langchain_document_chunks
+    GROUP BY
+        COALESCE(
+            metadata->>'document_id',
+            'unknown'
+        ),
+        COALESCE(
+            metadata->>'title',
+            'Başlıksız Doküman'
+        ),
+        COALESCE(
+            metadata->>'category',
+            'unknown'
+        ),
+        COALESCE(
+            metadata->>'file_type',
+            'unknown'
+        ),
+        COALESCE(
+            metadata->>'source_file_name',
+            metadata->>'file_name',
+            'unknown'
+        )
+)
+"""
+
+
+DOCUMENTS_FILTER = """
+WHERE
+    (
+        CAST(:category AS text) IS NULL
+        OR category = :category
+    )
+    AND
+    (
+        CAST(:search AS text) IS NULL
+        OR document_id ILIKE '%' || :search || '%'
+        OR title ILIKE '%' || :search || '%'
+        OR category ILIKE '%' || :search || '%'
+        OR source_file_name ILIKE '%' || :search || '%'
+    )
+"""
+
+
 def get_scalar_value(db: Session, query: str, params: dict | None = None) -> int:
     result = db.execute(text(query), params or {}).scalar()
     return int(result or 0)
+
 
 def get_document_metadata(
     db: Session,
@@ -71,9 +143,9 @@ def get_document_metadata(
 ):
     """Dokümanın kaynak dosya adını ve kategorisini getirir."""
 
-    return db.execute(
-        text(
-            """
+    return (
+        db.execute(
+            text("""
             SELECT
                 COALESCE(
                     metadata->>'source_file_name',
@@ -86,12 +158,15 @@ def get_document_metadata(
             FROM langchain_document_chunks
             WHERE metadata->>'document_id' = :document_id
             LIMIT 1
-            """
-        ),
-        {
-            "document_id": document_id,
-        },
-    ).mappings().first()
+            """),
+            {
+                "document_id": document_id,
+            },
+        )
+        .mappings()
+        .first()
+    )
+
 
 def load_documents_manifest() -> list[dict]:
     """Projenin documents.json manifest dosyasını okur."""
@@ -112,6 +187,7 @@ def run_prepare_documents_script(
         allow_empty=allow_empty,
     )
 
+
 @router.get("", response_model=PaginatedAdminDocumentsResponse)
 def list_documents(
     limit: int = Query(default=10, ge=1, le=50),
@@ -121,115 +197,58 @@ def list_documents(
     db: Session = Depends(get_db),
     _current_admin: User = Depends(require_admin),
 ):
+    """Dokümanları filtreleyerek ve sayfalayarak listeler."""
+
     search_value = search.strip() if search else None
     category_value = category.strip() if category else None
 
-    params = {
+    count_params = {
+        "search": search_value,
+        "category": category_value,
+    }
+
+    list_params = {
         "limit": limit,
         "offset": offset,
         "search": search_value,
         "category": category_value,
     }
 
+    count_query = f"""
+    {DOCUMENTS_CTE}
+
+    SELECT COUNT(*)
+    FROM documents
+
+    {DOCUMENTS_FILTER}
+    """
+
     total = get_scalar_value(
-        db,
-        """
-        WITH documents AS (
-            SELECT
-                COALESCE(metadata->>'document_id', 'unknown') AS document_id,
-                COALESCE(metadata->>'title', 'Başlıksız Doküman') AS title,
-                COALESCE(metadata->>'category', 'unknown') AS category,
-                COALESCE(metadata->>'file_type', 'unknown') AS file_type,
-                COALESCE(
-                    metadata->>'source_file_name',
-                    metadata->>'file_name',
-                    'unknown'
-                ) AS source_file_name,
-                MAX(metadata->>'last_updated') AS last_updated,
-                COUNT(*) AS chunk_count
-            FROM langchain_document_chunks
-            GROUP BY
-                COALESCE(metadata->>'document_id', 'unknown'),
-                COALESCE(metadata->>'title', 'Başlıksız Doküman'),
-                COALESCE(metadata->>'category', 'unknown'),
-                COALESCE(metadata->>'file_type', 'unknown'),
-                COALESCE(
-                    metadata->>'source_file_name',
-                    metadata->>'file_name',
-                    'unknown'
-                )
-        )
-        SELECT COUNT(*)
-        FROM documents
-        WHERE
-            (
-                CAST(:category AS text) IS NULL
-                OR category = :category
-            )
-            AND
-            (
-                CAST(:search AS text) IS NULL
-                OR document_id ILIKE '%' || :search || '%'
-                OR title ILIKE '%' || :search || '%'
-                OR category ILIKE '%' || :search || '%'
-                OR source_file_name ILIKE '%' || :search || '%'
-            )
-        """,
-        {
-            "search": search_value,
-            "category": category_value,
-        },
+        db=db,
+        query=count_query,
+        params=count_params,
     )
 
-    rows = db.execute(
-        text(
-            """
-            WITH documents AS (
-                SELECT
-                    COALESCE(metadata->>'document_id', 'unknown') AS document_id,
-                    COALESCE(metadata->>'title', 'Başlıksız Doküman') AS title,
-                    COALESCE(metadata->>'category', 'unknown') AS category,
-                    COALESCE(metadata->>'file_type', 'unknown') AS file_type,
-                    COALESCE(
-                        metadata->>'source_file_name',
-                        metadata->>'file_name',
-                        'unknown'
-                    ) AS source_file_name,
-                    MAX(metadata->>'last_updated') AS last_updated,
-                    COUNT(*) AS chunk_count
-                FROM langchain_document_chunks
-                GROUP BY
-                    COALESCE(metadata->>'document_id', 'unknown'),
-                    COALESCE(metadata->>'title', 'Başlıksız Doküman'),
-                    COALESCE(metadata->>'category', 'unknown'),
-                    COALESCE(metadata->>'file_type', 'unknown'),
-                    COALESCE(
-                        metadata->>'source_file_name',
-                        metadata->>'file_name',
-                        'unknown'
-                    )
-            )
-            SELECT *
-            FROM documents
-            WHERE
-                (
-                    CAST(:category AS text) IS NULL
-                    OR category = :category
-                )
-                AND
-                (
-                    CAST(:search AS text) IS NULL
-                    OR document_id ILIKE '%' || :search || '%'
-                    OR title ILIKE '%' || :search || '%'
-                    OR category ILIKE '%' || :search || '%'
-                    OR source_file_name ILIKE '%' || :search || '%'
-                )
-            ORDER BY category ASC, title ASC
-            LIMIT :limit OFFSET :offset
-            """
-        ),
-        params,
-    ).mappings().all()
+    list_query = f"""
+    {DOCUMENTS_CTE}
+
+    SELECT *
+    FROM documents
+
+    {DOCUMENTS_FILTER}
+
+    ORDER BY category ASC, title ASC
+    LIMIT :limit OFFSET :offset
+    """
+
+    rows = (
+        db.execute(
+            text(list_query),
+            list_params,
+        )
+        .mappings()
+        .all()
+    )
 
     items = [
         AdminDocumentResponse(
@@ -258,9 +277,7 @@ def list_document_categories(
     db: Session = Depends(get_db),
     _current_admin: User = Depends(require_admin),
 ):
-    rows = db.execute(
-        text(
-            """
+    rows = db.execute(text("""
             WITH documents AS (
                 SELECT DISTINCT
                     COALESCE(metadata->>'document_id', 'unknown') AS document_id,
@@ -273,9 +290,7 @@ def list_document_categories(
             FROM documents
             GROUP BY category
             ORDER BY category ASC
-            """
-        )
-    ).mappings().all()
+            """)).mappings().all()
 
     return [
         DocumentCategoryResponse(
@@ -362,8 +377,7 @@ def upload_document(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=(
-                "Bu başlık ve kategoriyle aynı isimde "
-                "bir doküman zaten mevcut."
+                "Bu başlık ve kategoriyle aynı isimde " "bir doküman zaten mevcut."
             ),
         )
 
@@ -390,9 +404,7 @@ def upload_document(
         ),
         file_name=target_file_path.name,
         category=clean_category,
-        source_path=str(
-            target_file_path.relative_to(PROJECT_ROOT_DIR)
-        ),
+        source_path=str(target_file_path.relative_to(PROJECT_ROOT_DIR)),
     )
 
 
@@ -495,9 +507,7 @@ def update_document(
         document_id=document_id,
         file_name=source_file_path.name,
         category=category,
-        source_path=str(
-            source_file_path.relative_to(PROJECT_ROOT_DIR)
-        ),
+        source_path=str(source_file_path.relative_to(PROJECT_ROOT_DIR)),
     )
 
 
@@ -545,10 +555,7 @@ def delete_document(
 
     DELETE_BACKUP_DIR.mkdir(parents=True, exist_ok=True)
 
-    backup_file_path = (
-        DELETE_BACKUP_DIR
-        / f"{document_id}{source_file_path.suffix}"
-    )
+    backup_file_path = DELETE_BACKUP_DIR / f"{document_id}{source_file_path.suffix}"
 
     backup_file_path.unlink(missing_ok=True)
 
@@ -564,12 +571,10 @@ def delete_document(
         preparation_completed = True
 
         db.execute(
-            text(
-                """
+            text("""
                 DELETE FROM langchain_document_chunks
                 WHERE metadata->>'document_id' = :document_id
-                """
-            ),
+                """),
             {"document_id": document_id},
         )
         db.commit()
@@ -633,13 +638,9 @@ def reindex_documents(
     manifest = load_documents_manifest()
 
     if not manifest:
-        db.execute(
-            text(
-                """
+        db.execute(text("""
                 TRUNCATE TABLE langchain_document_chunks RESTART IDENTITY
-                """
-            )
-        )
+                """))
         db.commit()
 
         return ReindexResponse(
