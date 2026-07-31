@@ -1,7 +1,7 @@
 """add chat observability fields
 
 Revision ID: 880edd204fe0
-Revises: 
+Revises: 1b817589c385
 Create Date: 2026-07-29 10:33:10.627297
 
 """
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = '880edd204fe0'
-down_revision: Union[str, Sequence[str], None] = None
+down_revision: Union[str, Sequence[str], None] = "1b817589c385"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
