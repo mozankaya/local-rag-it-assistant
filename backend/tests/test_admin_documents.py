@@ -2,7 +2,6 @@ import json
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
-from urllib.error import URLError
 
 from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
@@ -71,22 +70,6 @@ class FakeSession:
         self.rollback_count += 1
 
 
-class FakeHTTPResponse:
-    status = 200
-
-    def read(self) -> bytes:
-        return b'{"success": true}'
-
-    def __enter__(self) -> "FakeHTTPResponse":
-        return self
-
-    def __exit__(
-        self,
-        _exc_type: Any,
-        _exc_value: Any,
-        _traceback: Any,
-    ) -> None:
-        return None
 
 
 def create_user(*, role: str = "admin") -> User:
@@ -867,7 +850,6 @@ def test_admin_can_delete_document(
     )
 
 
-
 def test_delete_restores_document_when_database_commit_fails(
     monkeypatch: MonkeyPatch,
     tmp_path: Path,
@@ -1041,8 +1023,6 @@ def test_delete_restores_document_when_database_commit_fails(
     assert not backup_file.exists()
 
 
-
-
 def test_reindex_clears_database_when_manifest_is_empty(
     monkeypatch: MonkeyPatch,
     tmp_path: Path,
@@ -1107,22 +1087,19 @@ def test_reindex_calls_n8n_webhook(
         ),
     )
 
-    captured_request: dict[str, Any] = {}
+    captured_call: dict[str, Any] = {}
 
-    def fake_urlopen(
-        request: Any,
-        timeout: float,
-    ) -> FakeHTTPResponse:
-        captured_request["url"] = request.full_url
-        captured_request["method"] = request.get_method()
-        captured_request["timeout"] = timeout
-
-        return FakeHTTPResponse()
+    def fake_trigger_n8n_webhook(
+        url: str,
+        timeout_seconds: float,
+    ) -> None:
+        captured_call["url"] = url
+        captured_call["timeout_seconds"] = timeout_seconds
 
     monkeypatch.setattr(
         document_routes,
-        "urlopen",
-        fake_urlopen,
+        "trigger_n8n_webhook",
+        fake_trigger_n8n_webhook,
     )
 
     with create_client(
@@ -1134,10 +1111,9 @@ def test_reindex_calls_n8n_webhook(
     assert response.status_code == 200
     assert response.json()["success"] is True
 
-    assert captured_request == {
+    assert captured_call == {
         "url": "http://n8n.test/reindex",
-        "method": "POST",
-        "timeout": 15,
+        "timeout_seconds": 15,
     }
 
 
@@ -1167,16 +1143,16 @@ def test_reindex_handles_connection_error(
         ),
     )
 
-    def fail_urlopen(
-        _request: Any,
-        timeout: float,
-    ) -> Any:
-        raise URLError("Connection refused.")
+    def fail_trigger_n8n_webhook(
+        url: str,
+        timeout_seconds: float,
+    ) -> None:
+        raise document_routes.N8nClientError("n8n request failed.")
 
     monkeypatch.setattr(
         document_routes,
-        "urlopen",
-        fail_urlopen,
+        "trigger_n8n_webhook",
+        fail_trigger_n8n_webhook,
     )
 
     with create_client(
@@ -1217,16 +1193,16 @@ def test_reindex_handles_timeout(
         ),
     )
 
-    def timeout_urlopen(
-        _request: Any,
-        timeout: float,
-    ) -> Any:
-        raise TimeoutError("Request timed out.")
+    def timeout_trigger_n8n_webhook(
+        url: str,
+        timeout_seconds: float,
+    ) -> None:
+        raise document_routes.N8nTimeoutError("n8n request timed out.")
 
     monkeypatch.setattr(
         document_routes,
-        "urlopen",
-        timeout_urlopen,
+        "trigger_n8n_webhook",
+        timeout_trigger_n8n_webhook,
     )
 
     with create_client(

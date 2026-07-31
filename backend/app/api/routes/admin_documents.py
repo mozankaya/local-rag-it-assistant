@@ -1,6 +1,4 @@
 from pathlib import Path
-from urllib.error import HTTPError, URLError
-from urllib.request import Request, urlopen
 
 from fastapi import (
     APIRouter,
@@ -36,6 +34,11 @@ from app.services.document_files import (
     remove_empty_directory,
     save_uploaded_file,
     slugify_text,
+)
+from app.services.n8n_client import (
+    N8nClientError,
+    N8nTimeoutError,
+    trigger_n8n_webhook,
 )
 
 router = APIRouter(
@@ -377,7 +380,7 @@ def upload_document(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=(
-                "Bu başlık ve kategoriyle aynı isimde " "bir doküman zaten mevcut."
+                "Bu başlık ve kategoriyle aynı isimde bir doküman zaten mevcut."
             ),
         )
 
@@ -628,27 +631,38 @@ def delete_document(
     )
 
 
-@router.post("/reindex", response_model=ReindexResponse)
+@router.post(
+    "/reindex",
+    response_model=ReindexResponse,
+)
 def reindex_documents(
     db: Session = Depends(get_db),
     _current_admin: User = Depends(require_admin),
 ):
+    """Dokümanları hazırlar ve n8n reindex workflow'unu çalıştırır."""
+
     run_prepare_documents_script()
 
     manifest = load_documents_manifest()
 
     if not manifest:
         db.execute(text("""
-                TRUNCATE TABLE langchain_document_chunks RESTART IDENTITY
+                TRUNCATE TABLE
+                    langchain_document_chunks
+                RESTART IDENTITY
                 """))
+
         db.commit()
 
         return ReindexResponse(
             success=True,
-            message="Kaynak doküman bulunmadı. Vektör indeks kayıtları temizlendi.",
+            message=(
+                "Kaynak doküman bulunmadı. Vektör indeks kayıtları temizlendi."
+            ),
         )
 
     app_settings = get_settings()
+
     webhook_url = app_settings.n8n_reindex_webhook_url
     timeout_seconds = app_settings.reindex_timeout_seconds
 
@@ -658,43 +672,25 @@ def reindex_documents(
             detail="N8N_REINDEX_WEBHOOK_URL tanımlı değil.",
         )
 
-    request = Request(
-        webhook_url,
-        data=b"",
-        method="POST",
-    )
-
     try:
-        with urlopen(request, timeout=timeout_seconds) as response:
-            response_body = response.read().decode("utf-8", errors="ignore")
+        trigger_n8n_webhook(
+            url=webhook_url,
+            timeout_seconds=timeout_seconds,
+        )
 
-            if response.status >= 400:
-                raise HTTPException(
-                    status_code=status.HTTP_502_BAD_GATEWAY,
-                    detail=f"n8n reindex workflow hata döndürdü: {response_body}",
-                )
-
-    except HTTPError as exc:
-        error_body = exc.read().decode("utf-8", errors="ignore")
-
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"n8n reindex workflow HTTP hatası döndürdü: {error_body}",
-        ) from exc
-
-    except URLError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail="n8n reindex webhook adresine ulaşılamadı.",
-        ) from exc
-
-    except TimeoutError as exc:
+    except N8nTimeoutError as exc:
         raise HTTPException(
             status_code=status.HTTP_504_GATEWAY_TIMEOUT,
             detail="Reindex işlemi zaman aşımına uğradı.",
         ) from exc
 
+    except N8nClientError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="n8n reindex webhook adresine ulaşılamadı.",
+        ) from exc
+
     return ReindexResponse(
         success=True,
-        message="Dokümanlar için yeniden indeksleme işlemi başarıyla tamamlandı.",
+        message=("Dokümanlar için yeniden indeksleme işlemi başarıyla tamamlandı."),
     )
