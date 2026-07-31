@@ -1,5 +1,4 @@
 import json
-import re
 import subprocess
 import sys
 from pathlib import Path
@@ -33,6 +32,13 @@ from app.schemas.admin_documents import (
     PaginatedAdminDocumentsResponse,
     ReindexResponse,
 )
+from app.services.document_files import (
+    ensure_allowed_file,
+    find_source_document_path,
+    remove_empty_directory,
+    save_uploaded_file,
+    slugify_text,
+)
 
 
 router = APIRouter(
@@ -56,113 +62,6 @@ MAX_UPLOAD_SIZE_BYTES = 10 * 1024 * 1024
 def get_scalar_value(db: Session, query: str, params: dict | None = None) -> int:
     result = db.execute(text(query), params or {}).scalar()
     return int(result or 0)
-
-
-def find_source_document_path(
-    source_file_name: str,
-    category: str | None = None,
-) -> Path | None:
-    safe_file_name = Path(source_file_name).name
-
-    if not safe_file_name:
-        return None
-
-    source_root = SOURCE_DOCUMENTS_DIR.resolve()
-
-    if category and category != "unknown":
-        category_candidate = (source_root / category / safe_file_name).resolve()
-
-        if category_candidate.is_file() and category_candidate.is_relative_to(source_root):
-            return category_candidate
-
-    for file_path in source_root.rglob("*"):
-        if file_path.is_file() and file_path.name == safe_file_name:
-            resolved_path = file_path.resolve()
-
-            if resolved_path.is_relative_to(source_root):
-                return resolved_path
-
-    return None
-
-
-def remove_empty_directory(directory_path: Path, root_directory: Path) -> None:
-    resolved_directory = directory_path.resolve()
-    resolved_root = root_directory.resolve()
-
-    if resolved_directory == resolved_root:
-        return
-
-    if not resolved_directory.is_relative_to(resolved_root):
-        return
-
-    try:
-        resolved_directory.rmdir()
-    except OSError:
-        pass
-
-
-def slugify_text(value: str) -> str:
-    value = value.strip().lower()
-
-    replacements = {
-        "ç": "c",
-        "ğ": "g",
-        "ı": "i",
-        "ö": "o",
-        "ş": "s",
-        "ü": "u",
-    }
-
-    for source, target in replacements.items():
-        value = value.replace(source, target)
-
-    value = re.sub(r"[^a-z0-9]+", "-", value)
-    value = value.strip("-")
-
-    return value or "document"
-
-
-def ensure_allowed_file(file_name: str) -> str:
-    suffix = Path(file_name).suffix.lower()
-
-    if suffix not in ALLOWED_UPLOAD_EXTENSIONS:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Desteklenmeyen dosya türü. Sadece .md, .txt, .pdf ve .docx desteklenmektedir.",
-        )
-
-    return suffix
-
-
-def save_uploaded_file(file: UploadFile, target_path: Path) -> None:
-    """Yüklenen dosyayı boyut kontrolüyle kaydeder."""
-
-    uploaded_size = 0
-
-    try:
-        with target_path.open("wb") as buffer:
-            while True:
-                chunk = file.file.read(1024 * 1024)
-
-                if not chunk:
-                    break
-
-                uploaded_size += len(chunk)
-
-                if uploaded_size > MAX_UPLOAD_SIZE_BYTES:
-                    raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        detail="Dosya boyutu 10 MB sınırını aşamaz.",
-                    )
-
-                buffer.write(chunk)
-
-    except Exception:
-        target_path.unlink(missing_ok=True)
-        raise
-
-    finally:
-        file.file.close()
 
 
 def load_documents_manifest() -> list[dict]:
@@ -448,6 +347,7 @@ def download_document(
         )
 
     file_path = find_source_document_path(
+        source_documents_dir=SOURCE_DOCUMENTS_DIR,
         source_file_name=source_file_name,
         category=category,
     )
@@ -481,7 +381,10 @@ def upload_document(
             detail="Doküman başlığı boş olamaz.",
         )
 
-    suffix = ensure_allowed_file(file.filename or "")
+    suffix = ensure_allowed_file(
+        file_name=file.filename or "",
+        allowed_extensions=ALLOWED_UPLOAD_EXTENSIONS,
+    )
 
     file_base_name = slugify_text(clean_title)
     target_dir = SOURCE_DOCUMENTS_DIR / clean_category
@@ -498,7 +401,11 @@ def upload_document(
             ),
         )
 
-    save_uploaded_file(file, target_file_path)
+    save_uploaded_file(
+        file=file,
+        target_path=target_file_path,
+        max_upload_size_bytes=MAX_UPLOAD_SIZE_BYTES,
+    )
 
     try:
         run_prepare_documents_script()
@@ -565,6 +472,7 @@ def update_document(
         )
 
     source_file_path = find_source_document_path(
+        source_documents_dir=SOURCE_DOCUMENTS_DIR,
         source_file_name=source_file_name,
         category=category,
     )
@@ -575,7 +483,10 @@ def update_document(
             detail="Güncellenecek kaynak doküman dosyası bulunamadı.",
         )
 
-    new_suffix = ensure_allowed_file(file.filename or "")
+    new_suffix = ensure_allowed_file(
+        file_name=file.filename or "",
+        allowed_extensions=ALLOWED_UPLOAD_EXTENSIONS,
+    )
 
     if new_suffix != source_file_path.suffix.lower():
         file.file.close()
@@ -595,7 +506,11 @@ def update_document(
     source_file_path.replace(backup_file_path)
 
     try:
-        save_uploaded_file(file, source_file_path)
+        save_uploaded_file(
+            file=file,
+            target_path=source_file_path,
+            max_upload_size_bytes=MAX_UPLOAD_SIZE_BYTES,
+        )
         run_prepare_documents_script()
 
     except Exception:
@@ -673,6 +588,7 @@ def delete_document(
         )
 
     source_file_path = find_source_document_path(
+        source_documents_dir=SOURCE_DOCUMENTS_DIR,
         source_file_name=source_file_name,
         category=category,
     )
