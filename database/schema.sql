@@ -1,107 +1,142 @@
-CREATE EXTENSION IF NOT EXISTS vector;
-
-
--- ============================================================
--- RAG DOKÜMAN TABLOSU
--- ============================================================
-
--- LangChain / n8n PGVector Store tarafından kullanılan
--- aktif RAG doküman tablosu.
+-- ===========================================================
+-- Bu dosya uygulamanın güncel PostgreSQL şemasını açıklayan
+-- bir referans dosyadır.
 --
--- Bu tablo n8n workflow tarafından da oluşturulabilir.
--- Burada temiz kurulum için tutulur.
+-- Veritabanı kurulumu için doğrudan çalıştırılmamalıdır.
+-- Asıl şema kaynağı backend/alembic/versions altındaki
+-- Alembic migration dosyalarıdır.
+--
+-- Temiz kurulum:
+--
+--     alembic upgrade head
+--
+-- Bu dosya mevcut/dolu bir veritabanında topluca
+-- çalıştırılmamalıdır.
+-- ============================================================
 
-CREATE TABLE IF NOT EXISTS langchain_document_chunks (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    content TEXT,
-    metadata JSONB,
-    embedding vector(768)
+
+CREATE EXTENSION vector;
+
+
+CREATE TABLE public.n8n_vector_collections (
+    uuid UUID NOT NULL DEFAULT gen_random_uuid(),
+    name VARCHAR NULL,
+    cmetadata JSONB NULL,
+
+    CONSTRAINT n8n_vector_collections_pkey
+        PRIMARY KEY (uuid)
+);
+
+CREATE INDEX idx_n8n_vector_collections_name
+ON public.n8n_vector_collections (name);
+
+
+
+-- n8n ingestion workflow'u doküman parçalarını bu tabloya taşır.
+-- RAG sorguları benzer doküman parçalarını bu tablo üzerinden arar.
+CREATE TABLE public.langchain_document_chunks (
+    id UUID NOT NULL DEFAULT gen_random_uuid(),
+    text TEXT NULL,
+    metadata JSONB NULL,
+    embedding VECTOR NULL,
+    collection_id UUID NULL,
+
+    CONSTRAINT langchain_document_chunks_pkey
+        PRIMARY KEY (id),
+
+    CONSTRAINT langchain_document_chunks_collection_id_fkey
+        FOREIGN KEY (collection_id)
+        REFERENCES public.n8n_vector_collections (uuid)
+        ON DELETE CASCADE
 );
 
 
--- ============================================================
--- KULLANICI TABLOSU
--- ============================================================
+-- Güvenli reindex sırasında yeni chunk'lar önce bu tabloya yazılır.
+-- Doğrulamalar başarılı olduktan sonra aktif tabloya aktarılır.
+CREATE TABLE public.langchain_document_chunks_staging (
+    id UUID NOT NULL DEFAULT gen_random_uuid(),
+    text TEXT NULL,
+    metadata JSONB NULL,
+    embedding VECTOR NULL,
+    collection_id UUID NULL,
 
-CREATE TABLE IF NOT EXISTS users (
-    id SERIAL PRIMARY KEY,
-    email TEXT NOT NULL UNIQUE,
-    full_name TEXT NOT NULL,
-    hashed_password TEXT NOT NULL,
-    role TEXT NOT NULL DEFAULT 'user',
-    is_active BOOLEAN NOT NULL DEFAULT TRUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    CONSTRAINT langchain_document_chunks_staging_pkey
+        PRIMARY KEY (id),
+
+    CONSTRAINT langchain_document_chunks_staging_collection_id_fkey
+        FOREIGN KEY (collection_id)
+        REFERENCES public.n8n_vector_collections (uuid)
+        ON DELETE CASCADE
 );
 
 
--- ============================================================
--- CHAT LOG TABLOSU
--- ============================================================
+CREATE TABLE public.users (
+    id SERIAL NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    full_name VARCHAR(255) NOT NULL,
+    hashed_password VARCHAR(255) NOT NULL,
+    role VARCHAR(50) NOT NULL,
+    is_active BOOLEAN NOT NULL,
+    created_at TIMESTAMPTZ NULL DEFAULT now(),
 
--- request_id, duration_ms ve source_count alanları
--- Alembic migration'ı tarafından eklenecektir.
+    CONSTRAINT users_pkey
+        PRIMARY KEY (id)
+);
 
-CREATE TABLE IF NOT EXISTS chat_logs (
-    id SERIAL PRIMARY KEY,
+CREATE UNIQUE INDEX ix_users_email
+ON public.users (email);
+
+CREATE INDEX ix_users_id
+ON public.users (id);
+
+
+
+-- Chat kayıtları n8n tarafından yazılır.
+-- Backend admin dashboard bu tabloyu okur.
+CREATE TABLE public.chat_logs (
+    id SERIAL NOT NULL,
     question TEXT NOT NULL,
     answer TEXT NOT NULL,
-    sources JSONB,
-    category TEXT,
-    section_title TEXT,
-    response_type TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    sources JSONB NULL,
+    category TEXT NULL,
+    section_title TEXT NULL,
+    response_type TEXT NULL,
+    created_at TIMESTAMPTZ NULL DEFAULT CURRENT_TIMESTAMP,
+    request_id VARCHAR(100) NULL,
+    duration_ms NUMERIC(12, 2) NULL,
+    source_count INTEGER NOT NULL DEFAULT 0,
+
+    CONSTRAINT chat_logs_pkey
+        PRIMARY KEY (id)
 );
 
+CREATE INDEX idx_chat_logs_category
+ON public.chat_logs (category);
 
--- ============================================================
--- FEEDBACK LOG TABLOSU
--- ============================================================
+CREATE INDEX idx_chat_logs_created_at
+ON public.chat_logs (created_at);
 
-CREATE TABLE IF NOT EXISTS feedback_logs (
-    id SERIAL PRIMARY KEY,
+CREATE INDEX idx_chat_logs_request_id
+ON public.chat_logs (request_id);
+
+CREATE INDEX idx_chat_logs_section_title
+ON public.chat_logs (section_title);
+
+
+
+-- Feedback kayıtları n8n tarafından yazılır.
+-- Backend admin dashboard bu tabloyu okur.
+CREATE TABLE public.feedback_logs (
+    id SERIAL NOT NULL,
     question TEXT NOT NULL,
     answer TEXT NOT NULL,
-    feedback TEXT NOT NULL
-        CHECK (feedback IN ('useful', 'not_useful')),
-    sources JSONB,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    feedback TEXT NOT NULL,
+    sources JSONB NULL,
+    created_at TIMESTAMPTZ NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT feedback_logs_pkey
+        PRIMARY KEY (id),
+
+    CONSTRAINT feedback_logs_feedback_check
+        CHECK (feedback IN ('useful', 'not_useful'))
 );
-
-
--- ============================================================
--- CHAT LOG INDEXLERİ
--- ============================================================
-
-CREATE INDEX IF NOT EXISTS idx_chat_logs_created_at
-ON chat_logs (created_at);
-
-CREATE INDEX IF NOT EXISTS idx_chat_logs_category
-ON chat_logs (category);
-
-CREATE INDEX IF NOT EXISTS idx_chat_logs_section_title
-ON chat_logs (section_title);
-
-CREATE INDEX IF NOT EXISTS idx_chat_logs_response_type
-ON chat_logs (response_type);
-
-
--- ============================================================
--- FEEDBACK LOG INDEXLERİ
--- ============================================================
-
-CREATE INDEX IF NOT EXISTS idx_feedback_logs_created_at
-ON feedback_logs (created_at);
-
-CREATE INDEX IF NOT EXISTS idx_feedback_logs_feedback
-ON feedback_logs (feedback);
-
-
--- ============================================================
--- KULLANICI INDEXLERİ
--- ============================================================
-
-CREATE INDEX IF NOT EXISTS idx_users_email
-ON users (email);
-
-CREATE INDEX IF NOT EXISTS idx_users_role
-ON users (role);
