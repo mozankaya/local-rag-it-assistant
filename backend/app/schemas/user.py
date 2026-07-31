@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class UserCreateRequest(BaseModel):
@@ -11,11 +11,10 @@ class UserCreateRequest(BaseModel):
 
 
 class UserResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     email: str
     full_name: str
     role: str
     is_active: bool
-
-    class Config:
-        from_attributes = True
