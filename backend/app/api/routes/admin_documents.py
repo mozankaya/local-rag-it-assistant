@@ -1,6 +1,3 @@
-import json
-import subprocess
-import sys
 from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
@@ -32,6 +29,7 @@ from app.schemas.admin_documents import (
     PaginatedAdminDocumentsResponse,
     ReindexResponse,
 )
+from app.services import document_preprocessing
 from app.services.document_files import (
     ensure_allowed_file,
     find_source_document_path,
@@ -63,76 +61,24 @@ def get_scalar_value(db: Session, query: str, params: dict | None = None) -> int
     result = db.execute(text(query), params or {}).scalar()
     return int(result or 0)
 
-
 def load_documents_manifest() -> list[dict]:
-    if not DOCUMENTS_MANIFEST_PATH.exists():
-        return []
+    """Projenin documents.json manifest dosyasını okur."""
 
-    try:
-        with DOCUMENTS_MANIFEST_PATH.open("r", encoding="utf-8") as file:
-            data = json.load(file)
-
-    except json.JSONDecodeError:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="documents.json dosyası okunamadı. JSON formatı geçersiz.",
-        )
-
-    if not isinstance(data, list):
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="documents.json beklenen liste formatında değil.",
-        )
-
-    return data
+    return document_preprocessing.load_documents_manifest(
+        manifest_path=DOCUMENTS_MANIFEST_PATH,
+    )
 
 
-def run_prepare_documents_script(allow_empty: bool = False) -> None:
-    """prepare_documents.py scriptini çalıştırır."""
+def run_prepare_documents_script(
+    allow_empty: bool = False,
+) -> None:
+    """Projenin doküman ön işleme scriptini çalıştırır."""
 
-    if not PREPARE_DOCUMENTS_SCRIPT.is_file():
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="prepare_documents.py scripti bulunamadı.",
-        )
-
-    command = [
-        sys.executable,
-        str(PREPARE_DOCUMENTS_SCRIPT),
-    ]
-
-    if allow_empty:
-        command.append("--allow-empty")
-
-    try:
-        result = subprocess.run(
-            command,
-            cwd=str(PROJECT_ROOT_DIR),
-            capture_output=True,
-            text=True,
-            timeout=120,
-        )
-    except subprocess.TimeoutExpired as error:
-        raise HTTPException(
-            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
-            detail="Doküman ön işleme işlemi zaman aşımına uğradı.",
-        ) from error
-
-    if result.returncode != 0:
-        error_message = (
-            result.stderr.strip()
-            or result.stdout.strip()
-            or "Bilinmeyen doküman işleme hatası."
-        )
-
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=(
-                "Doküman ön işleme sırasında hata oluştu: "
-                f"{error_message}"
-            ),
-        )
-
+    document_preprocessing.run_prepare_documents_script(
+        project_root_dir=PROJECT_ROOT_DIR,
+        prepare_documents_script=PREPARE_DOCUMENTS_SCRIPT,
+        allow_empty=allow_empty,
+    )
 
 @router.get("", response_model=PaginatedAdminDocumentsResponse)
 def list_documents(
