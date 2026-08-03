@@ -218,7 +218,7 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        3152,
+        3392,
         80
       ],
       "id": "db925f28-a155-4a6c-a4d6-328fa22b2be9",
@@ -367,7 +367,7 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        3344,
+        2960,
         80
       ],
       "id": "0cc8eef1-930b-4d45-8211-b76dcd843b58",
@@ -377,18 +377,17 @@
           "id": "jShdzm8IEPIqSd41",
           "name": "Postgres account"
         }
-      },
-      "onError": "continueRegularOutput"
+      }
     },
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const chatData = $('Prepare Chat Log Data').first().json;\n\nreturn {\n  json: {\n    question: chatData.question,\n    answer: chatData.answer,\n    sources: chatData.sources || [],\n    response_type: chatData.response_type || \"unknown\"\n  }\n};"
+        "jsCode": "const chatData =\n  $('Prepare Chat Log Data').first().json;\n\nconst insertedChatLog = $json;\n\nconst chatLogId = Number(\n  insertedChatLog.id\n);\n\nif (\n  !Number.isInteger(chatLogId) ||\n  chatLogId <= 0\n) {\n  throw new Error(\n    'Inserted chat log ID is missing or invalid.'\n  );\n}\n\nreturn {\n  json: {\n    chat_log_id: chatLogId,\n    question: chatData.question,\n    answer: chatData.answer,\n    sources: Array.isArray(chatData.sources)\n      ? chatData.sources\n      : [],\n    response_type:\n      chatData.response_type || 'unknown'\n  }\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2944,
+        3184,
         80
       ],
       "id": "6445a47a-5f9b-49ef-87f9-44d47906da93",
@@ -678,7 +677,13 @@
     },
     "Insert Chat Log": {
       "main": [
-        []
+        [
+          {
+            "node": "Format Chat Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Format Chat Response": {
@@ -725,7 +730,7 @@
       "main": [
         [
           {
-            "node": "Format Chat Response",
+            "node": "Insert Chat Log",
             "type": "main",
             "index": 0
           }
@@ -796,13 +801,7 @@
     },
     "Respond Full LangChain Answer": {
       "main": [
-        [
-          {
-            "node": "Insert Chat Log",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        []
       ]
     }
   },
@@ -812,7 +811,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "6df3342c-7fa2-481b-9e4d-3e4bd0fba6a6",
+  "versionId": "4feb91b2-0c07-4223-9c38-3a5b4740e235",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "8ad5e91ca19f2aebbe2ce2f031589771f3e4e7c0049e38f9c59f6c20dd949760"
