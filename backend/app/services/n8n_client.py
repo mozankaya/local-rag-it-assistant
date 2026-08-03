@@ -2,6 +2,8 @@ from typing import Any
 
 import httpx
 
+N8N_WEBHOOK_AUTH_HEADER = "X-Internal-Webhook-Key"
+
 
 class N8nClientError(Exception):
     """n8n bağlantısı veya HTTP isteği başarısız olduğunda kullanılır."""
@@ -15,12 +17,23 @@ class N8nTimeoutError(N8nClientError):
     pass
 
 
+def build_webhook_headers(webhook_secret: str) -> dict[str, str]:
+    """n8n webhook isteklerinde kullanılacak kimlik doğrulama header'ını oluşturur."""
+
+    return {
+        N8N_WEBHOOK_AUTH_HEADER: webhook_secret,
+    }
+
+
 async def post_to_n8n(
     url: str,
     payload: dict[str, Any],
     timeout_seconds: float,
+    webhook_secret: str,
 ) -> dict[str, Any]:
     """n8n webhook'una JSON gönderir ve JSON nesnesi döndürür."""
+
+    headers = build_webhook_headers(webhook_secret)
 
     try:
         async with httpx.AsyncClient(
@@ -29,6 +42,7 @@ async def post_to_n8n(
             response = await client.post(
                 url,
                 json=payload,
+                headers=headers,
             )
 
             response.raise_for_status()
@@ -58,8 +72,11 @@ async def post_to_n8n(
 def trigger_n8n_webhook(
     url: str,
     timeout_seconds: float,
+    webhook_secret: str,
 ) -> None:
     """n8n webhook'unu boş POST isteğiyle çalıştırır."""
+
+    headers = build_webhook_headers(webhook_secret)
 
     try:
         with httpx.Client(
@@ -68,6 +85,7 @@ def trigger_n8n_webhook(
             response = client.post(
                 url,
                 content=b"",
+                headers=headers,
             )
 
             response.raise_for_status()

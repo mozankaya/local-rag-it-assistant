@@ -77,10 +77,12 @@ def test_chat_returns_n8n_response(
         url: str,
         payload: dict[str, Any],
         timeout_seconds: float,
+        webhook_secret: str,
     ) -> dict[str, Any]:
         captured_request["url"] = url
         captured_request["payload"] = payload
         captured_request["timeout_seconds"] = timeout_seconds
+        captured_request["webhook_secret"] = webhook_secret
 
         return {
             "answer": "- İnternet bağlantısını kontrol edin.",
@@ -111,6 +113,7 @@ def test_chat_returns_n8n_response(
     )
 
     assert response.status_code == 200
+
     assert response.json() == {
         "question": "VPN bağlantısı kuramıyorum.",
         "answer": "- İnternet bağlantısını kontrol edin.",
@@ -135,6 +138,7 @@ def test_chat_returns_n8n_response(
             "question": "VPN bağlantısı kuramıyorum.",
         },
         "timeout_seconds": 5.0,
+        "webhook_secret": "test-webhook-secret",
     }
 
 
@@ -142,7 +146,9 @@ def test_chat_replaces_invalid_sources_with_empty_list(
     chat_client: TestClient,
     monkeypatch: MonkeyPatch,
 ) -> None:
-    async def fake_post_to_n8n(**_kwargs: Any) -> dict[str, Any]:
+    async def fake_post_to_n8n(
+        **_kwargs: Any,
+    ) -> dict[str, Any]:
         return {
             "question": "VPN bağlantısı kuramıyorum.",
             "answer": "- İnternet bağlantısını kontrol edin.",
@@ -170,7 +176,9 @@ def test_chat_rejects_n8n_response_without_answer(
     chat_client: TestClient,
     monkeypatch: MonkeyPatch,
 ) -> None:
-    async def fake_post_to_n8n(**_kwargs: Any) -> dict[str, Any]:
+    async def fake_post_to_n8n(
+        **_kwargs: Any,
+    ) -> dict[str, Any]:
         return {
             "question": "VPN bağlantısı kuramıyorum.",
             "sources": [],
@@ -199,7 +207,9 @@ def test_chat_handles_n8n_error_safely(
     chat_client: TestClient,
     monkeypatch: MonkeyPatch,
 ) -> None:
-    async def fake_post_to_n8n(**_kwargs: Any) -> dict[str, Any]:
+    async def fake_post_to_n8n(
+        **_kwargs: Any,
+    ) -> dict[str, Any]:
         raise N8nClientError("Internal technical details.")
 
     monkeypatch.setattr(

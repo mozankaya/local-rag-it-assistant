@@ -165,6 +165,7 @@
       "parameters": {
         "httpMethod": "POST",
         "path": "admin-document-reindex",
+        "authentication": "headerAuth",
         "responseMode": "lastNode",
         "options": {}
       },
@@ -176,7 +177,13 @@
       ],
       "id": "fe5b4b3e-a9c1-4ba5-aec3-5f3166e8028d",
       "name": "Webhook",
-      "webhookId": "27b2c3bb-24b0-415c-b865-e01b651404ce"
+      "webhookId": "27b2c3bb-24b0-415c-b865-e01b651404ce",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "kmSsL1EFXjtX3g0l",
+          "name": "Internal Webhook Header Auth"
+        }
+      }
     },
     {
       "parameters": {
@@ -281,7 +288,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const validation = $json;\n\nconst expectedDocumentCount =\n  $('Create File List').all().length;\n\nthrow new Error(\n  [\n    'Staging validation failed.',\n    `total_chunks=${validation.total_chunks}`,\n    `document_count=${validation.document_count}`,\n    `expected_document_count=${expectedDocumentCount}`,\n    `null_embeddings=${validation.null_embedding_count}`,\n    `empty_texts=${validation.empty_text_count}`,\n    `missing_document_ids=${validation.missing_document_id_count}`,\n    `missing_chunk_indexes=${validation.missing_chunk_index_count}`,\n    `duplicate_chunk_keys=${validation.duplicate_chunk_key_count}`\n  ].join(' ')\n);"
+        "jsCode": "const validation = $input.first().json;\n\nconst expectedDocumentCount =\n  $('Create File List').all().length;\n\nthrow new Error(\n  [\n    'Staging validation failed.',\n    `total_chunks=${validation.total_chunks}`,\n    `document_count=${validation.document_count}`,\n    `expected_document_count=${expectedDocumentCount}`,\n    `null_embeddings=${validation.null_embedding_count}`,\n    `empty_texts=${validation.empty_text_count}`,\n    `missing_document_ids=${validation.missing_document_id_count}`,\n    `missing_chunk_indexes=${validation.missing_chunk_index_count}`,\n    `duplicate_chunk_keys=${validation.duplicate_chunk_key_count}`\n  ].join(' ')\n);"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -475,7 +482,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "4dcd061c-6454-4a9f-873c-a6fb408de69a",
+  "versionId": "785807b5-89a8-4b20-8cf5-09f069a33bcc",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "8ad5e91ca19f2aebbe2ce2f031589771f3e4e7c0049e38f9c59f6c20dd949760"

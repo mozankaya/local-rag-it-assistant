@@ -664,6 +664,7 @@ def reindex_documents(
 
     webhook_url = app_settings.n8n_reindex_webhook_url
     timeout_seconds = app_settings.reindex_timeout_seconds
+    webhook_secret = app_settings.n8n_webhook_secret
 
     if not webhook_url:
         raise HTTPException(
@@ -675,6 +676,7 @@ def reindex_documents(
         trigger_n8n_webhook(
             url=webhook_url,
             timeout_seconds=timeout_seconds,
+            webhook_secret=webhook_secret,
         )
 
     except N8nTimeoutError as exc:

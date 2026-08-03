@@ -5,10 +5,10 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-
 os.environ["N8N_RAG_WEBHOOK_URL"] = "http://testserver/rag"
 os.environ["N8N_FEEDBACK_WEBHOOK_URL"] = "http://testserver/feedback"
 os.environ["N8N_REINDEX_WEBHOOK_URL"] = "http://testserver/reindex"
+os.environ["N8N_WEBHOOK_SECRET"] = "test-webhook-secret"
 
 os.environ["DATABASE_URL"] = "sqlite+pysqlite:///:memory:"
 
@@ -18,7 +18,6 @@ os.environ["ACCESS_TOKEN_EXPIRE_MINUTES"] = "60"
 
 
 from app.core.config import Settings, get_settings  # noqa: E402
-
 
 get_settings.cache_clear()
 
@@ -44,6 +43,7 @@ def test_settings() -> Settings:
         n8n_rag_webhook_url="http://testserver/rag",
         n8n_feedback_webhook_url="http://testserver/feedback",
         n8n_reindex_webhook_url="http://testserver/reindex",
+        n8n_webhook_secret="test-webhook-secret",
         request_timeout_seconds=5,
         reindex_timeout_seconds=5,
         max_question_length=1000,
