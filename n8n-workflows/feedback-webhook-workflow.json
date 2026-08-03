@@ -84,6 +84,7 @@
       ],
       "id": "b385b648-d44f-44cd-857b-83a97c6b8807",
       "name": "Save Feedback",
+      "retryOnFail": true,
       "credentials": {
         "postgres": {
           "id": "jShdzm8IEPIqSd41",
@@ -145,7 +146,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "bf17daa8-0a62-4dcd-bca2-dbf816a64a58",
+  "versionId": "ca0ce5de-8837-4225-9c9e-de665e0e9880",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "8ad5e91ca19f2aebbe2ce2f031589771f3e4e7c0049e38f9c59f6c20dd949760"
