@@ -1,5 +1,6 @@
 from typing import Any
 
+import pytest
 from fastapi.testclient import TestClient
 from pytest import MonkeyPatch
 
@@ -62,7 +63,7 @@ def test_chat_respects_configured_question_limit(
 
     assert response.status_code == 400
     assert response.json() == {
-        "detail": "Soru çok uzun. Lütfen daha kısa bir soru girin.",
+        "detail": ("Soru çok uzun. " "Lütfen daha kısa bir soru girin."),
     }
 
 
@@ -85,6 +86,7 @@ def test_chat_returns_n8n_response(
         captured_request["webhook_secret"] = webhook_secret
 
         return {
+            "chat_log_id": 42,
             "answer": "- İnternet bağlantısını kontrol edin.",
             "sources": [
                 {
@@ -115,6 +117,7 @@ def test_chat_returns_n8n_response(
     assert response.status_code == 200
 
     assert response.json() == {
+        "chat_log_id": 42,
         "question": "VPN bağlantısı kuramıyorum.",
         "answer": "- İnternet bağlantısını kontrol edin.",
         "sources": [
@@ -150,6 +153,7 @@ def test_chat_replaces_invalid_sources_with_empty_list(
         **_kwargs: Any,
     ) -> dict[str, Any]:
         return {
+            "chat_log_id": 42,
             "question": "VPN bağlantısı kuramıyorum.",
             "answer": "- İnternet bağlantısını kontrol edin.",
             "sources": "invalid-source-value",
@@ -180,6 +184,7 @@ def test_chat_rejects_n8n_response_without_answer(
         **_kwargs: Any,
     ) -> dict[str, Any]:
         return {
+            "chat_log_id": 42,
             "question": "VPN bağlantısı kuramıyorum.",
             "sources": [],
         }
@@ -199,7 +204,52 @@ def test_chat_rejects_n8n_response_without_answer(
 
     assert response.status_code == 502
     assert response.json() == {
-        "detail": "Chatbot servisinden geçerli bir cevap alınamadı.",
+        "detail": ("Chatbot servisinden geçerli bir " "cevap alınamadı."),
+    }
+
+
+@pytest.mark.parametrize(
+    "invalid_chat_log_id",
+    [
+        None,
+        True,
+        0,
+        -1,
+        "invalid",
+    ],
+)
+def test_chat_rejects_invalid_chat_log_id(
+    chat_client: TestClient,
+    monkeypatch: MonkeyPatch,
+    invalid_chat_log_id: Any,
+) -> None:
+    async def fake_post_to_n8n(
+        **_kwargs: Any,
+    ) -> dict[str, Any]:
+        return {
+            "chat_log_id": invalid_chat_log_id,
+            "question": "VPN bağlantısı kuramıyorum.",
+            "answer": "- İnternet bağlantısını kontrol edin.",
+            "sources": [],
+            "response_type": "rag_answer",
+        }
+
+    monkeypatch.setattr(
+        chat_routes,
+        "post_to_n8n",
+        fake_post_to_n8n,
+    )
+
+    response = chat_client.post(
+        "/chat",
+        json={
+            "question": "VPN bağlantısı kuramıyorum.",
+        },
+    )
+
+    assert response.status_code == 502
+    assert response.json() == {
+        "detail": ("Chatbot servisinden geçerli bir " "kayıt kimliği alınamadı."),
     }
 
 
@@ -234,3 +284,40 @@ def test_chat_handles_n8n_error_safely(
     }
 
     assert "Internal technical details" not in response.text
+
+
+def test_chat_allows_static_response_without_chat_log_id(
+    chat_client: TestClient,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    async def fake_post_to_n8n(
+        **_kwargs: Any,
+    ) -> dict[str, Any]:
+        return {
+            "question": "Merhaba",
+            "answer": ("Merhaba, ben İZELTAŞ IT " "Danışma Asistanı’yım."),
+            "sources": [],
+            "response_type": "static_response",
+        }
+
+    monkeypatch.setattr(
+        chat_routes,
+        "post_to_n8n",
+        fake_post_to_n8n,
+    )
+
+    response = chat_client.post(
+        "/chat",
+        json={
+            "question": "Merhaba",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "chat_log_id": None,
+        "question": "Merhaba",
+        "answer": ("Merhaba, ben İZELTAŞ IT " "Danışma Asistanı’yım."),
+        "sources": [],
+        "response_type": "static_response",
+    }

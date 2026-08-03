@@ -32,6 +32,7 @@ def test_chat_forwards_request_id_to_n8n(
         captured_call["webhook_secret"] = webhook_secret
 
         return {
+            "chat_log_id": 42,
             "question": payload["question"],
             "answer": "- VPN bağlantısını kontrol edin.",
             "sources": [],
@@ -52,7 +53,7 @@ def test_chat_forwards_request_id_to_n8n(
 
     app.dependency_overrides[get_settings] = lambda: SimpleNamespace(
         max_question_length=1000,
-        n8n_rag_webhook_url="http://n8n.test/webhook/rag-query",
+        n8n_rag_webhook_url=("http://n8n.test/webhook/rag-query"),
         n8n_webhook_secret="test-webhook-secret",
         request_timeout_seconds=60.0,
     )
@@ -64,12 +65,14 @@ def test_chat_forwards_request_id_to_n8n(
                 REQUEST_ID_HEADER: "test-request-123",
             },
             json={
-                "question": "VPN bağlantısı kuramıyorum.",
+                "question": ("VPN bağlantısı kuramıyorum."),
             },
         )
 
     assert response.status_code == 200
     assert response.headers[REQUEST_ID_HEADER] == "test-request-123"
+
+    assert response.json()["chat_log_id"] == 42
 
     assert captured_call["payload"] == {
         "question": "VPN bağlantısı kuramıyorum.",

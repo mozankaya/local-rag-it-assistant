@@ -15,7 +15,11 @@ class Source(BaseModel):
 
 
 class ChatRequest(BaseModel):
-    question: str = Field(..., min_length=1, max_length=1000)
+    question: str = Field(
+        ...,
+        min_length=1,
+        max_length=1000,
+    )
 
     @field_validator("question")
     @classmethod
@@ -29,13 +33,16 @@ class ChatRequest(BaseModel):
 
 
 class ChatResponse(BaseModel):
+    chat_log_id: int | None = None
     question: str
     answer: str
-    sources: list[Source] = []
+    sources: list[Source] = Field(default_factory=list)
     response_type: str | None = None
 
 
 class N8nChatResponse(BaseModel):
+    chat_log_id: int | None = None
     question: str | None = None
     answer: str | None = None
-    sources: list[dict[str, Any]] = []
+    sources: list[dict[str, Any]] = Field(default_factory=list)
+    response_type: str | None = None
