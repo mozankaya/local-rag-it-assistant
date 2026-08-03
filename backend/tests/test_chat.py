@@ -139,6 +139,11 @@ def test_chat_returns_n8n_response(
         "url": "http://testserver/rag",
         "payload": {
             "question": "VPN bağlantısı kuramıyorum.",
+            "rag_settings": {
+                "top_k": 5,
+                "score_threshold": 0.51,
+                "max_sources": 3,
+            },
         },
         "timeout_seconds": 5.0,
         "webhook_secret": "test-webhook-secret",
@@ -320,4 +325,50 @@ def test_chat_allows_static_response_without_chat_log_id(
         "answer": ("Merhaba, ben İZELTAŞ IT " "Danışma Asistanı’yım."),
         "sources": [],
         "response_type": "static_response",
+    }
+
+
+def test_chat_forwards_configured_rag_settings(
+    chat_client: TestClient,
+    test_settings: Settings,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    captured_payload: dict[str, Any] = {}
+
+    test_settings.rag_top_k = 8
+    test_settings.rag_score_threshold = 0.44
+    test_settings.rag_max_sources = 4
+
+    async def fake_post_to_n8n(
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        captured_payload.update(kwargs["payload"])
+
+        return {
+            "chat_log_id": 42,
+            "question": "VPN bağlantısı kuramıyorum.",
+            "answer": "- İnternet bağlantısını kontrol edin.",
+            "sources": [],
+            "response_type": "rag_answer",
+        }
+
+    monkeypatch.setattr(
+        chat_routes,
+        "post_to_n8n",
+        fake_post_to_n8n,
+    )
+
+    response = chat_client.post(
+        "/chat",
+        json={
+            "question": "VPN bağlantısı kuramıyorum.",
+        },
+    )
+
+    assert response.status_code == 200
+
+    assert captured_payload["rag_settings"] == {
+        "top_k": 8,
+        "score_threshold": 0.44,
+        "max_sources": 4,
     }

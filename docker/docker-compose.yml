@@ -92,6 +92,10 @@ services:
       N8N_REINDEX_WEBHOOK_URL: ${N8N_REINDEX_WEBHOOK_URL}
       N8N_WEBHOOK_SECRET: ${N8N_WEBHOOK_SECRET}
 
+      RAG_TOP_K: ${RAG_TOP_K}
+      RAG_SCORE_THRESHOLD: ${RAG_SCORE_THRESHOLD}
+      RAG_MAX_SOURCES: ${RAG_MAX_SOURCES}
+
       N8N_HEALTH_URL: http://n8n:5678/healthz
       OLLAMA_HEALTH_URL: http://host.docker.internal:11434/api/tags
 
