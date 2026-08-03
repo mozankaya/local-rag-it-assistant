@@ -43,7 +43,10 @@ function MessageList({
               <SourceTooltip sources={message.sources} />
             )}
 
-            {message.role === "assistant" && message.question && (
+            {message.role === "assistant"
+              && typeof message.chatLogId === "number"
+              && Number.isInteger(message.chatLogId)
+              && message.chatLogId > 0 && (
               <FeedbackActions
                 status={feedbackStatus[message.id]}
                 onFeedback={(feedback) => onFeedback(message, feedback)}

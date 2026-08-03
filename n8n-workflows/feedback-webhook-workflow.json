@@ -28,7 +28,7 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const body = $json.body || {};\n\nconst question = String(body.question || '').trim();\nconst answer = String(body.answer || '').trim();\nconst feedback = String(body.feedback || '').trim();\nconst sources = Array.isArray(body.sources) ? body.sources : [];\n\nif (!question) {\n  throw new Error('Question is required.');\n}\n\nif (!answer) {\n  throw new Error('Answer is required.');\n}\n\nif (!['useful', 'not_useful'].includes(feedback)) {\n  throw new Error('Feedback must be either \"useful\" or \"not_useful\".');\n}\n\nreturn {\n  json: {\n    question,\n    answer,\n    feedback,\n    sources\n  }\n};"
+        "jsCode": "const body = $json.body || {};\n\nconst chatLogId = Number(body.chat_log_id);\n\nconst feedback = String(\n  body.feedback || ''\n).trim();\n\nif (\n  !Number.isInteger(chatLogId) ||\n  chatLogId <= 0\n) {\n  throw new Error(\n    'chat_log_id must be a positive integer.'\n  );\n}\n\nif (\n  !['useful', 'not_useful'].includes(feedback)\n) {\n  throw new Error(\n    'Feedback must be either \"useful\" or \"not_useful\".'\n  );\n}\n\nreturn {\n  json: {\n    chat_log_id: chatLogId,\n    feedback\n  }\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -41,115 +41,13 @@
     },
     {
       "parameters": {
-        "schema": {
-          "__rl": true,
-          "mode": "list",
-          "value": "public"
-        },
-        "table": {
-          "__rl": true,
-          "value": "feedback_logs",
-          "mode": "list",
-          "cachedResultName": "feedback_logs"
-        },
-        "columns": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "question": "={{ $json.question }}",
-            "answer": "={{ $json.answer }}",
-            "feedback": "={{ $json.feedback }}",
-            "sources": "={{ $json.sources_json }}"
-          },
-          "matchingColumns": [
-            "id"
-          ],
-          "schema": [
-            {
-              "id": "id",
-              "displayName": "id",
-              "required": false,
-              "defaultMatch": true,
-              "display": true,
-              "type": "number",
-              "canBeUsedToMatch": true,
-              "removed": true
-            },
-            {
-              "id": "question",
-              "displayName": "question",
-              "required": true,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "answer",
-              "displayName": "answer",
-              "required": true,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "feedback",
-              "displayName": "feedback",
-              "required": true,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "sources",
-              "displayName": "sources",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "object",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "created_at",
-              "displayName": "created_at",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "dateTime",
-              "canBeUsedToMatch": true,
-              "removed": true
-            }
-          ],
-          "attemptToConvertTypes": false,
-          "convertFieldsToString": false
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.postgres",
-      "typeVersion": 2.6,
-      "position": [
-        624,
-        0
-      ],
-      "id": "b385b648-d44f-44cd-857b-83a97c6b8807",
-      "name": "Insert Feedback",
-      "credentials": {
-        "postgres": {
-          "id": "jShdzm8IEPIqSd41",
-          "name": "Postgres account"
-        }
-      }
-    },
-    {
-      "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const feedbackData = $('Validate Feedback').first().json;\n\nreturn {\n  json: {\n    status: 'success',\n    message: 'Feedback saved successfully.',\n    feedback: feedbackData.feedback\n  }\n};"
+        "jsCode": "const status = String(\n  $json.status || 'error'\n).trim();\n\nconst chatLogId = Number(\n  $json.chat_log_id\n);\n\nif (status === 'not_found') {\n  return {\n    json: {\n      status: 'not_found',\n      message: 'Chat log not found.',\n      chat_log_id:\n        Number.isInteger(chatLogId)\n          ? chatLogId\n          : null\n    }\n  };\n}\n\nif (status !== 'success') {\n  throw new Error(\n    'Unexpected feedback save result.'\n  );\n}\n\nif (\n  !Number.isInteger(chatLogId) ||\n  chatLogId <= 0\n) {\n  throw new Error(\n    'Saved chat_log_id is missing or invalid.'\n  );\n}\n\nconst feedback = String(\n  $json.feedback || ''\n).trim();\n\nif (\n  !['useful', 'not_useful'].includes(feedback)\n) {\n  throw new Error(\n    'Saved feedback value is invalid.'\n  );\n}\n\nreturn {\n  json: {\n    status: 'success',\n    message: 'Feedback saved successfully.',\n    feedback,\n    chat_log_id: chatLogId\n  }\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        832,
+        752,
         0
       ],
       "id": "2255ffbf-ddcd-4dc4-b950-154e5cacfce9",
@@ -164,7 +62,7 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        1040,
+        960,
         0
       ],
       "id": "809f1d39-0fd9-4141-8aea-df5b16b80e8f",
@@ -172,17 +70,26 @@
     },
     {
       "parameters": {
-        "mode": "runOnceForEachItem",
-        "jsCode": "const question = String($json.question || '').trim();\nconst answer = String($json.answer || '').trim();\nconst feedback = String($json.feedback || '').trim();\nconst sources = Array.isArray($json.sources) ? $json.sources : [];\n\nif (!question) throw new Error('Question is required.');\nif (!answer) throw new Error('Answer is required.');\n\nif (!['useful', 'not_useful'].includes(feedback)) {\n  throw new Error('Feedback must be either \"useful\" or \"not_useful\".');\n}\n\nreturn {\n  json: {\n    question,\n    answer,\n    feedback,\n    sources,\n    sources_json: {\n      source_items: sources\n    }\n  }\n};"
+        "operation": "executeQuery",
+        "query": "WITH selected_chat AS (\n    SELECT\n        id,\n        question,\n        answer,\n        sources\n    FROM public.chat_logs\n    WHERE id = $1\n),\nsaved_feedback AS (\n    INSERT INTO public.feedback_logs (\n        chat_log_id,\n        question,\n        answer,\n        feedback,\n        sources\n    )\n    SELECT\n        id,\n        question,\n        answer,\n        $2,\n        sources\n    FROM selected_chat\n    ON CONFLICT (chat_log_id)\n    DO UPDATE SET\n        question = EXCLUDED.question,\n        answer = EXCLUDED.answer,\n        feedback = EXCLUDED.feedback,\n        sources = EXCLUDED.sources\n    RETURNING\n        chat_log_id,\n        feedback\n)\nSELECT\n    CASE\n        WHEN EXISTS (\n            SELECT 1\n            FROM selected_chat\n        )\n        THEN 'success'\n        ELSE 'not_found'\n    END AS status,\n\n    COALESCE(\n        (\n            SELECT chat_log_id\n            FROM saved_feedback\n            LIMIT 1\n        ),\n        $1::integer\n    ) AS chat_log_id,\n\n    (\n        SELECT feedback\n        FROM saved_feedback\n        LIMIT 1\n    ) AS feedback;",
+        "options": {
+          "queryReplacement": "={{ $json.chat_log_id }},{{ $json.feedback }}"
+        }
       },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
       "position": [
-        416,
+        480,
         0
       ],
-      "id": "f81fe8fd-93c3-4080-81de-7647d03f1762",
-      "name": "Prepare Feedback Data"
+      "id": "b385b648-d44f-44cd-857b-83a97c6b8807",
+      "name": "Save Feedback",
+      "credentials": {
+        "postgres": {
+          "id": "jShdzm8IEPIqSd41",
+          "name": "Postgres account"
+        }
+      }
     }
   ],
   "pinData": {},
@@ -202,18 +109,7 @@
       "main": [
         [
           {
-            "node": "Prepare Feedback Data",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Insert Feedback": {
-      "main": [
-        [
-          {
-            "node": "Format Feedback Response",
+            "node": "Save Feedback",
             "type": "main",
             "index": 0
           }
@@ -231,11 +127,11 @@
         ]
       ]
     },
-    "Prepare Feedback Data": {
+    "Save Feedback": {
       "main": [
         [
           {
-            "node": "Insert Feedback",
+            "node": "Format Feedback Response",
             "type": "main",
             "index": 0
           }
@@ -249,7 +145,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "a3dfd553-351f-4892-a92e-f2fc837584da",
+  "versionId": "bf17daa8-0a62-4dcd-bca2-dbf816a64a58",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "8ad5e91ca19f2aebbe2ce2f031589771f3e4e7c0049e38f9c59f6c20dd949760"

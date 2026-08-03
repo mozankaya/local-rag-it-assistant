@@ -10,21 +10,11 @@ from app.services.n8n_client import N8nClientError
 
 def valid_feedback_payload(
     feedback: str = "useful",
+    chat_log_id: int = 42,
 ) -> dict[str, Any]:
     return {
-        "question": "VPN bağlantısı kuramıyorum.",
-        "answer": "- İnternet bağlantınızı kontrol edin.",
+        "chat_log_id": chat_log_id,
         "feedback": feedback,
-        "sources": [
-            {
-                "document_id": "vpn-guide",
-                "title": "VPN Kullanım Rehberi",
-                "category": "network",
-                "section_title": "Bağlantı Sorunları",
-                "chunk_index": 1,
-                "score": 0.25,
-            }
-        ],
     }
 
 
@@ -44,21 +34,30 @@ def test_feedback_rejects_invalid_feedback_value(
 ) -> None:
     response = feedback_client.post(
         "/feedback",
-        json=valid_feedback_payload(feedback="maybe"),
+        json=valid_feedback_payload(
+            feedback="maybe",
+        ),
     )
 
     assert response.status_code == 422
 
 
-def test_feedback_rejects_blank_question(
+@pytest.mark.parametrize(
+    "invalid_chat_log_id",
+    [
+        0,
+        -1,
+    ],
+)
+def test_feedback_rejects_invalid_chat_log_id(
     feedback_client: TestClient,
+    invalid_chat_log_id: int,
 ) -> None:
-    payload = valid_feedback_payload()
-    payload["question"] = "   "
-
     response = feedback_client.post(
         "/feedback",
-        json=payload,
+        json=valid_feedback_payload(
+            chat_log_id=invalid_chat_log_id,
+        ),
     )
 
     assert response.status_code == 422
@@ -94,6 +93,7 @@ def test_feedback_sends_payload_to_n8n(
             "status": "success",
             "message": "Feedback kaydedildi.",
             "feedback": feedback_value,
+            "chat_log_id": 42,
         }
 
     monkeypatch.setattr(
@@ -117,19 +117,118 @@ def test_feedback_sends_payload_to_n8n(
         "status": "success",
         "message": "Feedback kaydedildi.",
         "feedback": feedback_value,
+        "chat_log_id": 42,
     }
 
-    assert captured_request["url"] == ("http://testserver/feedback")
+    assert captured_request == {
+        "url": "http://testserver/feedback",
+        "payload": {
+            "chat_log_id": 42,
+            "feedback": feedback_value,
+        },
+        "timeout_seconds": 5.0,
+        "webhook_secret": "test-webhook-secret",
+    }
 
-    assert captured_request["timeout_seconds"] == 5.0
 
-    assert captured_request["webhook_secret"] == ("test-webhook-secret")
+def test_feedback_returns_not_found_for_missing_chat_log(
+    feedback_client: TestClient,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    async def fake_post_to_n8n(
+        **_kwargs: Any,
+    ) -> dict[str, Any]:
+        return {
+            "status": "not_found",
+            "message": "Chat log not found.",
+        }
 
-    assert captured_request["payload"]["question"] == ("VPN bağlantısı kuramıyorum.")
+    monkeypatch.setattr(
+        feedback_routes,
+        "post_to_n8n",
+        fake_post_to_n8n,
+    )
 
-    assert captured_request["payload"]["feedback"] == (feedback_value)
+    response = feedback_client.post(
+        "/feedback",
+        json=valid_feedback_payload(),
+    )
 
-    assert len(captured_request["payload"]["sources"]) == 1
+    assert response.status_code == 404
+    assert response.json() == {
+        "detail": ("Geri bildirim gönderilecek " "sohbet kaydı bulunamadı."),
+    }
+
+
+def test_feedback_rejects_invalid_service_status(
+    feedback_client: TestClient,
+    monkeypatch: MonkeyPatch,
+) -> None:
+    async def fake_post_to_n8n(
+        **_kwargs: Any,
+    ) -> dict[str, Any]:
+        return {
+            "status": "unexpected",
+        }
+
+    monkeypatch.setattr(
+        feedback_routes,
+        "post_to_n8n",
+        fake_post_to_n8n,
+    )
+
+    response = feedback_client.post(
+        "/feedback",
+        json=valid_feedback_payload(),
+    )
+
+    assert response.status_code == 502
+    assert response.json() == {
+        "detail": ("Geri bildirim servisinden " "geçerli bir sonuç alınamadı."),
+    }
+
+
+@pytest.mark.parametrize(
+    "invalid_chat_log_id",
+    [
+        True,
+        0,
+        -1,
+        "invalid",
+    ],
+)
+def test_feedback_rejects_invalid_response_chat_log_id(
+    feedback_client: TestClient,
+    monkeypatch: MonkeyPatch,
+    invalid_chat_log_id: Any,
+) -> None:
+    async def fake_post_to_n8n(
+        **_kwargs: Any,
+    ) -> dict[str, Any]:
+        return {
+            "status": "success",
+            "message": "Feedback kaydedildi.",
+            "feedback": "useful",
+            "chat_log_id": invalid_chat_log_id,
+        }
+
+    monkeypatch.setattr(
+        feedback_routes,
+        "post_to_n8n",
+        fake_post_to_n8n,
+    )
+
+    response = feedback_client.post(
+        "/feedback",
+        json=valid_feedback_payload(),
+    )
+
+    assert response.status_code == 502
+    assert response.json() == {
+        "detail": (
+            "Geri bildirim servisinden geçerli " "bir sohbet kimliği alınamadı."
+        ),
+    }
 
 
 def test_feedback_handles_n8n_error_safely(
@@ -155,9 +254,10 @@ def test_feedback_handles_n8n_error_safely(
     assert response.status_code == 502
     assert response.json() == {
         "detail": (
-            "Geri bildirim servisine şu anda ulaşılamıyor. "
-            "Lütfen daha sonra tekrar deneyin."
+            "Geri bildirim servisine şu anda "
+            "ulaşılamıyor. Lütfen daha sonra "
+            "tekrar deneyin."
         ),
     }
 
-    assert "Internal feedback error" not in response.text
+    assert "Internal feedback error." not in response.text

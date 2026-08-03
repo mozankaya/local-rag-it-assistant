@@ -68,6 +68,7 @@ function ChatBox({ quickQuestion }: ChatBoxProps) {
         text: response.answer,
         sources: response.sources || [],
         question: response.question || cleanedQuestion,
+        chatLogId: response.chat_log_id,
       };
 
       setMessages((previous) => [...previous, assistantMessage]);
@@ -98,14 +99,16 @@ function ChatBox({ quickQuestion }: ChatBoxProps) {
     message: Message,
     feedback: "useful" | "not_useful",
   ) {
-    if (!message.question) return;
+    if (
+      typeof message.chatLogId !== "number"
+      || !Number.isInteger(message.chatLogId)
+      || message.chatLogId <= 0
+    ) return;
 
     try {
       await sendFeedback({
-        question: message.question,
-        answer: message.text,
+        chat_log_id: message.chatLogId,
         feedback,
-        sources: message.sources || [],
       });
 
       setFeedbackStatus((previous) => ({
