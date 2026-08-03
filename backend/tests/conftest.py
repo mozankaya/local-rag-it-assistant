@@ -10,6 +10,10 @@ os.environ["N8N_FEEDBACK_WEBHOOK_URL"] = "http://testserver/feedback"
 os.environ["N8N_REINDEX_WEBHOOK_URL"] = "http://testserver/reindex"
 os.environ["N8N_WEBHOOK_SECRET"] = "test-webhook-secret"
 
+os.environ["RAG_TOP_K"] = "5"
+os.environ["RAG_SCORE_THRESHOLD"] = "0.51"
+os.environ["RAG_MAX_SOURCES"] = "3"
+
 os.environ["DATABASE_URL"] = "sqlite+pysqlite:///:memory:"
 
 os.environ["JWT_SECRET_KEY"] = "test-only-secret-key-not-for-production"
@@ -47,6 +51,9 @@ def test_settings() -> Settings:
         request_timeout_seconds=5,
         reindex_timeout_seconds=5,
         max_question_length=1000,
+        rag_top_k=5,
+        rag_score_threshold=0.51,
+        rag_max_sources=3,
         database_url="sqlite+pysqlite:///:memory:",
         jwt_secret_key="test-only-secret-key-not-for-production",
         jwt_algorithm="HS256",

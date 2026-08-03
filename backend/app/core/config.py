@@ -1,5 +1,6 @@
 from functools import lru_cache
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -19,6 +20,22 @@ class Settings(BaseSettings):
     reindex_timeout_seconds: float = 300.0
     service_status_timeout_seconds: float = 3.0
     max_question_length: int = 1000
+
+    rag_top_k: int = Field(
+        default=5,
+        ge=1,
+        le=50,
+    )
+    rag_score_threshold: float = Field(
+        default=0.51,
+        ge=0.0,
+        le=2.0,
+    )
+    rag_max_sources: int = Field(
+        default=3,
+        ge=1,
+        le=10,
+    )
 
     database_url: str
 
