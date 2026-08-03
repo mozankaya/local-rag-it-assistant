@@ -146,19 +146,6 @@
     },
     {
       "parameters": {
-        "jsCode": "const items = $input.all();\nconst intentData = $('Detect Simple Intent').first().json;\n\nconst question = String(\n  intentData.question || ''\n).trim();\n\n// ============================================================\n// AYARLAR\n// ============================================================\n\nconst ragSettings =\n  $('Get User Question').first().json\n    .rag_settings || {};\n\nconst ENABLE_SCORE_THRESHOLD = true;\nconst LOWER_SCORE_IS_BETTER = true;\n\nconst parsedScoreThreshold = Number(\n  ragSettings.score_threshold\n);\n\nconst SCORE_THRESHOLD =\n  Number.isFinite(parsedScoreThreshold)\n    ? parsedScoreThreshold\n    : 0.51;\n\nconst parsedMaxSources = Number(\n  ragSettings.max_sources\n);\n\nconst MAX_SOURCES =\n  Number.isInteger(parsedMaxSources) &&\n  parsedMaxSources >= 1\n    ? parsedMaxSources\n    : 3;\n\nconst parsedTopK = Number(\n  ragSettings.top_k\n);\n\nconst TOP_K =\n  Number.isInteger(parsedTopK) &&\n  parsedTopK >= 1\n    ? parsedTopK\n    : 5;\n\n// ============================================================\n// YARDIMCI FONKSİYONLAR\n// ============================================================\n\nfunction parseMetadata(value) {\n  if (!value) {\n    return {};\n  }\n\n  if (typeof value === 'object') {\n    return value;\n  }\n\n  try {\n    return JSON.parse(value);\n  } catch {\n    return {};\n  }\n}\n\nfunction getContent(row) {\n  return String(\n    row.pageContent ||\n    row.content ||\n    row.text ||\n    row.document?.pageContent ||\n    row.document?.content ||\n    row.document?.text ||\n    row.json?.pageContent ||\n    row.json?.content ||\n    row.json?.text ||\n    ''\n  ).trim();\n}\n\nfunction getMetadata(row) {\n  return parseMetadata(\n    row.metadata ||\n    row.document?.metadata ||\n    row.json?.metadata ||\n    {}\n  );\n}\n\nfunction getScore(row) {\n  const value =\n    row.score ??\n    row.distance ??\n    row.json?.score ??\n    row.json?.distance ??\n    row.document?.score ??\n    row.document?.distance ??\n    null;\n\n  if (value === null || value === undefined) {\n    return null;\n  }\n\n  const numberValue = Number(value);\n\n  if (Number.isNaN(numberValue)) {\n    return null;\n  }\n\n  return numberValue;\n}\n\nfunction isScoreAccepted(score) {\n  if (!ENABLE_SCORE_THRESHOLD) {\n    return true;\n  }\n\n  if (score === null) {\n    return false;\n  }\n\n  if (LOWER_SCORE_IS_BETTER) {\n    return score <= SCORE_THRESHOLD;\n  }\n\n  return score >= SCORE_THRESHOLD;\n}\n\nfunction compareScores(firstDocument, secondDocument) {\n  const firstScore = firstDocument.score;\n  const secondScore = secondDocument.score;\n\n  if (firstScore === null && secondScore === null) {\n    return 0;\n  }\n\n  if (firstScore === null) {\n    return 1;\n  }\n\n  if (secondScore === null) {\n    return -1;\n  }\n\n  if (LOWER_SCORE_IS_BETTER) {\n    return firstScore - secondScore;\n  }\n\n  return secondScore - firstScore;\n}\n\n// ============================================================\n// N8N ÇIKTILARINI TEK LİSTEYE DÖNÜŞTÜR\n// ============================================================\n\nconst documents = [];\n\nfor (const item of items) {\n  const row = item.json || {};\n\n  if (Array.isArray(row.documents)) {\n    for (const document of row.documents) {\n      documents.push(document);\n    }\n\n    continue;\n  }\n\n  if (Array.isArray(row.results)) {\n    for (const document of row.results) {\n      documents.push(document);\n    }\n\n    continue;\n  }\n\n  documents.push(row);\n}\n\n// ============================================================\n// ADAY DOKÜMANLARI HAZIRLA\n// ============================================================\n\nconst candidateDocuments = documents\n  .map((document, index) => {\n    return {\n      content: getContent(document),\n      metadata: getMetadata(document),\n      score: getScore(document),\n      original_index: index\n    };\n  })\n  .filter((document) => document.content.length > 20)\n  .sort(compareScores);\n\nconst usefulDocuments = candidateDocuments\n  .filter((document) =>\n    isScoreAccepted(document.score)\n  )\n  .slice(0, MAX_SOURCES);\n\n// ============================================================\n// LLM CONTEXT HAZIRLA\n// ============================================================\n\nconst context = usefulDocuments.length > 0\n  ? usefulDocuments\n      .map((document, index) => {\n        const metadata = document.metadata || {};\n        const sectionTitle =\n          metadata.section_title || '';\n\n        return [\n          `[PASSAGE ${index + 1}]`,\n          sectionTitle\n            ? `TOPIC: ${sectionTitle}`\n            : '',\n          document.content\n        ]\n          .filter(Boolean)\n          .join('\\n');\n      })\n      .join('\\n\\n---\\n\\n')\n  : 'NO_RELEVANT_SOURCE';\n\n// ============================================================\n// FRONTEND'E DÖNECEK KAYNAKLAR\n// ============================================================\n\nconst sources = usefulDocuments.map(\n  (document, index) => {\n    const metadata = document.metadata || {};\n\n    return {\n      document_id:\n        metadata.document_id || null,\n\n      title:\n        metadata.title || null,\n\n      category:\n        metadata.category || null,\n\n      section_title:\n        metadata.section_title || null,\n\n      chunk_index:\n        metadata.chunk_index ?? index + 1,\n\n      source_file_name:\n        metadata.source_file_name || null,\n\n      file_type:\n        metadata.file_type || null,\n\n      score:\n        document.score\n    };\n  }\n);\n\n// ============================================================\n// PROMPT\n// ============================================================\n\nconst prompt = `\nYou are an internal IT support assistant for İZELTAŞ.\n\nThe PASSAGES below are candidate sections returned by the retrieval system.\n\nAnswer the USER QUESTION using only the information explicitly stated in the PASSAGES.\nSelect only the passages and statements that directly answer the question.\nIgnore unrelated passages and unrelated details.\nDo not return NO_RELEVANT_SOURCE.\n\nSECURITY RULES:\n\n- Never tell the user to share, send or include passwords, MFA codes, access tokens, API keys or other secret credentials in a support request, form, e-mail or message.\n- Password reset, password change and official login instructions are allowed.\n- Do not add a security warning merely because a passage mentions a password.\n- If a passage explicitly asks the user to share a secret credential, omit only that unsafe instruction and write:\n  \"Parola, MFA doğrulama kodu veya başka bir gizli bilgi paylaşılmamalıdır.\"\n\nSOURCE RULES:\n\n- Use only information explicitly stated in the PASSAGES.\n- Do not invent, infer or complete missing information.\n- Select concrete instructions, requirements and conditions that answer the USER QUESTION.\n- Do not answer only with a sentence that describes what a document covers when concrete instructions are available.\n- Preserve the original meaning, conditions, warnings and negations.\n- Never reverse or remove expressions such as \"değil\", \"olmadığından\", \"olmamalıdır\" or \"yapılmamalıdır\".\n- Never omit conditions such as \"açılmıyorsa\", \"devam ederse\", \"tamamlandıktan sonra\" or \"varsa\".\n- Prefer complete source sentences and keep their wording close to the original.\n- Do not unnecessarily change Turkish case suffixes, possessive suffixes, subjects or verb conjugations.\n- Do not merge sentences when merging them could cause a grammatical or semantic error.\n\nLANGUAGE AND FORMAT:\n\n- Write in Turkish only.\n- Return between 1 and 3 bullet points.\n- Start every bullet point with \"- \".\n- Each bullet point must contain one relevant and complete instruction or requirement.\n- Combine complementary information from different passages when it directly helps answer the question.\n- Do not include unrelated information merely to produce 3 bullet points.\n- Do not repeat the USER QUESTION.\n- Do not write a title, introduction or conclusion.\n- Do not ask a follow-up question.\n- Do not mention passages, sources, documents, metadata, chunks, scores or the retrieval process.\n- Before returning the answer, check that every sentence is complete, natural and grammatically correct Turkish.\n\nPASSAGES:\n\n${context}\n\nUSER QUESTION:\n\n${question}\n\nReturn only the Turkish bullet points.\n`;\n\n// ============================================================\n// DEBUG BİLGİLERİ\n// ============================================================\n\nconst debug = {\n  top_k:\n    TOP_K,\n\n  threshold_enabled:\n    ENABLE_SCORE_THRESHOLD,\n\n  threshold:\n    SCORE_THRESHOLD,\n\n  lower_score_is_better:\n    LOWER_SCORE_IS_BETTER,\n\n  max_sources:\n    MAX_SOURCES,\n\n  candidate_count:\n    candidateDocuments.length,\n\n  threshold_pass_count:\n    candidateDocuments.filter((document) =>\n      isScoreAccepted(document.score)\n    ).length,\n\n  selected_count:\n    usefulDocuments.length,\n\n  candidate_documents:\n    candidateDocuments.map((document) => {\n      return {\n        document_id:\n          document.metadata?.document_id || null,\n\n        title:\n          document.metadata?.title || null,\n\n        section_title:\n          document.metadata?.section_title || null,\n\n        score:\n          document.score,\n\n        accepted:\n          isScoreAccepted(document.score)\n      };\n    })\n};\n\n// ============================================================\n// N8N ÇIKIŞI\n// ============================================================\n\nreturn [\n  {\n    json: {\n      question,\n      context,\n      prompt,\n      sources,\n      debug\n    }\n  }\n];"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1232,
-        16
-      ],
-      "id": "e0a2baf9-93d5-4fd0-a280-138a2481cb62",
-      "name": "Build Prompt"
-    },
-    {
-      "parameters": {
         "model": "qwen3:4b-instruct-2507-q4_K_M",
         "options": {
           "temperature": 0.1,
@@ -168,8 +155,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        1856,
-        208
+        2128,
+        352
       ],
       "id": "39ccf32e-bffc-417b-8191-77e9c21db994",
       "name": "Ollama Chat Model",
@@ -189,8 +176,8 @@
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.9,
       "position": [
-        1776,
-        48
+        2000,
+        128
       ],
       "id": "33ac829a-3a4d-4d7d-a5b9-b207b67a0c24",
       "name": "Generate Answer - LangChain",
@@ -199,12 +186,12 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const buildPromptOutput = $('Build Prompt').first().json;\n\nconst question = String(\n  buildPromptOutput.question || ''\n).trim();\n\nconst sources = Array.isArray(buildPromptOutput.sources)\n  ? buildPromptOutput.sources\n  : [];\n\nconst context = String(\n  buildPromptOutput.context || ''\n).trim();\n\nconst noRelevantSourceAnswer =\n  '- Bu konuda kaynak dokümanlarda yeterli bilgi bulamadım. IT destek ekibiyle iletişime geçebilirsiniz.';\n\nconst llmErrorAnswer =\n  '- Şu anda yapay zeka modeli geçerli bir yanıt üretemedi. Lütfen daha sonra tekrar deneyin veya IT destek ekibiyle iletişime geçin.';\n\nconst unsafeCredentialWarning =\n  'Parola, MFA doğrulama kodu, erişim anahtarı veya başka bir gizli bilgi paylaşılmamalıdır.';\n\n// ============================================================\n// 1. KAYNAK BULUNAMADI\n// ============================================================\n\nif (\n  sources.length === 0 ||\n  context === 'NO_RELEVANT_SOURCE'\n) {\n  return {\n    json: {\n      question,\n      answer: noRelevantSourceAnswer,\n      sources: [],\n      response_type: 'no_relevant_source'\n    }\n  };\n}\n\n// ============================================================\n// 2. LLM NODE HATASI\n// ============================================================\n\nconst hasNodeError =\n  Boolean($json.error) ||\n  Boolean($json.stack) ||\n  Boolean(\n    $json.message &&\n    String($json.message)\n      .toLocaleLowerCase('tr-TR')\n      .includes('error')\n  );\n\nif (hasNodeError) {\n  return {\n    json: {\n      question,\n      answer: llmErrorAnswer,\n      sources,\n      response_type: 'llm_error'\n    }\n  };\n}\n\n// ============================================================\n// 3. LLM CEVABINI AL\n// ============================================================\n\nconst rawAnswer = String(\n  $json.text ??\n  $json.output ??\n  $json.response ??\n  $json.answer ??\n  $json.result ??\n  $json.data?.text ??\n  $json.data?.output ??\n  ''\n).trim();\n\nif (!rawAnswer) {\n  return {\n    json: {\n      question,\n      answer: llmErrorAnswer,\n      sources,\n      response_type: 'llm_error'\n    }\n  };\n}\n\n// ============================================================\n// 4. GENEL METİN TEMİZLİĞİ\n// ============================================================\n\nfunction cleanOutput(text) {\n  return String(text || '')\n    .replace(/```(?:text|plaintext)?/gi, '')\n    .replace(/```/g, '')\n    .replace(/^[\"'`]+|[\"'`]+$/g, '')\n    .replace(/\\r\\n/g, '\\n')\n    .replace(/[ \\t]+/g, ' ')\n    .replace(/\\s+([.!?,;:])/g, '$1')\n    .replace(/([.!?]){2,}/g, '$1')\n    .trim();\n}\n\nconst cleanedRawAnswer = cleanOutput(rawAnswer);\n\n// Kaynak bulunduğu hâlde model sentinel döndürürse\n// retrieval hatası değil, LLM üretim hatasıdır.\nif (\n  /^NO_RELEVANT_SOURCE[.!]?$/i.test(\n    cleanedRawAnswer\n  )\n) {\n  return {\n    json: {\n      question,\n      answer:\n        '- Kaynak bulundu ancak yapay zeka modeli geçerli bir yanıt üretemedi. Lütfen tekrar deneyin.',\n      sources,\n      response_type: 'llm_error'\n    }\n  };\n}\n\n// ============================================================\n// 5. GEÇERSİZ AÇIKLAMA SATIRLARI\n// ============================================================\n\nfunction isInvalidLine(text) {\n  const normalized = String(text || '')\n    .toLocaleLowerCase('tr-TR')\n    .trim();\n\n  const invalidPatterns = [\n    'source text',\n    'kaynak metin',\n    'metadata',\n    'chunk',\n    'document_id',\n    'section title',\n    'bölüm başlığı',\n    'final answer',\n    'final cevap',\n    'cevap veriyorum'\n  ];\n\n  return invalidPatterns.some((pattern) =>\n    normalized.includes(pattern)\n  );\n}\n\n// ============================================================\n// 6. AÇIK GİZLİ BİLGİ İHLALLERİNİ ENGELLE\n// ============================================================\n\nfunction sanitizeUnsafeCredentialInstruction(text) {\n  const original = String(text || '').trim();\n\n  const normalized = original\n    .toLocaleLowerCase('tr-TR')\n    .replace(/\\s+/g, ' ')\n    .trim();\n\n  const containsSecret =\n    /(parola|şifre|mfa doğrulama kodu|mfa kodu|erişim anahtarı|api anahtarı|access token|erişim belirteci)/i\n      .test(normalized);\n\n  if (!containsSecret) {\n    return original;\n  }\n\n  // Zaten güvenli bir yasaklama veya uyarıysa değiştirme.\n  const isSafeWarning =\n    /(paylaşmayın|paylaşılmamalı|göndermeyin|gönderilmemeli|iletmeyin|iletilmemeli|eklemeyin|eklenmemeli|ifşa etmeyin|ifşa edilmemeli|verilmemeli|verilmez)/i\n      .test(normalized);\n\n  if (isSafeWarning) {\n    return original;\n  }\n\n  // Doğrudan gizli bilgi paylaşılmasını isteyen ifadeler.\n  const hasDirectDisclosureAction =\n    /(paylaşın|paylaşınız|paylaşılmalıdır|gönderin|gönderiniz|gönderilmelidir|iletin|iletiniz|iletilmelidir|ifşa edin|ifşa edilmelidir)/i\n      .test(normalized);\n\n  // Talep, form, e-posta veya mesaja gizli bilgi\n  // eklenmesini isteyen ifadeler.\n  const hasInclusionAction =\n    /(ekleyin|ekleyiniz|eklenmelidir|yazın|yazınız|yazılmalıdır|belirtin|belirtiniz|belirtilmelidir)/i\n      .test(normalized);\n\n  const hasSupportDestination =\n    /(destek talebi|destek kaydı|talep formu|başvuru formu|e-posta|e posta|mail|mesaj|ticket)/i\n      .test(normalized);\n\n  if (\n    hasDirectDisclosureAction ||\n    (\n      hasInclusionAction &&\n      hasSupportDestination\n    )\n  ) {\n    return unsafeCredentialWarning;\n  }\n\n  // Şifre sıfırlama, değiştirme veya giriş işlemleri korunur.\n  return original;\n}\n\n// ============================================================\n// 7. TEKRAR KONTROLÜ İÇİN NORMALİZE ET\n// ============================================================\n\nfunction createComparisonKey(text) {\n  return String(text || '')\n    .toLocaleLowerCase('tr-TR')\n    .replace(/[.!?,;:]+/g, '')\n    .replace(/\\s+/g, ' ')\n    .trim();\n}\n\n// ============================================================\n// 8. CEVABI MADDE FORMATINA DÖNÜŞTÜR\n// ============================================================\n\nfunction normalizeBullets(answer) {\n  const cleaned = cleanOutput(answer);\n\n  if (!cleaned) {\n    return null;\n  }\n\n  const lines = cleaned\n    .split('\\n')\n    .map((line) => line.trim())\n    .filter(Boolean);\n\n  // Model madde işareti kullandıysa yalnızca maddeleri al.\n  let bulletLines = lines.filter((line) =>\n    /^[-•*]\\s+/.test(line)\n  );\n\n  // Madde işareti yoksa cümleleri ayrı maddelere dönüştür.\n  if (bulletLines.length === 0) {\n    bulletLines = cleaned\n      .split(/(?<=[.!?])\\s+/)\n      .map((sentence) => sentence.trim())\n      .filter(Boolean);\n  } else {\n    bulletLines = bulletLines.map((line) =>\n      line.replace(/^[-•*]\\s+/, '').trim()\n    );\n  }\n\n  bulletLines = bulletLines\n    .map(cleanOutput)\n    .map(sanitizeUnsafeCredentialInstruction)\n    .filter(Boolean)\n    .filter((line) => !isInvalidLine(line));\n\n  // Aynı maddeleri tekrar etme.\n  const seen = new Set();\n\n  bulletLines = bulletLines.filter((line) => {\n    const key = createComparisonKey(line);\n\n    if (!key || seen.has(key)) {\n      return false;\n    }\n\n    seen.add(key);\n    return true;\n  });\n\n  if (bulletLines.length === 0) {\n    return null;\n  }\n\n  return bulletLines\n    .slice(0, 3)\n    .map((line) => {\n      let text = cleanOutput(line);\n\n      if (!/[.!?]$/.test(text)) {\n        text += '.';\n      }\n\n      return `- ${text}`;\n    })\n    .join('\\n');\n}\n\n// ============================================================\n// 9. SONUCU DÖNDÜR\n// ============================================================\n\nconst normalizedAnswer =\n  normalizeBullets(cleanedRawAnswer);\n\nif (!normalizedAnswer) {\n  return {\n    json: {\n      question,\n      answer: llmErrorAnswer,\n      sources,\n      response_type: 'llm_error'\n    }\n  };\n}\n\nreturn {\n  json: {\n    question,\n    answer: normalizedAnswer,\n    sources,\n    response_type: 'rag_answer'\n  }\n};"
+        "jsCode": "const buildPromptOutput = $('Prepare Retrieval Context').first().json;\n\nconst question = String(\n  buildPromptOutput.question || ''\n).trim();\n\nconst sources = Array.isArray(buildPromptOutput.sources)\n  ? buildPromptOutput.sources\n  : [];\n\nconst context = String(\n  buildPromptOutput.context || ''\n).trim();\n\nconst noRelevantSourceAnswer =\n  '- Bu konuda kaynak dokümanlarda yeterli bilgi bulamadım. IT destek ekibiyle iletişime geçebilirsiniz.';\n\nconst llmErrorAnswer =\n  '- Şu anda yapay zeka modeli geçerli bir yanıt üretemedi. Lütfen daha sonra tekrar deneyin veya IT destek ekibiyle iletişime geçin.';\n\nconst unsafeCredentialWarning =\n  'Parola, MFA doğrulama kodu, erişim anahtarı veya başka bir gizli bilgi paylaşılmamalıdır.';\n\n// ============================================================\n// 1. KAYNAK BULUNAMADI\n// ============================================================\n\nif (\n  sources.length === 0 ||\n  context === 'NO_RELEVANT_SOURCE'\n) {\n  return {\n    json: {\n      question,\n      answer: noRelevantSourceAnswer,\n      sources: [],\n      response_type: 'no_relevant_source'\n    }\n  };\n}\n\n// ============================================================\n// 2. LLM NODE HATASI\n// ============================================================\n\nconst hasNodeError =\n  Boolean($json.error) ||\n  Boolean($json.stack) ||\n  Boolean(\n    $json.message &&\n    String($json.message)\n      .toLocaleLowerCase('tr-TR')\n      .includes('error')\n  );\n\nif (hasNodeError) {\n  return {\n    json: {\n      question,\n      answer: llmErrorAnswer,\n      sources,\n      response_type: 'llm_error'\n    }\n  };\n}\n\n// ============================================================\n// 3. LLM CEVABINI AL\n// ============================================================\n\nconst rawAnswer = String(\n  $json.text ??\n  $json.output ??\n  $json.response ??\n  $json.answer ??\n  $json.result ??\n  $json.data?.text ??\n  $json.data?.output ??\n  ''\n).trim();\n\nif (!rawAnswer) {\n  return {\n    json: {\n      question,\n      answer: llmErrorAnswer,\n      sources,\n      response_type: 'llm_error'\n    }\n  };\n}\n\n// ============================================================\n// 4. GENEL METİN TEMİZLİĞİ\n// ============================================================\n\nfunction cleanOutput(text) {\n  return String(text || '')\n    .replace(/```(?:text|plaintext)?/gi, '')\n    .replace(/```/g, '')\n    .replace(/^[\"'`]+|[\"'`]+$/g, '')\n    .replace(/\\r\\n/g, '\\n')\n    .replace(/[ \\t]+/g, ' ')\n    .replace(/\\s+([.!?,;:])/g, '$1')\n    .replace(/([.!?]){2,}/g, '$1')\n    .trim();\n}\n\nconst cleanedRawAnswer = cleanOutput(rawAnswer);\n\nif (\n  /^NO_RELEVANT_SOURCE[.!]?$/i.test(\n    cleanedRawAnswer\n  )\n) {\n  return {\n    json: {\n      question,\n      answer:\n        '- Kaynak bulundu ancak yapay zeka modeli geçerli bir yanıt üretemedi. Lütfen tekrar deneyin.',\n      sources,\n      response_type: 'llm_error'\n    }\n  };\n}\n\n// ============================================================\n// 5. GEÇERSİZ AÇIKLAMA SATIRLARI\n// ============================================================\n\nfunction isInvalidLine(text) {\n  const normalized = String(text || '')\n    .toLocaleLowerCase('tr-TR')\n    .trim();\n\n  const invalidPatterns = [\n    'source text',\n    'kaynak metin',\n    'metadata',\n    'chunk',\n    'document_id',\n    'section title',\n    'bölüm başlığı',\n    'final answer',\n    'final cevap',\n    'cevap veriyorum'\n  ];\n\n  return invalidPatterns.some((pattern) =>\n    normalized.includes(pattern)\n  );\n}\n\n// ============================================================\n// 6. AÇIK GİZLİ BİLGİ İHLALLERİNİ ENGELLE\n// ============================================================\n\nfunction sanitizeUnsafeCredentialInstruction(text) {\n  const original = String(text || '').trim();\n\n  const normalized = original\n    .toLocaleLowerCase('tr-TR')\n    .replace(/\\s+/g, ' ')\n    .trim();\n\n  const containsSecret =\n    /(parola|şifre|mfa doğrulama kodu|mfa kodu|erişim anahtarı|api anahtarı|access token|erişim belirteci)/i\n      .test(normalized);\n\n  if (!containsSecret) {\n    return original;\n  }\n\n  // Zaten güvenli bir yasaklama veya uyarıysa değiştirme.\n  const isSafeWarning =\n    /(paylaşmayın|paylaşılmamalı|göndermeyin|gönderilmemeli|iletmeyin|iletilmemeli|eklemeyin|eklenmemeli|ifşa etmeyin|ifşa edilmemeli|verilmemeli|verilmez)/i\n      .test(normalized);\n\n  if (isSafeWarning) {\n    return original;\n  }\n\n  // Doğrudan gizli bilgi paylaşılmasını isteyen ifadeler.\n  const hasDirectDisclosureAction =\n    /(paylaşın|paylaşınız|paylaşılmalıdır|gönderin|gönderiniz|gönderilmelidir|iletin|iletiniz|iletilmelidir|ifşa edin|ifşa edilmelidir)/i\n      .test(normalized);\n\n  // Talep, form, e-posta veya mesaja gizli bilgi\n  // eklenmesini isteyen ifadeler.\n  const hasInclusionAction =\n    /(ekleyin|ekleyiniz|eklenmelidir|yazın|yazınız|yazılmalıdır|belirtin|belirtiniz|belirtilmelidir)/i\n      .test(normalized);\n\n  const hasSupportDestination =\n    /(destek talebi|destek kaydı|talep formu|başvuru formu|e-posta|e posta|mail|mesaj|ticket)/i\n      .test(normalized);\n\n  if (\n    hasDirectDisclosureAction ||\n    (\n      hasInclusionAction &&\n      hasSupportDestination\n    )\n  ) {\n    return unsafeCredentialWarning;\n  }\n\n  // Şifre sıfırlama, değiştirme veya giriş işlemleri korunur.\n  return original;\n}\n\n// ============================================================\n// 7. TEKRAR KONTROLÜ İÇİN NORMALİZE ET\n// ============================================================\n\nfunction createComparisonKey(text) {\n  return String(text || '')\n    .toLocaleLowerCase('tr-TR')\n    .replace(/[.!?,;:]+/g, '')\n    .replace(/\\s+/g, ' ')\n    .trim();\n}\n\n// ============================================================\n// 8. CEVABI MADDE FORMATINA DÖNÜŞTÜR\n// ============================================================\n\nfunction normalizeBullets(answer) {\n  const cleaned = cleanOutput(answer);\n\n  if (!cleaned) {\n    return null;\n  }\n\n  const lines = cleaned\n    .split('\\n')\n    .map((line) => line.trim())\n    .filter(Boolean);\n\n  // Model madde işareti kullandıysa yalnızca maddeleri al.\n  let bulletLines = lines.filter((line) =>\n    /^[-•*]\\s+/.test(line)\n  );\n\n  // Madde işareti yoksa cümleleri ayrı maddelere dönüştür.\n  if (bulletLines.length === 0) {\n    bulletLines = cleaned\n      .split(/(?<=[.!?])\\s+/)\n      .map((sentence) => sentence.trim())\n      .filter(Boolean);\n  } else {\n    bulletLines = bulletLines.map((line) =>\n      line.replace(/^[-•*]\\s+/, '').trim()\n    );\n  }\n\n  bulletLines = bulletLines\n    .map(cleanOutput)\n    .map(sanitizeUnsafeCredentialInstruction)\n    .filter(Boolean)\n    .filter((line) => !isInvalidLine(line));\n\n  // Aynı maddeleri tekrar etme.\n  const seen = new Set();\n\n  bulletLines = bulletLines.filter((line) => {\n    const key = createComparisonKey(line);\n\n    if (!key || seen.has(key)) {\n      return false;\n    }\n\n    seen.add(key);\n    return true;\n  });\n\n  if (bulletLines.length === 0) {\n    return null;\n  }\n\n  return bulletLines\n    .slice(0, 3)\n    .map((line) => {\n      let text = cleanOutput(line);\n\n      if (!/[.!?]$/.test(text)) {\n        text += '.';\n      }\n\n      return `- ${text}`;\n    })\n    .join('\\n');\n}\n\n// ============================================================\n// 9. SONUCU DÖNDÜR\n// ============================================================\n\nconst normalizedAnswer =\n  normalizeBullets(cleanedRawAnswer);\n\nif (!normalizedAnswer) {\n  return {\n    json: {\n      question,\n      answer: llmErrorAnswer,\n      sources,\n      response_type: 'llm_error'\n    }\n  };\n}\n\nreturn {\n  json: {\n    question,\n    answer: normalizedAnswer,\n    sources,\n    response_type: 'rag_answer'\n  }\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2224,
+        2816,
         128
       ],
       "id": "cb815feb-a170-483e-a521-398ef803809f",
@@ -219,8 +206,8 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        3392,
-        80
+        3760,
+        48
       ],
       "id": "db925f28-a155-4a6c-a4d6-328fa22b2be9",
       "name": "Respond Full LangChain Answer"
@@ -368,8 +355,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        2960,
-        80
+        3328,
+        48
       ],
       "id": "0cc8eef1-930b-4d45-8211-b76dcd843b58",
       "name": "Insert Chat Log",
@@ -388,8 +375,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3184,
-        80
+        3552,
+        48
       ],
       "id": "6445a47a-5f9b-49ef-87f9-44d47906da93",
       "name": "Format Chat Response"
@@ -437,7 +424,7 @@
       "typeVersion": 2,
       "position": [
         2416,
-        -64
+        -48
       ],
       "id": "2e3a44b2-99fc-4ff8-b13a-fde7bff7633f",
       "name": "Prepare No Source Response"
@@ -450,8 +437,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2736,
-        80
+        3104,
+        48
       ],
       "id": "695aa610-c6b7-4d51-b05d-75338844c0be",
       "name": "Prepare Chat Log Data"
@@ -472,14 +459,14 @@
     {
       "parameters": {
         "promptType": "define",
-        "text": "=You are a scope classifier for an internal IT support assistant.\n\nClassify the USER QUESTION into exactly one category:\n\nIT_RELATED\n\nThe question is about computers, software, business applications,\ndigital portals, modules, screens, user accounts, passwords,\naccess permissions, networks, VPN, e-mail, printers, hardware,\ncybersecurity, digital data, or IT support processes.\n\nQuestions about named enterprise applications, business systems,\nportals, modules, screens, login problems or digital records are\nIT_RELATED even when no support document contains the answer.\n\nRequests involving laptops, desktop computers, monitors, keyboards,\nmice, printers or other IT equipment are IT_RELATED.\n\nRequests about IT equipment procurement, need, allocation, replacement,\nrepair, approval, urgency, delivery or request status are also IT_RELATED.\n\nInformal expressions such as \"laptop lazım\", \"bilgisayar ihtiyacım var\",\n\"yeni cihaz istiyorum\" or \"ekipman talebi açmak istiyorum\" are IT_RELATED.\n\nOUT_OF_SCOPE\n\nThe question is unrelated to information technology or IT support.\n\nPhysical production, machine maintenance or operational questions\nwithout a software, system, device, network or digital component are\nOUT_OF_SCOPE.\n\nDo not answer the question.\nDo not explain the classification.\nReturn exactly one label:\n\nIT_RELATED\n\nor\n\nOUT_OF_SCOPE\n\nUSER QUESTION:\n\n{{ $json.question }}",
+        "text": "={{ $json.scope_prompt }}",
         "batching": {}
       },
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.9,
       "position": [
-        1744,
-        -240
+        1792,
+        -304
       ],
       "id": "6ce26800-82ce-4594-8537-d2386e53884b",
       "name": "Classify Question Scope",
@@ -496,7 +483,7 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        1840,
+        1872,
         -96
       ],
       "id": "d61a3543-ccca-4d40-a08b-7a5af85d5740",
@@ -511,7 +498,7 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const buildPromptData =\n  $('Build Prompt').first().json;\n\nconst question = String(\n  buildPromptData.question || ''\n).trim();\n\nconst rawClassification = String(\n  $json.text ??\n  $json.output ??\n  $json.response ??\n  $json.answer ??\n  $json.result ??\n  ''\n).trim();\n\nconst hasClassifierError =\n  Boolean($json.error) ||\n  Boolean($json.stack);\n\nconst cleanedClassification =\n  rawClassification\n    .replace(/```(?:text|plaintext)?/gi, '')\n    .replace(/```/g, '')\n    .replace(/^[\"'`]+|[\"'`]+$/g, '')\n    .trim()\n    .toUpperCase();\n\nlet scopeClassification;\n\nif (\n  !hasClassifierError &&\n  /^OUT_OF_SCOPE[.!]?$/.test(\n    cleanedClassification\n  )\n) {\n  scopeClassification = 'OUT_OF_SCOPE';\n} else if (\n  !hasClassifierError &&\n  /^IT_RELATED[.!]?$/.test(\n    cleanedClassification\n  )\n) {\n  scopeClassification = 'IT_RELATED';\n} else {\n  /*\n   * Güvenli varsayılan:\n   *\n   * Sınıflandırıcı hata verir veya beklenmeyen\n   * bir çıktı üretirse gerçek bir IT sorusunu\n   * yanlışlıkla reddetmemek için IT_RELATED kabul edilir.\n   */\n  scopeClassification = 'IT_RELATED';\n}\n\nreturn {\n  json: {\n    question,\n    scope_classification:\n      scopeClassification,\n\n    raw_scope_classification:\n      rawClassification,\n\n    classifier_fallback_used:\n      hasClassifierError ||\n      !/^(IT_RELATED|OUT_OF_SCOPE)[.!]?$/.test(\n        cleanedClassification\n      )\n  }\n};"
+        "jsCode": "const retrievalData =\n  $('Prepare Retrieval Context').first().json;\n\nconst question = String(\n  retrievalData.question || ''\n).trim();\n\nconst rawClassification = String(\n  $json.text ??\n  $json.output ??\n  $json.response ??\n  $json.answer ??\n  $json.result ??\n  ''\n).trim();\n\nconst hasClassifierError =\n  Boolean($json.error) ||\n  Boolean($json.stack);\n\nconst cleanedClassification =\n  rawClassification\n    .replace(/```(?:text|plaintext)?/gi, '')\n    .replace(/```/g, '')\n    .replace(/^[\"'`]+|[\"'`]+$/g, '')\n    .trim()\n    .toUpperCase();\n\nlet scopeClassification;\n\nif (\n  !hasClassifierError &&\n  /^OUT_OF_SCOPE[.!]?$/.test(\n    cleanedClassification\n  )\n) {\n  scopeClassification = 'OUT_OF_SCOPE';\n} else if (\n  !hasClassifierError &&\n  /^IT_RELATED[.!]?$/.test(\n    cleanedClassification\n  )\n) {\n  scopeClassification = 'IT_RELATED';\n} else {\n  /*\n   * Güvenli varsayılan:\n   *\n   * Sınıflandırıcı hata verir veya beklenmeyen\n   * bir çıktı üretirse gerçek bir IT sorusunu\n   * yanlışlıkla reddetmemek için IT_RELATED kabul edilir.\n   */\n  scopeClassification = 'IT_RELATED';\n}\n\nreturn {\n  json: {\n    question,\n    scope_classification:\n      scopeClassification,\n\n    raw_scope_classification:\n      rawClassification,\n\n    classifier_fallback_used:\n      hasClassifierError ||\n      !/^(IT_RELATED|OUT_OF_SCOPE)[.!]?$/.test(\n        cleanedClassification\n      )\n  }\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -555,6 +542,47 @@
       ],
       "id": "eb2dabdc-477a-44f2-a2ec-f49a08766188",
       "name": "IF Out Of Scope"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst intentData = $('Detect Simple Intent').first().json;\n\nconst question = String(\n  intentData.question || ''\n).trim();\n\n// ============================================================\n// AYARLAR\n// ============================================================\n\nconst ragSettings =\n  $('Get User Question').first().json\n    .rag_settings || {};\n\nconst ENABLE_SCORE_THRESHOLD = true;\nconst LOWER_SCORE_IS_BETTER = true;\n\nconst parsedScoreThreshold = Number(\n  ragSettings.score_threshold\n);\n\nconst SCORE_THRESHOLD =\n  Number.isFinite(parsedScoreThreshold)\n    ? parsedScoreThreshold\n    : 0.51;\n\nconst parsedMaxSources = Number(\n  ragSettings.max_sources\n);\n\nconst MAX_SOURCES =\n  Number.isInteger(parsedMaxSources) &&\n  parsedMaxSources >= 1\n    ? parsedMaxSources\n    : 3;\n\nconst parsedTopK = Number(\n  ragSettings.top_k\n);\n\nconst TOP_K =\n  Number.isInteger(parsedTopK) &&\n  parsedTopK >= 1\n    ? parsedTopK\n    : 5;\n\n// ============================================================\n// YARDIMCI FONKSİYONLAR\n// ============================================================\n\nfunction parseMetadata(value) {\n  if (!value) {\n    return {};\n  }\n\n  if (typeof value === 'object') {\n    return value;\n  }\n\n  try {\n    return JSON.parse(value);\n  } catch {\n    return {};\n  }\n}\n\nfunction getContent(row) {\n  return String(\n    row.pageContent ||\n    row.content ||\n    row.text ||\n    row.document?.pageContent ||\n    row.document?.content ||\n    row.document?.text ||\n    row.json?.pageContent ||\n    row.json?.content ||\n    row.json?.text ||\n    ''\n  ).trim();\n}\n\nfunction getMetadata(row) {\n  return parseMetadata(\n    row.metadata ||\n    row.document?.metadata ||\n    row.json?.metadata ||\n    {}\n  );\n}\n\nfunction getScore(row) {\n  const value =\n    row.score ??\n    row.distance ??\n    row.json?.score ??\n    row.json?.distance ??\n    row.document?.score ??\n    row.document?.distance ??\n    null;\n\n  if (value === null || value === undefined) {\n    return null;\n  }\n\n  const numberValue = Number(value);\n\n  if (Number.isNaN(numberValue)) {\n    return null;\n  }\n\n  return numberValue;\n}\n\nfunction isScoreAccepted(score) {\n  if (!ENABLE_SCORE_THRESHOLD) {\n    return true;\n  }\n\n  if (score === null) {\n    return false;\n  }\n\n  if (LOWER_SCORE_IS_BETTER) {\n    return score <= SCORE_THRESHOLD;\n  }\n\n  return score >= SCORE_THRESHOLD;\n}\n\nfunction compareScores(firstDocument, secondDocument) {\n  const firstScore = firstDocument.score;\n  const secondScore = secondDocument.score;\n\n  if (firstScore === null && secondScore === null) {\n    return 0;\n  }\n\n  if (firstScore === null) {\n    return 1;\n  }\n\n  if (secondScore === null) {\n    return -1;\n  }\n\n  if (LOWER_SCORE_IS_BETTER) {\n    return firstScore - secondScore;\n  }\n\n  return secondScore - firstScore;\n}\n\n// ============================================================\n// N8N ÇIKTILARINI TEK LİSTEYE DÖNÜŞTÜR\n// ============================================================\n\nconst documents = [];\n\nfor (const item of items) {\n  const row = item.json || {};\n\n  if (Array.isArray(row.documents)) {\n    for (const document of row.documents) {\n      documents.push(document);\n    }\n\n    continue;\n  }\n\n  if (Array.isArray(row.results)) {\n    for (const document of row.results) {\n      documents.push(document);\n    }\n\n    continue;\n  }\n\n  documents.push(row);\n}\n\n// ============================================================\n// ADAY DOKÜMANLARI HAZIRLA\n// ============================================================\n\nconst candidateDocuments = documents\n  .map((document, index) => {\n    return {\n      content: getContent(document),\n      metadata: getMetadata(document),\n      score: getScore(document),\n      original_index: index\n    };\n  })\n  .filter((document) => document.content.length > 20)\n  .sort(compareScores);\n\nconst usefulDocuments = candidateDocuments\n  .filter((document) =>\n    isScoreAccepted(document.score)\n  )\n  .slice(0, MAX_SOURCES);\n\n// ============================================================\n// LLM CONTEXT HAZIRLA\n// ============================================================\n\nconst context = usefulDocuments.length > 0\n  ? usefulDocuments\n      .map((document, index) => {\n        const metadata = document.metadata || {};\n        const sectionTitle =\n          metadata.section_title || '';\n\n        return [\n          `[PASSAGE ${index + 1}]`,\n          sectionTitle\n            ? `TOPIC: ${sectionTitle}`\n            : '',\n          document.content\n        ]\n          .filter(Boolean)\n          .join('\\n');\n      })\n      .join('\\n\\n---\\n\\n')\n  : 'NO_RELEVANT_SOURCE';\n\n// ============================================================\n// FRONTEND'E DÖNECEK KAYNAKLAR\n// ============================================================\n\nconst sources = usefulDocuments.map(\n  (document, index) => {\n    const metadata = document.metadata || {};\n\n    return {\n      document_id:\n        metadata.document_id || null,\n\n      title:\n        metadata.title || null,\n\n      category:\n        metadata.category || null,\n\n      section_title:\n        metadata.section_title || null,\n\n      chunk_index:\n        metadata.chunk_index ?? index + 1,\n\n      source_file_name:\n        metadata.source_file_name || null,\n\n      file_type:\n        metadata.file_type || null,\n\n      score:\n        document.score\n    };\n  }\n);\n\n\n// ============================================================\n// DEBUG BİLGİLERİ\n// ============================================================\n\nconst debug = {\n  top_k:\n    TOP_K,\n\n  threshold_enabled:\n    ENABLE_SCORE_THRESHOLD,\n\n  threshold:\n    SCORE_THRESHOLD,\n\n  lower_score_is_better:\n    LOWER_SCORE_IS_BETTER,\n\n  max_sources:\n    MAX_SOURCES,\n\n  candidate_count:\n    candidateDocuments.length,\n\n  threshold_pass_count:\n    candidateDocuments.filter((document) =>\n      isScoreAccepted(document.score)\n    ).length,\n\n  selected_count:\n    usefulDocuments.length,\n\n  candidate_documents:\n    candidateDocuments.map((document) => {\n      return {\n        document_id:\n          document.metadata?.document_id || null,\n\n        title:\n          document.metadata?.title || null,\n\n        section_title:\n          document.metadata?.section_title || null,\n\n        score:\n          document.score,\n\n        accepted:\n          isScoreAccepted(document.score)\n      };\n    })\n};\n\n// ============================================================\n// N8N ÇIKIŞI\n// ============================================================\n\nreturn [\n  {\n    json: {\n      question,\n      context,\n      sources,\n      debug\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1216,
+        16
+      ],
+      "id": "e0a2baf9-93d5-4fd0-a280-138a2481cb62",
+      "name": "Prepare Retrieval Context"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const question = String(\n  $json.question || ''\n).trim();\n\nconst context = String(\n  $json.context || ''\n).trim();\n\nconst sources = Array.isArray($json.sources)\n  ? $json.sources\n  : [];\n\nconst debug =\n  $json.debug &&\n  typeof $json.debug === 'object'\n    ? $json.debug\n    : {};\n\nif (!question) {\n  throw new Error(\n    'Question is required to build the RAG prompt.'\n  );\n}\n\nif (\n  !context ||\n  context === 'NO_RELEVANT_SOURCE' ||\n  sources.length === 0\n) {\n  throw new Error(\n    'Relevant retrieval context is required to build the RAG prompt.'\n  );\n}\n\nconst prompt = `\nYou are an internal IT support assistant for İZELTAŞ.\n\nThe PASSAGES below are candidate sections returned by the retrieval system.\n\nAnswer the USER QUESTION using only the information explicitly stated in the PASSAGES.\nSelect only the passages and statements that directly answer the question.\nIgnore unrelated passages and unrelated details.\nDo not return NO_RELEVANT_SOURCE.\n\nSECURITY RULES:\n\n- Never tell the user to share, send or include passwords, MFA codes, access tokens, API keys or other secret credentials in a support request, form, e-mail or message.\n- Password reset, password change and official login instructions are allowed.\n- Do not add a security warning merely because a passage mentions a password.\n- If a passage explicitly asks the user to share a secret credential, omit only that unsafe instruction and write:\n  \"Parola, MFA doğrulama kodu veya başka bir gizli bilgi paylaşılmamalıdır.\"\n\nSOURCE RULES:\n\n- Use only information explicitly stated in the PASSAGES.\n- Do not invent, infer or complete missing information.\n- Select concrete instructions, requirements and conditions that answer the USER QUESTION.\n- Do not answer only with a sentence that describes what a document covers when concrete instructions are available.\n- Preserve the original meaning, conditions, warnings and negations.\n- Never reverse or remove expressions such as \"değil\", \"olmadığından\", \"olmamalıdır\" or \"yapılmamalıdır\".\n- Never omit conditions such as \"açılmıyorsa\", \"devam ederse\", \"tamamlandıktan sonra\" or \"varsa\".\n- Prefer complete source sentences and keep their wording close to the original.\n- Do not unnecessarily change Turkish case suffixes, possessive suffixes, subjects or verb conjugations.\n- Do not merge sentences when merging them could cause a grammatical or semantic error.\n\n\nLANGUAGE AND FORMAT:\n\n- Write in Turkish only.\n- Return between 1 and 3 bullet points.\n- Start every bullet point with \"- \".\n- Each bullet point must contain one relevant and complete instruction or requirement.\n- Combine complementary information from different passages when it directly helps answer the question.\n- Do not include unrelated information merely to produce 3 bullet points.\n- Do not repeat the USER QUESTION.\n- Do not write a title, introduction or conclusion.\n- Do not ask a follow-up question.\n- Do not mention passages, sources, documents, metadata, chunks, scores or the retrieval process.\n- Before returning the answer, check that every sentence is complete, natural and grammatically correct Turkish.\n\nPASSAGES:\n\n${context}\n\nUSER QUESTION:\n\n${question}\n\nReturn only the Turkish bullet points.\n`;\n\nreturn {\n  json: {\n    question,\n    context,\n    prompt,\n    sources,\n    debug\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1824,
+        176
+      ],
+      "id": "d0dd4f82-956e-4872-9e49-9cd750ec596c",
+      "name": "Build RAG Prompt"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const question = String(\n  $json.question || ''\n).trim();\n\nif (!question) {\n  throw new Error(\n    'Question is required to build the scope classification prompt.'\n  );\n}\n\nconst scopePrompt = `\nYou are a scope classifier for an internal IT support assistant.\n\nClassify the USER QUESTION into exactly one category:\n\nIT_RELATED\n\nThe question is about computers, software, business applications,\ndigital portals, modules, screens, user accounts, passwords,\naccess permissions, networks, VPN, e-mail, printers, hardware,\ncybersecurity, digital data, or IT support processes.\n\nQuestions about named enterprise applications, business systems,\nportals, modules, screens, login problems or digital records are\nIT_RELATED even when no support document contains the answer.\n\nRequests involving laptops, desktop computers, monitors, keyboards,\nmice, printers or other IT equipment are IT_RELATED.\n\nRequests about IT equipment procurement, need, allocation, replacement,\nrepair, approval, urgency, delivery or request status are also IT_RELATED.\n\nInformal expressions such as \"laptop lazım\", \"bilgisayar ihtiyacım var\",\n\"yeni cihaz istiyorum\" or \"ekipman talebi açmak istiyorum\" are IT_RELATED.\n\nOUT_OF_SCOPE\n\nThe question is unrelated to information technology or IT support.\n\nPhysical production, machine maintenance or operational questions\nwithout a software, system, device, network or digital component are\nOUT_OF_SCOPE.\n\nDo not answer the question.\nDo not explain the classification.\nReturn exactly one label:\n\nIT_RELATED\n\nor\n\nOUT_OF_SCOPE\n\nUSER QUESTION:\n\n${question}\n`;\n\nreturn {\n  json: {\n    ...$json,\n    question,\n    scope_prompt: scopePrompt\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1600,
+        -224
+      ],
+      "id": "58c789e8-2535-4b76-8aea-87a99e541c55",
+      "name": "Build Scope Prompt"
     }
   ],
   "pinData": {},
@@ -625,18 +653,7 @@
       "main": [
         [
           {
-            "node": "Build Prompt",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Build Prompt": {
-      "main": [
-        [
-          {
-            "node": "IF No Relevant Source",
+            "node": "Prepare Retrieval Context",
             "type": "main",
             "index": 0
           }
@@ -702,14 +719,14 @@
       "main": [
         [
           {
-            "node": "Classify Question Scope",
+            "node": "Build Scope Prompt",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Generate Answer - LangChain",
+            "node": "Build RAG Prompt",
             "type": "main",
             "index": 0
           }
@@ -804,6 +821,39 @@
       "main": [
         []
       ]
+    },
+    "Prepare Retrieval Context": {
+      "main": [
+        [
+          {
+            "node": "IF No Relevant Source",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build RAG Prompt": {
+      "main": [
+        [
+          {
+            "node": "Generate Answer - LangChain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Scope Prompt": {
+      "main": [
+        [
+          {
+            "node": "Classify Question Scope",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
@@ -815,7 +865,7 @@
     "callerPolicy": "workflowsFromSameOwner",
     "executionTimeout": 55
   },
-  "versionId": "f4698c6d-86cf-43ac-889e-8c75f97dc871",
+  "versionId": "81286313-25d4-45e5-bbd9-608a664efaac",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "8ad5e91ca19f2aebbe2ce2f031589771f3e4e7c0049e38f9c59f6c20dd949760"
