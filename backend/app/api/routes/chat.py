@@ -38,6 +38,11 @@ async def chat(
 
     payload = {
         "question": request.question,
+        "rag_settings": {
+            "top_k": settings.rag_top_k,
+            "score_threshold": settings.rag_score_threshold,
+            "max_sources": settings.rag_max_sources,
+        },
     }
 
     if request_id:
