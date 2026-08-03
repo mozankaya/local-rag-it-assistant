@@ -14,6 +14,7 @@ export interface Source {
 }
 
 export type ChatResponse = {
+  chat_log_id: number | null;
   question: string;
   answer: string;
   sources?: Source[];
@@ -23,10 +24,8 @@ export type ChatResponse = {
 export type FeedbackValue = "useful" | "not_useful";
 
 export type FeedbackRequest = {
-  question: string;
-  answer: string;
+  chat_log_id: number;
   feedback: FeedbackValue;
-  sources?: Source[];
 };
 
 export type FeedbackResponse = {

@@ -6,4 +6,5 @@ export interface Message {
   text: string;
   sources?: Source[];
   question?: string;
+  chatLogId?: number | null;
 }
