@@ -95,6 +95,16 @@ def create_client(
     return TestClient(app)
 
 
+def create_reindex_settings() -> SimpleNamespace:
+    """Reindex testlerinde kullanılan ortak n8n ayarlarını oluşturur."""
+
+    return SimpleNamespace(
+        n8n_reindex_webhook_url="http://n8n.test/reindex",
+        reindex_timeout_seconds=15,
+        n8n_webhook_secret="test-webhook-secret",
+    )
+
+
 def configure_temporary_paths(
     monkeypatch: MonkeyPatch,
     tmp_path: Path,
@@ -396,10 +406,7 @@ def test_upload_rejects_duplicate_document(
 
     assert response.status_code == 409
     assert response.json() == {
-        "detail": (
-            "Bu başlık ve kategoriyle aynı isimde "
-            "bir doküman zaten mevcut."
-        ),
+        "detail": ("Bu başlık ve kategoriyle aynı isimde " "bir doküman zaten mevcut."),
     }
 
     assert existing_file.read_text(encoding="utf-8") == "existing"
@@ -436,11 +443,7 @@ def test_upload_rejects_oversized_file_and_cleans_partial_file(
             },
         )
 
-    target_file = (
-        paths["source_directory"]
-        / "network"
-        / "vpn-rehberi.txt"
-    )
+    target_file = paths["source_directory"] / "network" / "vpn-rehberi.txt"
 
     assert response.status_code == 400
     assert response.json() == {
@@ -493,11 +496,7 @@ def test_admin_can_upload_document(
         "data/source-documents/network/vpn-rehberi.txt"
     )
 
-    uploaded_file = (
-        paths["source_directory"]
-        / "network"
-        / "vpn-rehberi.txt"
-    )
+    uploaded_file = paths["source_directory"] / "network" / "vpn-rehberi.txt"
 
     assert uploaded_file.read_bytes() == b"VPN test content"
     assert prepare_calls == [True]
@@ -540,11 +539,7 @@ def test_upload_cleans_file_when_preprocessing_fails(
             },
         )
 
-    target_file = (
-        paths["source_directory"]
-        / "network"
-        / "vpn-rehberi.txt"
-    )
+    target_file = paths["source_directory"] / "network" / "vpn-rehberi.txt"
 
     assert response.status_code == 500
     assert not target_file.exists()
@@ -572,9 +567,7 @@ def test_download_does_not_access_file_outside_source_directory(
         current_user=create_user(),
         fake_db=fake_db,
     ) as client:
-        response = client.get(
-            "/admin/documents/test-document/download"
-        )
+        response = client.get("/admin/documents/test-document/download")
 
     assert response.status_code == 404
     assert response.json() == {
@@ -739,9 +732,7 @@ def test_admin_can_delete_document(
     source_file = source_directory / "vpn-guide.txt"
     source_file.write_text("source content", encoding="utf-8")
 
-    processed_file = (
-        paths["processed_directory"] / "vpn-guide.md"
-    )
+    processed_file = paths["processed_directory"] / "vpn-guide.md"
     processed_file.write_text("processed content", encoding="utf-8")
 
     paths["manifest_path"].write_text(
@@ -770,9 +761,7 @@ def test_admin_can_delete_document(
         # silinen dokümanın processed çıktısı kaldırılırdı.
         processed_file.unlink(missing_ok=True)
 
-        documents = json.loads(
-            paths["manifest_path"].read_text(encoding="utf-8")
-        )
+        documents = json.loads(paths["manifest_path"].read_text(encoding="utf-8"))
         remaining_documents = [
             document
             for document in documents
@@ -807,9 +796,7 @@ def test_admin_can_delete_document(
         current_user=create_user(),
         fake_db=fake_db,
     ) as client:
-        response = client.delete(
-            "/admin/documents/vpn-guide"
-        )
+        response = client.delete("/admin/documents/vpn-guide")
 
     assert response.status_code == 200
     assert response.json()["success"] is True
@@ -820,9 +807,7 @@ def test_admin_can_delete_document(
     assert not source_directory.exists()
     assert not paths["delete_backup_directory"].exists()
 
-    remaining_manifest = json.loads(
-        paths["manifest_path"].read_text(encoding="utf-8")
-    )
+    remaining_manifest = json.loads(paths["manifest_path"].read_text(encoding="utf-8"))
 
     assert remaining_manifest == [
         {
@@ -853,9 +838,7 @@ def test_delete_restores_document_when_database_commit_fails(
         encoding="utf-8",
     )
 
-    processed_file = (
-        paths["processed_directory"] / "vpn-guide.md"
-    )
+    processed_file = paths["processed_directory"] / "vpn-guide.md"
     processed_file.write_text(
         "processed content",
         encoding="utf-8",
@@ -944,9 +927,7 @@ def test_delete_restores_document_when_database_commit_fails(
         def commit(self) -> None:
             self.commit_count += 1
 
-            raise RuntimeError(
-                "Test database commit failure."
-            )
+            raise RuntimeError("Test database commit failure.")
 
     fake_db = CommitFailingSession(
         FakeResult(
@@ -966,28 +947,18 @@ def test_delete_restores_document_when_database_commit_fails(
             RuntimeError,
             match="Test database commit failure",
         ):
-            client.delete(
-                "/admin/documents/vpn-guide"
-            )
+            client.delete("/admin/documents/vpn-guide")
 
     # Kaynak dosya eski konumuna ve içeriğine dönmelidir.
     assert source_file.exists()
-    assert source_file.read_text(
-        encoding="utf-8"
-    ) == "source content"
+    assert source_file.read_text(encoding="utf-8") == "source content"
 
     # Processed çıktı kurtarma preprocessing işlemiyle
     # yeniden oluşturulmalıdır.
     assert processed_file.exists()
-    assert processed_file.read_text(
-        encoding="utf-8"
-    ) == "processed content"
+    assert processed_file.read_text(encoding="utf-8") == "processed content"
 
-    restored_manifest = json.loads(
-        paths["manifest_path"].read_text(
-            encoding="utf-8"
-        )
-    )
+    restored_manifest = json.loads(paths["manifest_path"].read_text(encoding="utf-8"))
 
     assert restored_manifest == original_manifest
 
@@ -998,15 +969,11 @@ def test_delete_restores_document_when_database_commit_fails(
     assert fake_db.rollback_count == 1
 
     assert any(
-        "DELETE FROM langchain_document_chunks"
-        in call["query"]
+        "DELETE FROM langchain_document_chunks" in call["query"]
         for call in fake_db.execute_calls
     )
 
-    backup_file = (
-        paths["delete_backup_directory"]
-        / "vpn-guide.txt"
-    )
+    backup_file = paths["delete_backup_directory"] / "vpn-guide.txt"
 
     assert not backup_file.exists()
 
@@ -1039,10 +1006,7 @@ def test_reindex_clears_database_when_manifest_is_empty(
     assert response.status_code == 200
     assert response.json() == {
         "success": True,
-        "message": (
-            "Kaynak doküman bulunmadı. "
-            "Vektör indeks kayıtları temizlendi."
-        ),
+        "message": ("Kaynak doküman bulunmadı. " "Vektör indeks kayıtları temizlendi."),
     }
 
     assert fake_db.commit_count == 1
@@ -1069,10 +1033,7 @@ def test_reindex_calls_n8n_webhook(
     monkeypatch.setattr(
         document_routes,
         "get_settings",
-        lambda: SimpleNamespace(
-            n8n_reindex_webhook_url="http://n8n.test/reindex",
-            reindex_timeout_seconds=15,
-        ),
+        create_reindex_settings,
     )
 
     captured_call: dict[str, Any] = {}
@@ -1080,9 +1041,11 @@ def test_reindex_calls_n8n_webhook(
     def fake_trigger_n8n_webhook(
         url: str,
         timeout_seconds: float,
+        webhook_secret: str,
     ) -> None:
         captured_call["url"] = url
         captured_call["timeout_seconds"] = timeout_seconds
+        captured_call["webhook_secret"] = webhook_secret
 
     monkeypatch.setattr(
         document_routes,
@@ -1102,6 +1065,7 @@ def test_reindex_calls_n8n_webhook(
     assert captured_call == {
         "url": "http://n8n.test/reindex",
         "timeout_seconds": 15,
+        "webhook_secret": "test-webhook-secret",
     }
 
 
@@ -1125,15 +1089,13 @@ def test_reindex_handles_connection_error(
     monkeypatch.setattr(
         document_routes,
         "get_settings",
-        lambda: SimpleNamespace(
-            n8n_reindex_webhook_url="http://n8n.test/reindex",
-            reindex_timeout_seconds=15,
-        ),
+        create_reindex_settings,
     )
 
     def fail_trigger_n8n_webhook(
         url: str,
         timeout_seconds: float,
+        webhook_secret: str,
     ) -> None:
         raise document_routes.N8nClientError("n8n request failed.")
 
@@ -1175,15 +1137,13 @@ def test_reindex_handles_timeout(
     monkeypatch.setattr(
         document_routes,
         "get_settings",
-        lambda: SimpleNamespace(
-            n8n_reindex_webhook_url="http://n8n.test/reindex",
-            reindex_timeout_seconds=15,
-        ),
+        create_reindex_settings,
     )
 
     def timeout_trigger_n8n_webhook(
         url: str,
         timeout_seconds: float,
+        webhook_secret: str,
     ) -> None:
         raise document_routes.N8nTimeoutError("n8n request timed out.")
 

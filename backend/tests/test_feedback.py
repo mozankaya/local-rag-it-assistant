@@ -83,10 +83,12 @@ def test_feedback_sends_payload_to_n8n(
         url: str,
         payload: dict[str, Any],
         timeout_seconds: float,
+        webhook_secret: str,
     ) -> dict[str, Any]:
         captured_request["url"] = url
         captured_request["payload"] = payload
         captured_request["timeout_seconds"] = timeout_seconds
+        captured_request["webhook_secret"] = webhook_secret
 
         return {
             "status": "success",
@@ -100,7 +102,9 @@ def test_feedback_sends_payload_to_n8n(
         fake_post_to_n8n,
     )
 
-    payload = valid_feedback_payload(feedback=feedback_value)
+    payload = valid_feedback_payload(
+        feedback=feedback_value,
+    )
 
     response = feedback_client.post(
         "/feedback",
@@ -108,19 +112,23 @@ def test_feedback_sends_payload_to_n8n(
     )
 
     assert response.status_code == 200
+
     assert response.json() == {
         "status": "success",
         "message": "Feedback kaydedildi.",
         "feedback": feedback_value,
     }
 
-    assert captured_request["url"] == "http://testserver/feedback"
+    assert captured_request["url"] == ("http://testserver/feedback")
+
     assert captured_request["timeout_seconds"] == 5.0
 
-    assert captured_request["payload"]["question"] == (
-        "VPN bağlantısı kuramıyorum."
-    )
-    assert captured_request["payload"]["feedback"] == feedback_value
+    assert captured_request["webhook_secret"] == ("test-webhook-secret")
+
+    assert captured_request["payload"]["question"] == ("VPN bağlantısı kuramıyorum.")
+
+    assert captured_request["payload"]["feedback"] == (feedback_value)
+
     assert len(captured_request["payload"]["sources"]) == 1
 
 
@@ -128,7 +136,9 @@ def test_feedback_handles_n8n_error_safely(
     feedback_client: TestClient,
     monkeypatch: MonkeyPatch,
 ) -> None:
-    async def fake_post_to_n8n(**_kwargs: Any) -> dict[str, Any]:
+    async def fake_post_to_n8n(
+        **_kwargs: Any,
+    ) -> dict[str, Any]:
         raise N8nClientError("Internal feedback error.")
 
     monkeypatch.setattr(

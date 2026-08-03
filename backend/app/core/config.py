@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     n8n_rag_webhook_url: str
     n8n_feedback_webhook_url: str
     n8n_reindex_webhook_url: str | None = None
+    n8n_webhook_secret: str
 
     n8n_health_url: str = "http://localhost:5678/healthz"
     ollama_health_url: str = "http://localhost:11434/api/tags"

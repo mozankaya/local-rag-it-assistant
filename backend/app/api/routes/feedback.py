@@ -37,6 +37,7 @@ async def feedback(
             url=settings.n8n_feedback_webhook_url,
             payload=payload,
             timeout_seconds=settings.request_timeout_seconds,
+            webhook_secret=settings.n8n_webhook_secret,
         )
 
     except N8nClientError:
