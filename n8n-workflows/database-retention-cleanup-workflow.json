@@ -34,6 +34,7 @@
       ],
       "id": "969ac432-7075-4d5f-b026-df82d33109ea",
       "name": "Delete Expired Logs",
+      "retryOnFail": true,
       "credentials": {
         "postgres": {
           "id": "jShdzm8IEPIqSd41",
@@ -62,7 +63,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "4005d603-84f2-42de-9fae-f76912730e0d",
+  "versionId": "3a53baf1-35d3-4799-970d-98f02d3a8710",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "8ad5e91ca19f2aebbe2ce2f031589771f3e4e7c0049e38f9c59f6c20dd949760"

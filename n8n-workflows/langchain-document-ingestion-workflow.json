@@ -199,6 +199,7 @@
       ],
       "id": "2d87435e-acb5-4fb4-a2b9-4de4d20d1553",
       "name": "Clear Staging Chunks",
+      "retryOnFail": true,
       "credentials": {
         "postgres": {
           "id": "jShdzm8IEPIqSd41",
@@ -245,6 +246,7 @@
       ],
       "id": "241ff475-dc61-4cb2-8d79-9047a6a6de1e",
       "name": "Validate Staging Chunks",
+      "retryOnFail": true,
       "credentials": {
         "postgres": {
           "id": "jShdzm8IEPIqSd41",
@@ -315,6 +317,7 @@
       ],
       "id": "a9901945-1070-4012-8335-3f9b0a17d4d4",
       "name": "Promote Staging to Active",
+      "retryOnFail": true,
       "credentials": {
         "postgres": {
           "id": "jShdzm8IEPIqSd41",
@@ -482,7 +485,7 @@
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "785807b5-89a8-4b20-8cf5-09f069a33bcc",
+  "versionId": "1b021e38-36b9-4075-b5c1-aba53751faff",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "8ad5e91ca19f2aebbe2ce2f031589771f3e4e7c0049e38f9c59f6c20dd949760"
