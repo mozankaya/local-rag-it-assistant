@@ -117,6 +117,7 @@
       ],
       "id": "def2d8f5-8f42-4237-98f5-986ba51655bf",
       "name": "Get Similar Documents",
+      "notesInFlow": false,
       "credentials": {
         "postgres": {
           "id": "jShdzm8IEPIqSd41",
@@ -809,9 +810,12 @@
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate",
-    "availableInMCP": false
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "executionTimeout": 55
   },
-  "versionId": "9f8c13bd-73e0-42e3-b1d1-27a994057222",
+  "versionId": "f4698c6d-86cf-43ac-889e-8c75f97dc871",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "8ad5e91ca19f2aebbe2ce2f031589771f3e4e7c0049e38f9c59f6c20dd949760"
