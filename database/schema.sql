@@ -125,9 +125,12 @@ ON public.chat_logs (section_title);
 
 
 -- Feedback kayıtları n8n tarafından yazılır.
+-- Her feedback kaydı ilgili chat_logs kaydına chat_log_id ile bağlanır.
+-- question, answer ve sources alanları analiz amacıyla snapshot olarak korunur.
 -- Backend admin dashboard bu tabloyu okur.
 CREATE TABLE public.feedback_logs (
     id SERIAL NOT NULL,
+    chat_log_id INTEGER NULL,
     question TEXT NOT NULL,
     answer TEXT NOT NULL,
     feedback TEXT NOT NULL,
@@ -138,5 +141,13 @@ CREATE TABLE public.feedback_logs (
         PRIMARY KEY (id),
 
     CONSTRAINT feedback_logs_feedback_check
-        CHECK (feedback IN ('useful', 'not_useful'))
+        CHECK (feedback IN ('useful', 'not_useful')),
+
+    CONSTRAINT uq_feedback_logs_chat_log_id
+        UNIQUE (chat_log_id),
+
+    CONSTRAINT fk_feedback_logs_chat_log_id_chat_logs
+        FOREIGN KEY (chat_log_id)
+        REFERENCES public.chat_logs (id)
+        ON DELETE SET NULL
 );
