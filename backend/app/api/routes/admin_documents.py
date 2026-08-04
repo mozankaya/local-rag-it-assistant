@@ -638,9 +638,9 @@ def reindex_documents(
     db: Session = Depends(get_db),
     _current_admin: User = Depends(require_admin),
 ):
-    """Dokümanları hazırlar ve n8n reindex workflow'unu çalıştırır."""
+    """Dokümanları hazırlar ve n8n ingestion workflow'unu çalıştırır."""
 
-    run_prepare_documents_script()
+    run_prepare_documents_script(allow_empty=True)
 
     manifest = load_documents_manifest()
 
@@ -656,7 +656,7 @@ def reindex_documents(
         return ReindexResponse(
             success=True,
             message=(
-                "Kaynak doküman bulunmadı. Vektör indeks kayıtları temizlendi."
+                "Kaynak doküman bulunmadı. " "Vektör indeks kayıtları temizlendi."
             ),
         )
 
@@ -693,5 +693,5 @@ def reindex_documents(
 
     return ReindexResponse(
         success=True,
-        message=("Dokümanlar için yeniden indeksleme işlemi başarıyla tamamlandı."),
+        message=("Dokümanlar için yeniden indeksleme işlemi " "başarıyla tamamlandı."),
     )

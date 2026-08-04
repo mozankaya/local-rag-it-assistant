@@ -978,22 +978,23 @@ def test_delete_restores_document_when_database_commit_fails(
     assert not backup_file.exists()
 
 
-def test_reindex_clears_database_when_manifest_is_empty(
+def test_reindex_clears_database_when_source_directory_is_empty(
     monkeypatch: MonkeyPatch,
     tmp_path: Path,
 ) -> None:
     paths = configure_temporary_paths(monkeypatch, tmp_path)
 
-    paths["manifest_path"].write_text(
-        "[]",
-        encoding="utf-8",
-    )
+    repository_root = Path(__file__).resolve().parents[2]
 
-    monkeypatch.setattr(
-        document_routes,
-        "run_prepare_documents_script",
-        lambda: None,
+    real_prepare_script = repository_root / "scripts" / "prepare_documents.py"
+    real_processing_module = repository_root / "scripts" / "document_processing.py"
+
+    paths["prepare_script"].write_bytes(real_prepare_script.read_bytes())
+
+    temporary_processing_module = (
+        paths["prepare_script"].parent / "document_processing.py"
     )
+    temporary_processing_module.write_bytes(real_processing_module.read_bytes())
 
     fake_db = FakeSession(FakeResult())
 
@@ -1009,7 +1010,22 @@ def test_reindex_clears_database_when_manifest_is_empty(
         "message": ("Kaynak doküman bulunmadı. " "Vektör indeks kayıtları temizlendi."),
     }
 
+    assert (
+        json.loads(
+            paths["manifest_path"].read_text(
+                encoding="utf-8",
+            )
+        )
+        == []
+    )
+
+    assert paths["processed_directory"].is_dir()
+    assert list(paths["processed_directory"].iterdir()) == []
+
     assert fake_db.commit_count == 1
+    assert fake_db.rollback_count == 0
+
+    assert len(fake_db.execute_calls) == 1
     assert "TRUNCATE TABLE" in fake_db.execute_calls[0]["query"]
 
 
@@ -1027,7 +1043,7 @@ def test_reindex_calls_n8n_webhook(
     monkeypatch.setattr(
         document_routes,
         "run_prepare_documents_script",
-        lambda: None,
+        lambda allow_empty=False: None,
     )
 
     monkeypatch.setattr(
@@ -1083,7 +1099,7 @@ def test_reindex_handles_connection_error(
     monkeypatch.setattr(
         document_routes,
         "run_prepare_documents_script",
-        lambda: None,
+        lambda allow_empty=False: None,
     )
 
     monkeypatch.setattr(
@@ -1131,7 +1147,7 @@ def test_reindex_handles_timeout(
     monkeypatch.setattr(
         document_routes,
         "run_prepare_documents_script",
-        lambda: None,
+        lambda allow_empty=False: None,
     )
 
     monkeypatch.setattr(
