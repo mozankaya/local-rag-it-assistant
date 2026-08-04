@@ -521,6 +521,40 @@
   background: rgba(255, 255, 255, 0.035);
 }
 
+.user-status-cell,
+.user-retention-info {
+  display: grid;
+  justify-items: start;
+  gap: 6px;
+}
+
+.user-retention-info {
+  margin-top: 4px;
+  color: var(--admin-muted);
+  line-height: 1.4;
+}
+
+.user-retention-info strong {
+  color: #caccd2;
+  font-weight: 700;
+}
+
+.retention-status {
+  font-weight: 800;
+}
+
+.retention-status.waiting {
+  color: #ffd18a;
+}
+
+.retention-status.eligible {
+  color: #69dfa0;
+}
+
+.retention-status.missing {
+  color: #ffb3b7;
+}
+
 .user-row-actions {
   display: flex;
   align-items: center;
@@ -557,6 +591,24 @@
   white-space: nowrap;
 }
 
+.user-permanent-delete {
+  min-width: 88px;
+  padding: 8px 10px;
+  border: 1px solid rgba(227, 6, 19, 0.5);
+  border-radius: 8px;
+  color: #ff9ca2;
+  background: var(--admin-red-soft);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.user-permanent-delete:hover:not(:disabled) {
+  color: #fff;
+  border-color: var(--admin-red);
+  background: rgba(227, 6, 19, 0.28);
+}
+
 .user-status-toggle.deactivate:hover:not(:disabled) {
   color: #ff9ca2;
   border-color: rgba(227, 6, 19, 0.5);
@@ -568,13 +620,15 @@
 }
 
 .user-row-actions select:disabled,
-.user-status-toggle:disabled {
+.user-status-toggle:disabled,
+.user-permanent-delete:disabled {
   opacity: 0.55;
   cursor: not-allowed;
 }
 
 .user-row-actions select[aria-busy="true"],
-.user-status-toggle[aria-busy="true"] {
+.user-status-toggle[aria-busy="true"],
+.user-permanent-delete[aria-busy="true"] {
   cursor: wait;
 }
 

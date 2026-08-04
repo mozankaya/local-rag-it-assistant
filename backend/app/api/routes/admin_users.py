@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
@@ -12,11 +13,16 @@ from app.schemas.admin_users import (
     UserStatusUpdateRequest,
 )
 
+INACTIVE_USER_RETENTION_DAYS = 30
 
 router = APIRouter(
     prefix="/admin/users",
     tags=["Admin Users"],
 )
+
+
+def utc_now() -> datetime:
+    return datetime.now(timezone.utc)
 
 
 def to_admin_user_response(user: User) -> AdminUserResponse:
@@ -26,13 +32,12 @@ def to_admin_user_response(user: User) -> AdminUserResponse:
         full_name=user.full_name,
         role=user.role,
         is_active=user.is_active,
+        deactivated_at=user.deactivated_at,
         created_at=user.created_at,
     )
 
 
 def count_active_admins(db: Session) -> int:
-    """Sistemde giriş yapabilecek aktif admin sayısını döndürür."""
-
     return (
         db.query(User)
         .filter(
@@ -138,8 +143,87 @@ def update_user_status(
             detail="Admin kendi hesabını pasif hale getiremez.",
         )
 
-    user.is_active = payload.is_active
+    if user.id == current_admin.id and payload.is_active is False:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Admin kendi hesabını pasif hale getiremez.",
+        )
+
+    deactivates_active_admin = (
+        user.role == "admin" and user.is_active and payload.is_active is False
+    )
+
+    if deactivates_active_admin:
+        active_admin_count = count_active_admins(db)
+
+        if active_admin_count <= 1:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Sistemde en az bir aktif admin kullanıcı bulunmalıdır.",
+            )
+
+    if payload.is_active:
+        user.is_active = True
+        user.deactivated_at = None
+    else:
+        if user.is_active or user.deactivated_at is None:
+            user.deactivated_at = utc_now()
+
+        user.is_active = False
+
     db.commit()
     db.refresh(user)
 
     return to_admin_user_response(user)
+
+
+@router.delete(
+    "/{user_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def permanently_delete_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(require_admin),
+) -> None:
+    user = db.query(User).filter(User.id == user_id).first()
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Kullanıcı bulunamadı.",
+        )
+
+    if user.id == current_admin.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Admin kendi hesabını kalıcı olarak silemez.",
+        )
+
+    if user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                "Aktif kullanıcı kalıcı olarak silinemez. "
+                "Önce kullanıcıyı pasif hale getirin."
+            ),
+        )
+
+    if user.deactivated_at is None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Kullanıcının pasifleştirilme tarihi bulunamadı.",
+        )
+
+    delete_available_at = user.deactivated_at + timedelta(
+        days=INACTIVE_USER_RETENTION_DAYS,
+    )
+
+    if utc_now() < delete_available_at:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=("Bu kullanıcı için 30 günlük bekleme " "süresi henüz dolmadı."),
+        )
+
+    db.delete(user)
+    db.commit()

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import {
   AdminUsersApiError,
+  deleteAdminUser,
   getAdminUsers,
   updateAdminUserRole,
   updateAdminUserStatus,
@@ -210,6 +211,41 @@ function AdminUsersPage({
     }
   }
 
+  async function handleDeleteUser(targetUser: AdminUser) {
+    if (targetUser.is_active || targetUser.id === user.id || pendingAction) return;
+
+    const isConfirmed = window.confirm(
+      `${targetUser.full_name || targetUser.email} kullanıcısını kalıcı olarak silmek istediğinize emin misiniz? Bu işlem geri alınamaz.`,
+    );
+    if (!isConfirmed) return;
+
+    setError("");
+    setSuccess("");
+    setPendingAction(`${targetUser.id}:delete`);
+
+    try {
+      await deleteAdminUser(targetUser.id);
+      setSuccess(`${targetUser.full_name} kullanıcısı kalıcı olarak silindi.`);
+      refreshUsers();
+    } catch (requestError) {
+      if (requestError instanceof AdminUsersApiError && requestError.status === 401) {
+        onLogout();
+        return;
+      }
+      if (requestError instanceof AdminUsersApiError && requestError.status === 403) {
+        onGoToChat();
+        return;
+      }
+
+      const detail = requestError instanceof AdminUsersApiError
+        ? requestError.detail
+        : undefined;
+      setError(detail || "Kullanıcı kalıcı olarak silinemedi. Lütfen tekrar deneyin.");
+    } finally {
+      setPendingAction("");
+    }
+  }
+
   return (
     <AdminLayout
       user={user}
@@ -266,6 +302,7 @@ function AdminUsersPage({
               pendingAction={pendingAction}
               onRoleChange={handleRoleChange}
               onStatusChange={handleStatusChange}
+              onDelete={handleDeleteUser}
             />
           )}
 

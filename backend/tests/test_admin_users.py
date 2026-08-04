@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from typing import Any
 
 from fastapi import FastAPI
@@ -62,6 +63,7 @@ class FakeSession:
         self.added_objects: list[Any] = []
         self.commit_count = 0
         self.refreshed_objects: list[Any] = []
+        self.deleted_objects: list[Any] = []
 
     def query(self, _model: Any) -> FakeQuery:
         if not self.queries:
@@ -71,6 +73,9 @@ class FakeSession:
 
     def add(self, value: Any) -> None:
         self.added_objects.append(value)
+
+    def delete(self, value: Any) -> None:
+        self.deleted_objects.append(value)
 
     def commit(self) -> None:
         self.commit_count += 1
@@ -88,6 +93,7 @@ def create_user(
     email: str,
     role: str = "user",
     is_active: bool = True,
+    deactivated_at: datetime | None = None,
 ) -> User:
     return User(
         id=user_id,
@@ -96,6 +102,7 @@ def create_user(
         hashed_password="fake-hashed-password",
         role=role,
         is_active=is_active,
+        deactivated_at=deactivated_at,
     )
 
 
@@ -180,6 +187,7 @@ def test_admin_can_list_users() -> None:
                 "full_name": "Test User 2",
                 "role": "user",
                 "is_active": True,
+                "deactivated_at": None,
                 "created_at": None,
             },
             {
@@ -188,6 +196,7 @@ def test_admin_can_list_users() -> None:
                 "full_name": "Test User 3",
                 "role": "user",
                 "is_active": True,
+                "deactivated_at": None,
                 "created_at": None,
             },
         ],
@@ -417,7 +426,7 @@ def test_last_active_admin_cannot_be_demoted() -> None:
     assert "users.is_active" in filter_text
 
 
-def test_admin_can_update_user_status() -> None:
+def test_admin_can_update_user_status(monkeypatch: MonkeyPatch) -> None:
     admin = create_user(
         user_id=1,
         email="admin@example.com",
@@ -427,6 +436,14 @@ def test_admin_can_update_user_status() -> None:
         user_id=2,
         email="target@example.com",
         is_active=True,
+    )
+
+    fixed_time = datetime(2026, 8, 4, 12, 0, tzinfo=timezone.utc)
+
+    monkeypatch.setattr(
+        admin_users_routes,
+        "utc_now",
+        lambda: fixed_time,
     )
 
     fake_db = FakeSession(
@@ -448,6 +465,8 @@ def test_admin_can_update_user_status() -> None:
     assert response.json()["is_active"] is False
     assert target_user.is_active is False
     assert fake_db.commit_count == 1
+    assert target_user.deactivated_at == fixed_time
+    assert response.json()["deactivated_at"] is not None
 
 
 def test_admin_cannot_deactivate_own_account() -> None:
@@ -557,3 +576,381 @@ def test_inactive_admin_can_be_demoted_without_active_admin_count() -> None:
 
     assert inactive_admin.role == "user"
     assert fake_db.commit_count == 1
+
+
+def test_repeated_deactivation_preserves_original_timestamp(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    admin = create_user(
+        user_id=1,
+        email="admin@example.com",
+        role="admin",
+    )
+
+    original_time = datetime(
+        2026,
+        7,
+        1,
+        10,
+        0,
+        tzinfo=timezone.utc,
+    )
+
+    inactive_user = create_user(
+        user_id=2,
+        email="inactive@example.com",
+        is_active=False,
+        deactivated_at=original_time,
+    )
+
+    monkeypatch.setattr(
+        admin_users_routes,
+        "utc_now",
+        lambda: datetime(
+            2026,
+            8,
+            4,
+            12,
+            0,
+            tzinfo=timezone.utc,
+        ),
+    )
+
+    fake_db = FakeSession(
+        FakeQuery(first_result=inactive_user),
+    )
+
+    with create_client(
+        current_user=admin,
+        fake_db=fake_db,
+    ) as client:
+        response = client.patch(
+            "/admin/users/2/status",
+            json={"is_active": False},
+        )
+
+    assert response.status_code == 200
+    assert inactive_user.is_active is False
+    assert inactive_user.deactivated_at == original_time
+    assert fake_db.commit_count == 1
+
+
+def test_reactivation_clears_deactivation_timestamp() -> None:
+    admin = create_user(
+        user_id=1,
+        email="admin@example.com",
+        role="admin",
+    )
+
+    inactive_user = create_user(
+        user_id=2,
+        email="inactive@example.com",
+        is_active=False,
+        deactivated_at=datetime(
+            2026,
+            7,
+            1,
+            10,
+            0,
+            tzinfo=timezone.utc,
+        ),
+    )
+
+    fake_db = FakeSession(
+        FakeQuery(first_result=inactive_user),
+    )
+
+    with create_client(
+        current_user=admin,
+        fake_db=fake_db,
+    ) as client:
+        response = client.patch(
+            "/admin/users/2/status",
+            json={"is_active": True},
+        )
+
+    assert response.status_code == 200
+    assert inactive_user.is_active is True
+    assert inactive_user.deactivated_at is None
+    assert response.json()["deactivated_at"] is None
+    assert fake_db.commit_count == 1
+
+
+def test_last_active_admin_cannot_be_deactivated() -> None:
+    current_admin = create_user(
+        user_id=1,
+        email="current.admin@example.com",
+        role="admin",
+        is_active=True,
+    )
+
+    target_admin = create_user(
+        user_id=2,
+        email="target.admin@example.com",
+        role="admin",
+        is_active=True,
+    )
+
+    fake_db = FakeSession(
+        FakeQuery(first_result=target_admin),
+        FakeQuery(count_result=1),
+    )
+
+    with create_client(
+        current_user=current_admin,
+        fake_db=fake_db,
+    ) as client:
+        response = client.patch(
+            "/admin/users/2/status",
+            json={"is_active": False},
+        )
+
+    assert response.status_code == 400
+    assert response.json() == {
+        "detail": "Sistemde en az bir aktif admin kullanıcı bulunmalıdır.",
+    }
+
+    assert target_admin.is_active is True
+    assert target_admin.deactivated_at is None
+    assert fake_db.commit_count == 0
+
+
+def test_active_user_cannot_be_permanently_deleted() -> None:
+    admin = create_user(
+        user_id=1,
+        email="admin@example.com",
+        role="admin",
+    )
+
+    active_user = create_user(
+        user_id=2,
+        email="active@example.com",
+        is_active=True,
+    )
+
+    fake_db = FakeSession(
+        FakeQuery(first_result=active_user),
+    )
+
+    with create_client(
+        current_user=admin,
+        fake_db=fake_db,
+    ) as client:
+        response = client.delete("/admin/users/2")
+
+    assert response.status_code == 409
+    assert response.json() == {
+        "detail": (
+            "Aktif kullanıcı kalıcı olarak silinemez. "
+            "Önce kullanıcıyı pasif hale getirin."
+        ),
+    }
+
+    assert fake_db.deleted_objects == []
+    assert fake_db.commit_count == 0
+
+
+def test_inactive_user_cannot_be_deleted_before_retention_period(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    admin = create_user(
+        user_id=1,
+        email="admin@example.com",
+        role="admin",
+    )
+
+    deactivated_at = datetime(
+        2026,
+        7,
+        20,
+        12,
+        0,
+        tzinfo=timezone.utc,
+    )
+
+    inactive_user = create_user(
+        user_id=2,
+        email="inactive@example.com",
+        is_active=False,
+        deactivated_at=deactivated_at,
+    )
+
+    monkeypatch.setattr(
+        admin_users_routes,
+        "utc_now",
+        lambda: datetime(
+            2026,
+            8,
+            4,
+            12,
+            0,
+            tzinfo=timezone.utc,
+        ),
+    )
+
+    fake_db = FakeSession(
+        FakeQuery(first_result=inactive_user),
+    )
+
+    with create_client(
+        current_user=admin,
+        fake_db=fake_db,
+    ) as client:
+        response = client.delete("/admin/users/2")
+
+    assert response.status_code == 409
+    assert response.json() == {
+        "detail": ("Bu kullanıcı için 30 günlük bekleme " "süresi henüz dolmadı."),
+    }
+
+    assert fake_db.deleted_objects == []
+    assert fake_db.commit_count == 0
+
+
+def test_inactive_user_can_be_deleted_after_retention_period(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    admin = create_user(
+        user_id=1,
+        email="admin@example.com",
+        role="admin",
+    )
+
+    deactivated_at = datetime(
+        2026,
+        7,
+        5,
+        12,
+        0,
+        tzinfo=timezone.utc,
+    )
+
+    inactive_user = create_user(
+        user_id=2,
+        email="inactive@example.com",
+        is_active=False,
+        deactivated_at=deactivated_at,
+    )
+
+    monkeypatch.setattr(
+        admin_users_routes,
+        "utc_now",
+        lambda: datetime(
+            2026,
+            8,
+            4,
+            12,
+            0,
+            tzinfo=timezone.utc,
+        ),
+    )
+
+    fake_db = FakeSession(
+        FakeQuery(first_result=inactive_user),
+    )
+
+    with create_client(
+        current_user=admin,
+        fake_db=fake_db,
+    ) as client:
+        response = client.delete("/admin/users/2")
+
+    assert response.status_code == 204
+    assert response.content == b""
+
+    assert fake_db.deleted_objects == [inactive_user]
+    assert fake_db.commit_count == 1
+
+
+def test_inactive_user_without_deactivation_timestamp_cannot_be_deleted() -> None:
+    admin = create_user(
+        user_id=1,
+        email="admin@example.com",
+        role="admin",
+    )
+
+    inactive_user = create_user(
+        user_id=2,
+        email="inactive@example.com",
+        is_active=False,
+        deactivated_at=None,
+    )
+
+    fake_db = FakeSession(
+        FakeQuery(first_result=inactive_user),
+    )
+
+    with create_client(
+        current_user=admin,
+        fake_db=fake_db,
+    ) as client:
+        response = client.delete("/admin/users/2")
+
+    assert response.status_code == 409
+    assert response.json() == {
+        "detail": "Kullanıcının pasifleştirilme tarihi bulunamadı.",
+    }
+
+    assert fake_db.deleted_objects == []
+    assert fake_db.commit_count == 0
+
+
+def test_admin_cannot_permanently_delete_own_account() -> None:
+    admin = create_user(
+        user_id=1,
+        email="admin@example.com",
+        role="admin",
+        is_active=False,
+        deactivated_at=datetime(
+            2026,
+            6,
+            1,
+            12,
+            0,
+            tzinfo=timezone.utc,
+        ),
+    )
+
+    fake_db = FakeSession(
+        FakeQuery(first_result=admin),
+    )
+
+    with create_client(
+        current_user=admin,
+        fake_db=fake_db,
+    ) as client:
+        response = client.delete("/admin/users/1")
+
+    assert response.status_code == 400
+    assert response.json() == {
+        "detail": "Admin kendi hesabını kalıcı olarak silemez.",
+    }
+
+    assert fake_db.deleted_objects == []
+    assert fake_db.commit_count == 0
+
+
+def test_permanent_delete_returns_404_for_unknown_user() -> None:
+    admin = create_user(
+        user_id=1,
+        email="admin@example.com",
+        role="admin",
+    )
+
+    fake_db = FakeSession(
+        FakeQuery(first_result=None),
+    )
+
+    with create_client(
+        current_user=admin,
+        fake_db=fake_db,
+    ) as client:
+        response = client.delete("/admin/users/404")
+
+    assert response.status_code == 404
+    assert response.json() == {
+        "detail": "Kullanıcı bulunamadı.",
+    }
+
+    assert fake_db.deleted_objects == []
+    assert fake_db.commit_count == 0
