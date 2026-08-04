@@ -30,6 +30,19 @@ def to_admin_user_response(user: User) -> AdminUserResponse:
     )
 
 
+def count_active_admins(db: Session) -> int:
+    """Sistemde giriş yapabilecek aktif admin sayısını döndürür."""
+
+    return (
+        db.query(User)
+        .filter(
+            User.role == "admin",
+            User.is_active.is_(True),
+        )
+        .count()
+    )
+
+
 @router.get("", response_model=PaginatedAdminUsersResponse)
 def list_users(
     limit: int = Query(default=10, ge=1, le=50),
@@ -74,7 +87,7 @@ def update_user_role(
     user_id: int,
     payload: UserRoleUpdateRequest,
     db: Session = Depends(get_db),
-    current_admin: User = Depends(require_admin),
+    _current_admin: User = Depends(require_admin),
 ):
     user = db.query(User).filter(User.id == user_id).first()
 
@@ -84,13 +97,17 @@ def update_user_role(
             detail="Kullanıcı bulunamadı.",
         )
 
-    if user.id == current_admin.id and payload.role != "admin":
-        admin_count = db.query(User).filter(User.role == "admin").count()
+    removes_active_admin_role = (
+        user.role == "admin" and user.is_active and payload.role != "admin"
+    )
 
-        if admin_count <= 1:
+    if removes_active_admin_role:
+        active_admin_count = count_active_admins(db)
+
+        if active_admin_count <= 1:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Sistemde en az bir admin kullanıcı bulunmalıdır.",
+                detail=("Sistemde en az bir aktif admin " "kullanıcı bulunmalıdır."),
             )
 
     user.role = payload.role

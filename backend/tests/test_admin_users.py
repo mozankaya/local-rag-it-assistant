@@ -25,8 +25,14 @@ class FakeQuery:
 
         self.offset_value: int | None = None
         self.limit_value: int | None = None
+        self.filter_calls: list[tuple[Any, ...]] = []
 
-    def filter(self, *_args: Any, **_kwargs: Any) -> "FakeQuery":
+    def filter(
+        self,
+        *args: Any,
+        **_kwargs: Any,
+    ) -> "FakeQuery":
+        self.filter_calls.append(args)
         return self
 
     def order_by(self, *_args: Any, **_kwargs: Any) -> "FakeQuery":
@@ -366,19 +372,20 @@ def test_update_role_returns_404_for_unknown_user() -> None:
     }
 
 
-def test_last_admin_cannot_demote_own_role() -> None:
+def test_last_active_admin_cannot_be_demoted() -> None:
     admin = create_user(
         user_id=1,
         email="admin@example.com",
         role="admin",
+        is_active=True,
     )
 
     user_query = FakeQuery(first_result=admin)
-    admin_count_query = FakeQuery(count_result=1)
+    active_admin_count_query = FakeQuery(count_result=1)
 
     fake_db = FakeSession(
         user_query,
-        admin_count_query,
+        active_admin_count_query,
     )
 
     with create_client(
@@ -394,11 +401,20 @@ def test_last_admin_cannot_demote_own_role() -> None:
 
     assert response.status_code == 400
     assert response.json() == {
-        "detail": "Sistemde en az bir admin kullanıcı bulunmalıdır.",
+        "detail": ("Sistemde en az bir aktif admin " "kullanıcı bulunmalıdır."),
     }
 
     assert admin.role == "admin"
     assert fake_db.commit_count == 0
+
+    assert len(active_admin_count_query.filter_calls) == 1
+
+    filter_text = " ".join(
+        str(expression) for expression in active_admin_count_query.filter_calls[0]
+    )
+
+    assert "users.role" in filter_text
+    assert "users.is_active" in filter_text
 
 
 def test_admin_can_update_user_status() -> None:
@@ -463,3 +479,81 @@ def test_admin_cannot_deactivate_own_account() -> None:
 
     assert admin.is_active is True
     assert fake_db.commit_count == 0
+
+
+def test_active_admin_can_be_demoted_when_another_active_admin_exists() -> None:
+    current_admin = create_user(
+        user_id=1,
+        email="current.admin@example.com",
+        role="admin",
+        is_active=True,
+    )
+
+    target_admin = create_user(
+        user_id=2,
+        email="target.admin@example.com",
+        role="admin",
+        is_active=True,
+    )
+
+    user_query = FakeQuery(first_result=target_admin)
+    active_admin_count_query = FakeQuery(count_result=2)
+
+    fake_db = FakeSession(
+        user_query,
+        active_admin_count_query,
+    )
+
+    with create_client(
+        current_user=current_admin,
+        fake_db=fake_db,
+    ) as client:
+        response = client.patch(
+            "/admin/users/2/role",
+            json={
+                "role": "user",
+            },
+        )
+
+    assert response.status_code == 200
+    assert response.json()["role"] == "user"
+
+    assert target_admin.role == "user"
+    assert fake_db.commit_count == 1
+
+
+def test_inactive_admin_can_be_demoted_without_active_admin_count() -> None:
+    current_admin = create_user(
+        user_id=1,
+        email="current.admin@example.com",
+        role="admin",
+        is_active=True,
+    )
+
+    inactive_admin = create_user(
+        user_id=2,
+        email="inactive.admin@example.com",
+        role="admin",
+        is_active=False,
+    )
+
+    fake_db = FakeSession(
+        FakeQuery(first_result=inactive_admin),
+    )
+
+    with create_client(
+        current_user=current_admin,
+        fake_db=fake_db,
+    ) as client:
+        response = client.patch(
+            "/admin/users/2/role",
+            json={
+                "role": "user",
+            },
+        )
+
+    assert response.status_code == 200
+    assert response.json()["role"] == "user"
+
+    assert inactive_admin.role == "user"
+    assert fake_db.commit_count == 1
