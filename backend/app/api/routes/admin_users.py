@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
@@ -19,6 +20,10 @@ router = APIRouter(
 )
 
 
+def utc_now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
 def to_admin_user_response(user: User) -> AdminUserResponse:
     return AdminUserResponse(
         id=user.id,
@@ -26,13 +31,12 @@ def to_admin_user_response(user: User) -> AdminUserResponse:
         full_name=user.full_name,
         role=user.role,
         is_active=user.is_active,
+        deactivated_at=user.deactivated_at,
         created_at=user.created_at,
     )
 
 
 def count_active_admins(db: Session) -> int:
-    """Sistemde giriş yapabilecek aktif admin sayısını döndürür."""
-
     return (
         db.query(User)
         .filter(
@@ -138,7 +142,34 @@ def update_user_status(
             detail="Admin kendi hesabını pasif hale getiremez.",
         )
 
-    user.is_active = payload.is_active
+    if user.id == current_admin.id and payload.is_active is False:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Admin kendi hesabını pasif hale getiremez.",
+        )
+
+    deactivates_active_admin = (
+        user.role == "admin" and user.is_active and payload.is_active is False
+    )
+
+    if deactivates_active_admin:
+        active_admin_count = count_active_admins(db)
+
+        if active_admin_count <= 1:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Sistemde en az bir aktif admin kullanıcı bulunmalıdır.",
+            )
+
+    if payload.is_active:
+        user.is_active = True
+        user.deactivated_at = None
+    else:
+        if user.is_active or user.deactivated_at is None:
+            user.deactivated_at = utc_now()
+
+        user.is_active = False
+
     db.commit()
     db.refresh(user)
 

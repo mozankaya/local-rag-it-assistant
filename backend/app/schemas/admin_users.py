@@ -10,6 +10,7 @@ class AdminUserResponse(BaseModel):
     full_name: str
     role: str
     is_active: bool
+    deactivated_at: Optional[datetime] = None
     created_at: Optional[datetime] = None
 
 

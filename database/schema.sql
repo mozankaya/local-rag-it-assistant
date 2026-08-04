@@ -77,6 +77,7 @@ CREATE TABLE public.users (
     hashed_password VARCHAR(255) NOT NULL,
     role VARCHAR(50) NOT NULL,
     is_active BOOLEAN NOT NULL,
+    deactivated_at TIMESTAMPTZ NULL,
     created_at TIMESTAMPTZ NULL DEFAULT now(),
 
     CONSTRAINT users_pkey
