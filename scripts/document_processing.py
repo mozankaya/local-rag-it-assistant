@@ -8,7 +8,7 @@ SUPPORTED_EXTENSIONS = {".md", ".txt", ".pdf", ".docx"}
 
 
 def slugify(value: str) -> str:
-    """Metni document_id olarak kullanılabilecek sade bir değere çevirir."""
+    """Convert text to a stable lowercase document ID."""
 
     value = value.lower()
     value = value.replace("ı", "i").replace("ğ", "g").replace("ü", "u")
@@ -20,8 +20,6 @@ def slugify(value: str) -> str:
 
 
 def file_hash(path: Path) -> str:
-    """Dosyanın SHA-256 hash değerini üretir."""
-
     digest = hashlib.sha256()
 
     with path.open("rb") as file:
@@ -32,7 +30,7 @@ def file_hash(path: Path) -> str:
 
 
 def clean_text(text: str) -> str:
-    """Gereksiz boşlukları ve fazla satır sonlarını temizler."""
+    """Normalize line endings, collapse horizontal whitespace, and limit consecutive blank lines."""
 
     text = text.replace("\r\n", "\n")
     text = re.sub(r"[ \t]+", " ", text)
@@ -42,14 +40,12 @@ def clean_text(text: str) -> str:
 
 
 def title_from_filename(path: Path) -> str:
-    """Dosya adından okunabilir bir başlık oluşturur."""
-
     title = path.stem.replace("_", " ").replace("-", " ")
     return " ".join(word.capitalize() for word in title.split())
 
 
 def ensure_section_heading(text: str) -> str:
-    """Dosyada ## başlık yoksa Genel bölümü ekler."""
+    """Add a general level-two heading when the text has no level-two headings."""
 
     if re.search(r"^##\s+", text, flags=re.MULTILINE):
         return text
@@ -78,6 +74,8 @@ def extract_txt(path: Path) -> str:
 
 
 def extract_pdf(path: Path) -> str:
+    """Extract non-empty text into one Markdown section per PDF page."""
+
     try:
         import fitz  # PyMuPDF
     except ImportError as error:
@@ -105,6 +103,8 @@ def extract_pdf(path: Path) -> str:
 
 
 def extract_docx(path: Path) -> str:
+    """Convert non-empty paragraphs and tables to Markdown-like text, preserving recognized headings."""
+
     try:
         from docx import Document
     except ImportError as error:
@@ -154,8 +154,6 @@ def extract_docx(path: Path) -> str:
 
 
 def extract_content(path: Path) -> str:
-    """Dosya uzantısına göre uygun içerik çıkarma fonksiyonunu çalıştırır."""
-
     extension = path.suffix.lower()
 
     if extension == ".md":
@@ -171,7 +169,7 @@ def extract_content(path: Path) -> str:
 
 
 def infer_category(path: Path, source_dir: Path) -> str:
-    """İlk alt klasör adını kategori olarak kullanır."""
+    """Use the first source subdirectory as the category, or general for root files."""
 
     relative_parent = path.parent.relative_to(source_dir)
 
@@ -182,7 +180,7 @@ def infer_category(path: Path, source_dir: Path) -> str:
 
 
 def process_file(path: Path, output_dir: Path, source_dir: Path) -> dict:
-    """Tek bir kaynak dosyayı işleyip Markdown çıktısı ve manifest kaydı üretir."""
+    """Write one normalized Markdown file and return its manifest record."""
 
     title = title_from_filename(path)
     document_id = slugify(path.stem)
