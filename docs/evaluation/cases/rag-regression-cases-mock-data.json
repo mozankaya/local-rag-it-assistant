@@ -1,0 +1,779 @@
+[
+  {
+    "id": "EMAIL-PARA-01",
+    "question": "Outlook'un alt kısmında çevrimdışı çalışıyor yazıyor, neyi kontrol etmeliyim?",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "email-outlook-support"
+    ],
+    "accepted_sections": [
+      "Outlook çevrimdışı görünüyor"
+    ],
+    "required_keywords": [
+      "çevrimdışı",
+      "internet",
+      "VPN"
+    ],
+    "min_keyword_hits": 1
+  },
+  {
+    "id": "EMAIL-PARA-02",
+    "question": "Büyük ekli bir e-postam Giden Kutusu'nda kaldı ve gönderilmiyor.",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "email-outlook-support"
+    ],
+    "accepted_sections": [
+      "E-posta gönderilemiyor"
+    ],
+    "required_keywords": [
+      "Giden Kutusu",
+      "ek",
+      "alıcı"
+    ],
+    "min_keyword_hits": 1
+  },
+  {
+    "id": "EMAIL-PARA-03",
+    "question": "Yetkim verildiği halde ortak posta kutusu Outlook listemde görünmüyor.",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "email-outlook-support"
+    ],
+    "accepted_sections": [
+      "Ortak posta kutusu görünmüyor"
+    ],
+    "required_keywords": [
+      "yetki",
+      "Outlook",
+      "posta kutusu"
+    ],
+    "min_keyword_hits": 1
+  },
+  {
+    "id": "EQUIP-PARA-01",
+    "question": "Masa için ikinci bir monitör talep ederken hangi bilgileri yazmalıyım?",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "equipment-request-process"
+    ],
+    "accepted_sections": [
+      "Monitör talebi"
+    ],
+    "required_keywords": [
+      "kullanım gerekçesi",
+      "mevcut ekipman",
+      "masa konumu"
+    ],
+    "min_keyword_hits": 1
+  },
+  {
+    "id": "EQUIP-PARA-02",
+    "question": "Bilgisayarım bozuldu ve iş tamamen durdu; acil geçici laptop istiyorum.",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "equipment-request-process"
+    ],
+    "accepted_sections": [
+      "Acil ekipman ihtiyacı"
+    ],
+    "required_keywords": [
+      "acil",
+      "geçici cihaz",
+      "yönetici onayı"
+    ],
+    "min_keyword_hits": 1
+  },
+  {
+    "id": "EQUIP-PARA-03",
+    "question": "Ekipman talep numaramı bulamıyorum, talebimin durumunu nasıl sorgularım?",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "equipment-request-process"
+    ],
+    "accepted_sections": [
+      "Ekipman talebi durumu"
+    ],
+    "required_keywords": [
+      "kullanıcı adı",
+      "talep tarihi",
+      "ekipman türü"
+    ],
+    "min_keyword_hits": 1
+  },
+  {
+    "id": "HW-PARA-01",
+    "question": "Dock istasyonuna bağlı monitör ve USB cihazlar birden çalışmayı bıraktı.",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "hardware-peripherals"
+    ],
+    "accepted_sections": [
+      "Bağlantı istasyonu çalışmıyor"
+    ],
+    "required_keywords": [
+      "güç adaptörü",
+      "bağlantı kablosu",
+      "USB"
+    ],
+    "min_keyword_hits": 1
+  },
+  {
+    "id": "HW-PARA-02",
+    "question": "Laptop adaptöre bağlı ama açılmıyor ve güç ışığı da yanmıyor.",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "hardware-peripherals"
+    ],
+    "accepted_sections": [
+      "Bilgisayar açılmıyor"
+    ],
+    "required_keywords": [
+      "adaptör",
+      "güç",
+      "cihaz etiketi"
+    ],
+    "min_keyword_hits": 1
+  },
+  {
+    "id": "HW-PARA-03",
+    "question": "USB belleği farklı bilgisayarlarda denedim, hiçbirinde algılanmıyor.",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "hardware-peripherals"
+    ],
+    "accepted_sections": [
+      "USB cihaz algılanmıyor"
+    ],
+    "required_keywords": [
+      "farklı USB",
+      "başka bir bilgisayar",
+      "arızalı"
+    ],
+    "min_keyword_hits": 1
+  },
+  {
+    "id": "TICKET-PARA-01",
+    "question": "IT destek kaydına sorunu anlatırken hangi teknik ayrıntıları eklemeliyim?",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "it-support-ticket-process"
+    ],
+    "accepted_sections": [
+      "Destek kaydında bulunması gereken bilgiler"
+    ],
+    "required_keywords": [
+      "hata mesajı",
+      "olay saati",
+      "cihaz etiketi"
+    ],
+    "min_keyword_hits": 1
+  },
+  {
+    "id": "TICKET-PARA-02",
+    "question": "Aynı hata devam ediyor; yeni kayıt mı açayım yoksa eskisini mi güncelleyeyim?",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "it-support-ticket-process"
+    ],
+    "accepted_sections": [
+      "Aynı sorun için tekrar kayıt açma"
+    ],
+    "required_keywords": [
+      "mevcut kayıt",
+      "ek bilgi",
+      "yeni kayıt"
+    ],
+    "min_keyword_hits": 1
+  },
+  {
+    "id": "TICKET-PARA-03",
+    "question": "Ekran görüntüsünde kişisel bilgiler görünüyor, destek kaydına eklemeden önce ne yapmalıyım?",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "it-support-ticket-process"
+    ],
+    "accepted_sections": [
+      "Ekran görüntüsü veya hata kaydı ekleme"
+    ],
+    "required_keywords": [
+      "gizlen",
+      "hata saati",
+      "parola"
+    ],
+    "min_keyword_hits": 1
+  },
+  {
+    "id": "MEET-PARA-01",
+    "question": "Toplantıda karşı taraf benim sesimi duymuyor ama ben onları duyuyorum.",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "meeting-room-av"
+    ],
+    "accepted_sections": [
+      "Toplantıda ses karşı tarafa gitmiyor"
+    ],
+    "required_keywords": [
+      "mikrofon",
+      "giriş cihazı",
+      "izin"
+    ],
+    "min_keyword_hits": 1
+  },
+  {
+    "id": "MEET-PARA-02",
+    "question": "Sunum sırasında ekranımı paylaşamıyorum.",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "meeting-room-av"
+    ],
+    "accepted_sections": [
+      "Ekran paylaşımı yapılamıyor"
+    ],
+    "required_keywords": [
+      "paylaşım izni",
+      "pencere",
+      "ekran"
+    ],
+    "min_keyword_hits": 1
+  },
+  {
+    "id": "MEET-PARA-03",
+    "question": "Aynı odada toplantıya iki bilgisayardan girince sürekli yankı oluşuyor.",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "meeting-room-av"
+    ],
+    "accepted_sections": [
+      "Toplantıda yankı oluşuyor"
+    ],
+    "required_keywords": [
+      "birden fazla cihaz",
+      "mikrofon",
+      "hoparlör"
+    ],
+    "min_keyword_hits": 1
+  },
+  {
+    "id": "NET-PARA-01",
+    "question": "İnternet çalışıyor ama yalnızca bir web adresi hiçbir tarayıcıda açılmıyor.",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "network-connectivity"
+    ],
+    "accepted_sections": [
+      "Yalnızca bir web sitesi açılmıyor"
+    ],
+    "required_keywords": [
+      "adres",
+      "tarayıcı",
+      "gizli pencere"
+    ],
+    "min_keyword_hits": 1
+  },
+  {
+    "id": "NET-PARA-02",
+    "question": "Kurumsal Wi-Fi parolası doğru olduğu halde bilgisayar ağa bağlanamıyor.",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "network-connectivity"
+    ],
+    "accepted_sections": [
+      "Kablosuz ağa bağlanılamıyor"
+    ],
+    "required_keywords": [
+      "ağ adı",
+      "unut",
+      "hata mesajı"
+    ],
+    "min_keyword_hits": 1
+  },
+  {
+    "id": "NET-PARA-03",
+    "question": "Ağ sürücüsü özellikle öğleden sonra bağlantıyı kaybediyor.",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "network-connectivity"
+    ],
+    "accepted_sections": [
+      "Ağ sürücüsü bağlantısı kopuyor"
+    ],
+    "required_keywords": [
+      "VPN",
+      "saat",
+      "sürücü adı"
+    ],
+    "min_keyword_hits": 1
+  },
+  {
+    "id": "ACC-PARA-01",
+    "question": "Hesabım kilitleniyor; telefonda ve Outlook'ta eski şifre hâlâ kayıtlı olabilir.",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "password-account-access"
+    ],
+    "accepted_sections": [
+      "Hesap kilitlendi"
+    ],
+    "required_keywords": [
+      "eski şifre",
+      "oturum",
+      "sıfırlama"
+    ],
+    "min_keyword_hits": 1
+  },
+  {
+    "id": "ACC-PARA-02",
+    "question": "Şifremi değiştirdim fakat bir uygulama hâlâ eski parolayı soruyor.",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "password-account-access"
+    ],
+    "accepted_sections": [
+      "Şifre değişti ancak uygulama eski şifreyi istiyor"
+    ],
+    "required_keywords": [
+      "yeni şifre",
+      "oturum",
+      "Kimlik Bilgisi Yöneticisi"
+    ],
+    "min_keyword_hits": 1
+  },
+  {
+    "id": "ACC-PARA-03",
+    "question": "Uzun süredir kullanmadığım kurumsal hesabım pasif görünüyor.",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "password-account-access"
+    ],
+    "accepted_sections": [
+      "Hesap pasif görünüyor"
+    ],
+    "required_keywords": [
+      "sicil numarası",
+      "departman",
+      "yönetici onayı"
+    ],
+    "min_keyword_hits": 1
+  },
+  {
+    "id": "PRINT-PARA-01",
+    "question": "Yazdırma kuyruğu takıldı ve belgeler sırada bekliyor.",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "printer-scanner"
+    ],
+    "accepted_sections": [
+      "Yazdırma kuyruğu takıldı"
+    ],
+    "required_keywords": [
+      "bekleyen işler",
+      "test sayfası",
+      "yeniden aç"
+    ],
+    "min_keyword_hits": 1
+  },
+  {
+    "id": "PRINT-PARA-02",
+    "question": "Çıktılar sürekli başka bölümdeki benzer isimli yazıcıdan geliyor.",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "printer-scanner"
+    ],
+    "accepted_sections": [
+      "Yanlış yazıcıdan çıktı alınıyor"
+    ],
+    "required_keywords": [
+      "yazıcı adı",
+      "varsayılan",
+      "konum"
+    ],
+    "min_keyword_hits": 1
+  },
+  {
+    "id": "PRINT-PARA-03",
+    "question": "Taradığım belge çok büyük olduğu için e-postayla gönderilemiyor.",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "printer-scanner"
+    ],
+    "accepted_sections": [
+      "Tarama dosyası gönderilemiyor"
+    ],
+    "required_keywords": [
+      "boyut",
+      "PDF",
+      "kota"
+    ],
+    "min_keyword_hits": 1
+  },
+  {
+    "id": "SEC-PARA-01",
+    "question": "Şüpheli bir bağlantıya yanlışlıkla tıkladım ama hiçbir bilgi girmedim.",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "security-mfa-phishing"
+    ],
+    "accepted_sections": [
+      "Yanlışlıkla şüpheli bağlantıya tıklandı"
+    ],
+    "required_keywords": [
+      "tarayıcı",
+      "olay saati",
+      "bildir"
+    ],
+    "min_keyword_hits": 1
+  },
+  {
+    "id": "SEC-PARA-02",
+    "question": "Telefonumu değiştirdim; yeni cihazda doğrulama uygulaması kurulu ama MFA çalışmıyor.",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "security-mfa-phishing"
+    ],
+    "accepted_sections": [
+      "Telefon değiştirildi ve MFA çalışmıyor"
+    ],
+    "required_keywords": [
+      "eski cihaz",
+      "yeni cihaz",
+      "MFA"
+    ],
+    "min_keyword_hits": 1
+  },
+  {
+    "id": "SEC-PARA-03",
+    "question": "Ben giriş yapmadığım halde telefona MFA onay isteği geliyor.",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "security-mfa-phishing"
+    ],
+    "accepted_sections": [
+      "Beklenmeyen MFA onayı geliyor"
+    ],
+    "required_keywords": [
+      "redded",
+      "parola",
+      "olay saati"
+    ],
+    "min_keyword_hits": 1
+  },
+  {
+    "id": "FILES-PARA-01",
+    "question": "Evden bağlandığımda ortak klasör listede görünmüyor.",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "shared-folder-access"
+    ],
+    "accepted_sections": [
+      "Ortak klasör görünmüyor"
+    ],
+    "required_keywords": [
+      "VPN",
+      "ağ sürücüsü",
+      "klasör yolu"
+    ],
+    "min_keyword_hits": 1
+  },
+  {
+    "id": "FILES-PARA-02",
+    "question": "Ortak klasördeki Excel dosyası yalnızca salt okunur açılıyor.",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "shared-folder-access"
+    ],
+    "accepted_sections": [
+      "Dosya salt okunur açılıyor"
+    ],
+    "required_keywords": [
+      "yazma yetkisi",
+      "kilit",
+      "yerel bilgisayar"
+    ],
+    "min_keyword_hits": 1
+  },
+  {
+    "id": "FILES-PARA-03",
+    "question": "Ağ yolu bulunamadı hatası var ve aynı klasöre bölümde kimse erişemiyor.",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "shared-folder-access"
+    ],
+    "accepted_sections": [
+      "Ağ yolu bulunamadı"
+    ],
+    "required_keywords": [
+      "VPN",
+      "sunucu",
+      "ağ bağlantısı"
+    ],
+    "min_keyword_hits": 1
+  },
+  {
+    "id": "SW-PARA-01",
+    "question": "Program kurulurken yönetici parolası isteyen bir pencere açıldı.",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "software-installation-access"
+    ],
+    "accepted_sections": [
+      "Yönetici parolası isteniyor"
+    ],
+    "required_keywords": [
+      "işlem durdur",
+      "yazılım adı",
+      "bilgisayar etiketi"
+    ],
+    "min_keyword_hits": 1
+  },
+  {
+    "id": "SW-PARA-02",
+    "question": "Kurumsal uygulama lisans bulunamadı uyarısı veriyor.",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "software-installation-access"
+    ],
+    "accepted_sections": [
+      "Uygulama lisans hatası veriyor"
+    ],
+    "required_keywords": [
+      "VPN",
+      "lisans grubu",
+      "lisans destek kaydı"
+    ],
+    "min_keyword_hits": 1
+  },
+  {
+    "id": "SW-PARA-03",
+    "question": "Bakım Takip Portalı açılıyor ama girişten sonra yetkiniz yok hatası geliyor.",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "software-installation-access"
+    ],
+    "accepted_sections": [
+      "Bakım Takip Portalı açılmıyor"
+    ],
+    "required_keywords": [
+      "yetki talebi",
+      "kullanıcı rolü",
+      "portal"
+    ],
+    "min_keyword_hits": 1
+  },
+  {
+    "id": "VPN-PARA-01",
+    "question": "VPN bağlantısı kuruluyor fakat kurum içindeki uygulama adresleri açılmıyor.",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "vpn-remote-access"
+    ],
+    "accepted_sections": [
+      "VPN bağlanıyor ancak iç sistemler açılmıyor"
+    ],
+    "required_keywords": [
+      "sistem adı",
+      "erişim adresi",
+      "yetki"
+    ],
+    "min_keyword_hits": 1
+  },
+  {
+    "id": "VPN-PARA-02",
+    "question": "Kablosuz ağdayken VPN bağlantısı birkaç dakikada bir kopuyor.",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "vpn-remote-access"
+    ],
+    "accepted_sections": [
+      "VPN bağlantısı sık sık kopuyor"
+    ],
+    "required_keywords": [
+      "kablolu bağlantı",
+      "uyku",
+      "saat"
+    ],
+    "min_keyword_hits": 1
+  },
+  {
+    "id": "VPN-PARA-03",
+    "question": "VPN açık ama uzak masaüstündeki bilgisayara bağlanamıyorum; cihaz kapalı olabilir.",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "vpn-remote-access"
+    ],
+    "accepted_sections": [
+      "Uzak masaüstü bağlantısı açılamıyor"
+    ],
+    "required_keywords": [
+      "hedef bilgisayar",
+      "açık",
+      "VPN"
+    ],
+    "min_keyword_hits": 1
+  },
+  {
+    "id": "GENERIC-SW-01",
+    "question": "Kurumsal bir uygulama açılmıyor, ilk olarak ne yapmalıyım?",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "software-installation-access"
+    ],
+    "accepted_sections": [
+      "Uygulama açılmıyor"
+    ],
+    "required_keywords": [
+      "yeniden aç",
+      "yeniden başlat",
+      "hata mesajı"
+    ],
+    "min_keyword_hits": 1
+  },
+  {
+    "id": "GENERIC-SW-02",
+    "question": "Kullandığım program lisans hatası veriyor.",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "software-installation-access"
+    ],
+    "accepted_sections": [
+      "Uygulama lisans hatası veriyor"
+    ],
+    "required_keywords": [
+      "VPN",
+      "lisans",
+      "kullanıcı hesabı"
+    ],
+    "min_keyword_hits": 1
+  },
+  {
+    "id": "CROSS-ACC-EMAIL-01",
+    "question": "Şifremi değiştirdim ama Outlook hâlâ eski parolayı soruyor.",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "password-account-access",
+      "email-outlook-support"
+    ],
+    "accepted_sections": [
+      "Şifre değişti ancak uygulama eski şifreyi istiyor",
+      "Outlook sürekli parola istiyor"
+    ],
+    "required_keywords": [
+      "yeni şifre",
+      "Outlook",
+      "eski parola"
+    ],
+    "min_keyword_hits": 1
+  },
+  {
+    "id": "NOSRC-NAMED-01",
+    "question": "SAP kalite modülünde işlem kaydedemiyorum.",
+    "expected_response_type": "no_relevant_source",
+    "expected_document_ids": [],
+    "accepted_sections": [],
+    "required_keywords": [
+      "kaynak dokümanlarda",
+      "IT destek"
+    ],
+    "min_keyword_hits": 2
+  },
+  {
+    "id": "NOSRC-NAMED-02",
+    "question": "Bordro portalında izin günüm yanlış görünüyor.",
+    "expected_response_type": "no_relevant_source",
+    "expected_document_ids": [],
+    "accepted_sections": [],
+    "required_keywords": [
+      "kaynak dokümanlarda",
+      "IT destek"
+    ],
+    "min_keyword_hits": 2
+  },
+  {
+    "id": "NOSRC-NAMED-03",
+    "question": "Power BI satış raporu yenilenmiyor.",
+    "expected_response_type": "no_relevant_source",
+    "expected_document_ids": [],
+    "accepted_sections": [],
+    "required_keywords": [
+      "kaynak dokümanlarda",
+      "IT destek"
+    ],
+    "min_keyword_hits": 2
+  },
+  {
+    "id": "NOSRC-NAMED-04",
+    "question": "Jira'da sprinti kapatamıyorum.",
+    "expected_response_type": "no_relevant_source",
+    "expected_document_ids": [],
+    "accepted_sections": [],
+    "required_keywords": [
+      "kaynak dokümanlarda",
+      "IT destek"
+    ],
+    "min_keyword_hits": 2
+  },
+  {
+    "id": "NOSRC-NAMED-05",
+    "question": "Logo Tiger'da e-fatura oluşmuyor.",
+    "expected_response_type": "no_relevant_source",
+    "expected_document_ids": [],
+    "accepted_sections": [],
+    "required_keywords": [
+      "kaynak dokümanlarda",
+      "IT destek"
+    ],
+    "min_keyword_hits": 2
+  },
+  {
+    "id": "NOSRC-NAMED-06",
+    "question": "Microsoft Teams takvimim Outlook ile eşitlenmiyor.",
+    "expected_response_type": "no_relevant_source",
+    "expected_document_ids": [],
+    "accepted_sections": [],
+    "required_keywords": [
+      "kaynak dokümanlarda",
+      "IT destek"
+    ],
+    "min_keyword_hits": 2
+  },
+  {
+    "id": "OOS-01",
+    "question": "Akşam için pratik bir çorba tarifi verir misin?",
+    "expected_response_type": "out_of_scope",
+    "expected_document_ids": [],
+    "accepted_sections": [],
+    "required_keywords": []
+  },
+  {
+    "id": "OOS-02",
+    "question": "Arabamın lastik basıncı düşük, kaç bar hava basmalıyım?",
+    "expected_response_type": "out_of_scope",
+    "expected_document_ids": [],
+    "accepted_sections": [],
+    "required_keywords": []
+  },
+  {
+    "id": "OOS-03",
+    "question": "Depodaki forkliftin hidrolik pompasından ses geliyor.",
+    "expected_response_type": "out_of_scope",
+    "expected_document_ids": [],
+    "accepted_sections": [],
+    "required_keywords": []
+  },
+  {
+    "id": "STATIC-01",
+    "question": "Selam, nasılsın?",
+    "expected_response_type": "static_response",
+    "expected_document_ids": [],
+    "accepted_sections": [],
+    "required_keywords": []
+  },
+  {
+    "id": "STATIC-02",
+    "question": "Hangi konularda yardımcı olabiliyorsun?",
+    "expected_response_type": "static_response",
+    "expected_document_ids": [],
+    "accepted_sections": [],
+    "required_keywords": []
+  }
+]

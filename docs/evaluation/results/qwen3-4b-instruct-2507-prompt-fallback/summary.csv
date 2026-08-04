@@ -1,0 +1,2 @@
+﻿model,total_run_count,case_pass_count,source_match_count,section_match_count,keyword_match_count,response_type_match_count,answer_format_match_count,request_error_count,average_response_time_seconds,min_response_time_seconds,max_response_time_seconds
+qwen3-4b-instruct-2507-prompt-fallback,50,47,50,50,49,47,50,0,2.785,0.859,15.564
