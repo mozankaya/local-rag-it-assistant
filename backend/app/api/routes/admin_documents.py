@@ -1,3 +1,5 @@
+from collections.abc import Iterator
+from contextlib import contextmanager
 from pathlib import Path
 
 from fastapi import (
@@ -16,7 +18,7 @@ from sqlalchemy.orm import Session
 
 from app.api.routes.users import require_admin
 from app.core.config import get_settings
-from app.db.database import get_db
+from app.db.database import engine, get_db
 from app.models.user import User
 from app.schemas.admin_documents import (
     AdminDocumentResponse,
@@ -61,6 +63,7 @@ UPDATE_BACKUP_DIR = DATA_DIR / ".document-update-backup"
 ALLOWED_UPLOAD_EXTENSIONS = {".md", ".txt", ".pdf", ".docx"}
 MAX_UPLOAD_SIZE_BYTES = 10 * 1024 * 1024
 
+REINDEX_ADVISORY_LOCK_ID = 73_241_001
 
 DOCUMENTS_CTE = """
 WITH documents AS (
@@ -188,6 +191,45 @@ def run_prepare_documents_script(
         prepare_documents_script=PREPARE_DOCUMENTS_SCRIPT,
         allow_empty=allow_empty,
     )
+
+
+@contextmanager
+def acquire_reindex_lock() -> Iterator[None]:
+    """Reindex süresince PostgreSQL advisory lock tutar."""
+
+    lock_params = {
+        "lock_key": REINDEX_ADVISORY_LOCK_ID,
+    }
+
+    with engine.connect() as lock_connection:
+        lock_acquired = bool(
+            lock_connection.execute(
+                text("""
+                    SELECT pg_try_advisory_lock(:lock_key)
+                    """),
+                lock_params,
+            ).scalar()
+        )
+
+        lock_connection.commit()
+
+        if not lock_acquired:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=("Başka bir yeniden indeksleme işlemi " "devam ediyor."),
+            )
+
+        try:
+            yield
+
+        finally:
+            lock_connection.execute(
+                text("""
+                    SELECT pg_advisory_unlock(:lock_key)
+                    """),
+                lock_params,
+            )
+            lock_connection.commit()
 
 
 @router.get("", response_model=PaginatedAdminDocumentsResponse)
@@ -638,60 +680,63 @@ def reindex_documents(
     db: Session = Depends(get_db),
     _current_admin: User = Depends(require_admin),
 ):
-    """Dokümanları hazırlar ve n8n ingestion workflow'unu çalıştırır."""
+    """Dokümanları hazırlar ve yeniden indeksler."""
 
-    run_prepare_documents_script(allow_empty=True)
+    with acquire_reindex_lock():
+        run_prepare_documents_script(allow_empty=True)
 
-    manifest = load_documents_manifest()
+        manifest = load_documents_manifest()
 
-    if not manifest:
-        db.execute(text("""
-                TRUNCATE TABLE
-                    langchain_document_chunks
-                RESTART IDENTITY
-                """))
+        if not manifest:
+            db.execute(text("""
+                    TRUNCATE TABLE
+                        langchain_document_chunks
+                    RESTART IDENTITY
+                    """))
 
-        db.commit()
+            db.commit()
+
+            return ReindexResponse(
+                success=True,
+                message=(
+                    "Kaynak doküman bulunmadı. " "Vektör indeks kayıtları temizlendi."
+                ),
+            )
+
+        app_settings = get_settings()
+
+        webhook_url = app_settings.n8n_reindex_webhook_url
+        timeout_seconds = app_settings.reindex_timeout_seconds
+        webhook_secret = app_settings.n8n_webhook_secret
+
+        if not webhook_url:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="N8N_REINDEX_WEBHOOK_URL tanımlı değil.",
+            )
+
+        try:
+            trigger_n8n_webhook(
+                url=webhook_url,
+                timeout_seconds=timeout_seconds,
+                webhook_secret=webhook_secret,
+            )
+
+        except N8nTimeoutError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+                detail="Reindex işlemi zaman aşımına uğradı.",
+            ) from exc
+
+        except N8nClientError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail=("n8n reindex webhook adresine " "ulaşılamadı."),
+            ) from exc
 
         return ReindexResponse(
             success=True,
             message=(
-                "Kaynak doküman bulunmadı. " "Vektör indeks kayıtları temizlendi."
+                "Dokümanlar için yeniden indeksleme " "işlemi başarıyla tamamlandı."
             ),
         )
-
-    app_settings = get_settings()
-
-    webhook_url = app_settings.n8n_reindex_webhook_url
-    timeout_seconds = app_settings.reindex_timeout_seconds
-    webhook_secret = app_settings.n8n_webhook_secret
-
-    if not webhook_url:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="N8N_REINDEX_WEBHOOK_URL tanımlı değil.",
-        )
-
-    try:
-        trigger_n8n_webhook(
-            url=webhook_url,
-            timeout_seconds=timeout_seconds,
-            webhook_secret=webhook_secret,
-        )
-
-    except N8nTimeoutError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
-            detail="Reindex işlemi zaman aşımına uğradı.",
-        ) from exc
-
-    except N8nClientError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail="n8n reindex webhook adresine ulaşılamadı.",
-        ) from exc
-
-    return ReindexResponse(
-        success=True,
-        message=("Dokümanlar için yeniden indeksleme işlemi " "başarıyla tamamlandı."),
-    )
