@@ -70,6 +70,71 @@ class FakeSession:
         self.rollback_count += 1
 
 
+class FakeLockConnection:
+    def __init__(
+        self,
+        *,
+        lock_acquired: bool = True,
+    ) -> None:
+        self.lock_acquired = lock_acquired
+        self.execute_calls: list[dict[str, Any]] = []
+        self.commit_count = 0
+        self.closed = False
+
+    def __enter__(self) -> "FakeLockConnection":
+        return self
+
+    def __exit__(
+        self,
+        _exc_type: Any,
+        _exc_value: Any,
+        _traceback: Any,
+    ) -> None:
+        self.closed = True
+
+    def execute(
+        self,
+        query: Any,
+        params: dict[str, Any] | None = None,
+    ) -> FakeResult:
+        query_text = str(query)
+
+        self.execute_calls.append(
+            {
+                "query": query_text,
+                "params": params or {},
+            }
+        )
+
+        if "pg_try_advisory_lock" in query_text:
+            return FakeResult(
+                scalar_result=self.lock_acquired,
+            )
+
+        if "pg_advisory_unlock" in query_text:
+            return FakeResult(
+                scalar_result=True,
+            )
+
+        raise AssertionError(f"Beklenmeyen lock sorgusu: {query_text}")
+
+    def commit(self) -> None:
+        self.commit_count += 1
+
+
+class FakeLockEngine:
+    def __init__(
+        self,
+        connection: FakeLockConnection,
+    ) -> None:
+        self.connection = connection
+        self.connect_count = 0
+
+    def connect(self) -> FakeLockConnection:
+        self.connect_count += 1
+        return self.connection
+
+
 def create_user(*, role: str = "admin") -> User:
     return User(
         id=1,
@@ -103,6 +168,26 @@ def create_reindex_settings() -> SimpleNamespace:
         reindex_timeout_seconds=15,
         n8n_webhook_secret="test-webhook-secret",
     )
+
+
+def configure_fake_reindex_lock(
+    monkeypatch: MonkeyPatch,
+    *,
+    lock_acquired: bool = True,
+) -> FakeLockConnection:
+    lock_connection = FakeLockConnection(
+        lock_acquired=lock_acquired,
+    )
+
+    fake_engine = FakeLockEngine(lock_connection)
+
+    monkeypatch.setattr(
+        document_routes,
+        "engine",
+        fake_engine,
+    )
+
+    return lock_connection
 
 
 def configure_temporary_paths(
@@ -978,11 +1063,25 @@ def test_delete_restores_document_when_database_commit_fails(
     assert not backup_file.exists()
 
 
+def assert_reindex_lock_released(
+    lock_connection: FakeLockConnection,
+) -> None:
+    assert lock_connection.commit_count == 2
+    assert lock_connection.closed is True
+
+    assert len(lock_connection.execute_calls) == 2
+
+    assert "pg_try_advisory_lock" in lock_connection.execute_calls[0]["query"]
+
+    assert "pg_advisory_unlock" in lock_connection.execute_calls[1]["query"]
+
+
 def test_reindex_clears_database_when_source_directory_is_empty(
     monkeypatch: MonkeyPatch,
     tmp_path: Path,
 ) -> None:
     paths = configure_temporary_paths(monkeypatch, tmp_path)
+    lock_connection = configure_fake_reindex_lock(monkeypatch)
 
     repository_root = Path(__file__).resolve().parents[2]
 
@@ -1028,12 +1127,15 @@ def test_reindex_clears_database_when_source_directory_is_empty(
     assert len(fake_db.execute_calls) == 1
     assert "TRUNCATE TABLE" in fake_db.execute_calls[0]["query"]
 
+    assert_reindex_lock_released(lock_connection)
+
 
 def test_reindex_calls_n8n_webhook(
     monkeypatch: MonkeyPatch,
     tmp_path: Path,
 ) -> None:
     paths = configure_temporary_paths(monkeypatch, tmp_path)
+    lock_connection = configure_fake_reindex_lock(monkeypatch)
 
     paths["manifest_path"].write_text(
         json.dumps([{"document_id": "vpn-guide"}]),
@@ -1084,12 +1186,15 @@ def test_reindex_calls_n8n_webhook(
         "webhook_secret": "test-webhook-secret",
     }
 
+    assert_reindex_lock_released(lock_connection)
+
 
 def test_reindex_handles_connection_error(
     monkeypatch: MonkeyPatch,
     tmp_path: Path,
 ) -> None:
     paths = configure_temporary_paths(monkeypatch, tmp_path)
+    lock_connection = configure_fake_reindex_lock(monkeypatch)
 
     paths["manifest_path"].write_text(
         json.dumps([{"document_id": "vpn-guide"}]),
@@ -1132,12 +1237,15 @@ def test_reindex_handles_connection_error(
         "detail": "n8n reindex webhook adresine ulaşılamadı.",
     }
 
+    assert_reindex_lock_released(lock_connection)
+
 
 def test_reindex_handles_timeout(
     monkeypatch: MonkeyPatch,
     tmp_path: Path,
 ) -> None:
     paths = configure_temporary_paths(monkeypatch, tmp_path)
+    lock_connection = configure_fake_reindex_lock(monkeypatch)
 
     paths["manifest_path"].write_text(
         json.dumps([{"document_id": "vpn-guide"}]),
@@ -1179,3 +1287,53 @@ def test_reindex_handles_timeout(
     assert response.json() == {
         "detail": "Reindex işlemi zaman aşımına uğradı.",
     }
+
+    assert_reindex_lock_released(lock_connection)
+
+
+def test_reindex_returns_conflict_when_another_reindex_is_running(
+    monkeypatch: MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    configure_temporary_paths(monkeypatch, tmp_path)
+
+    lock_connection = configure_fake_reindex_lock(
+        monkeypatch,
+        lock_acquired=False,
+    )
+
+    prepare_calls: list[bool] = []
+
+    def fake_prepare_documents_script(
+        allow_empty: bool = False,
+    ) -> None:
+        prepare_calls.append(allow_empty)
+
+    monkeypatch.setattr(
+        document_routes,
+        "run_prepare_documents_script",
+        fake_prepare_documents_script,
+    )
+
+    fake_db = FakeSession()
+
+    with create_client(
+        current_user=create_user(),
+        fake_db=fake_db,
+    ) as client:
+        response = client.post("/admin/documents/reindex")
+
+    assert response.status_code == 409
+    assert response.json() == {
+        "detail": ("Başka bir yeniden indeksleme işlemi " "devam ediyor."),
+    }
+
+    assert prepare_calls == []
+    assert fake_db.execute_calls == []
+    assert fake_db.commit_count == 0
+
+    assert len(lock_connection.execute_calls) == 1
+    assert "pg_try_advisory_lock" in lock_connection.execute_calls[0]["query"]
+
+    assert lock_connection.commit_count == 1
+    assert lock_connection.closed is True
