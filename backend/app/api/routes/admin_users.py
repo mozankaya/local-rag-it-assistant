@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
@@ -13,6 +13,7 @@ from app.schemas.admin_users import (
     UserStatusUpdateRequest,
 )
 
+INACTIVE_USER_RETENTION_DAYS = 30
 
 router = APIRouter(
     prefix="/admin/users",
@@ -174,3 +175,55 @@ def update_user_status(
     db.refresh(user)
 
     return to_admin_user_response(user)
+
+
+@router.delete(
+    "/{user_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def permanently_delete_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(require_admin),
+) -> None:
+    user = db.query(User).filter(User.id == user_id).first()
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Kullanıcı bulunamadı.",
+        )
+
+    if user.id == current_admin.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Admin kendi hesabını kalıcı olarak silemez.",
+        )
+
+    if user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                "Aktif kullanıcı kalıcı olarak silinemez. "
+                "Önce kullanıcıyı pasif hale getirin."
+            ),
+        )
+
+    if user.deactivated_at is None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Kullanıcının pasifleştirilme tarihi bulunamadı.",
+        )
+
+    delete_available_at = user.deactivated_at + timedelta(
+        days=INACTIVE_USER_RETENTION_DAYS,
+    )
+
+    if utc_now() < delete_available_at:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=("Bu kullanıcı için 30 günlük bekleme " "süresi henüz dolmadı."),
+        )
+
+    db.delete(user)
+    db.commit()
