@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { SyntheticEvent } from "react";
 import {
   askQuestion,
+  ChatApiError,
   sendFeedback,
   type ChatResponse,
 } from "../../api/chatApi";
@@ -13,6 +14,7 @@ interface ChatBoxProps {
     id: number;
     question: string;
   } | null;
+  onUnauthorized: () => void;
 }
 
 const starterQuestions = [
@@ -32,7 +34,7 @@ function createInitialMessages(): Message[] {
   ];
 }
 
-function ChatBox({ quickQuestion }: ChatBoxProps) {
+function ChatBox({ quickQuestion, onUnauthorized }: ChatBoxProps) {
   const [messages, setMessages] = useState<Message[]>(createInitialMessages);
   const [question, setQuestion] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -72,7 +74,12 @@ function ChatBox({ quickQuestion }: ChatBoxProps) {
       };
 
       setMessages((previous) => [...previous, assistantMessage]);
-    } catch {
+    } catch (error) {
+      if (error instanceof ChatApiError && error.status === 401) {
+        onUnauthorized();
+        return;
+      }
+
       const errorMessage: Message = {
         id: nextIdRef.current++,
         role: "assistant",
@@ -84,7 +91,7 @@ function ChatBox({ quickQuestion }: ChatBoxProps) {
     } finally {
       setIsLoading(false);
     }
-  }, [isLoading]);
+  }, [isLoading, onUnauthorized]);
 
   async function handleSubmit(event?: SyntheticEvent<HTMLFormElement>) {
     event?.preventDefault();
