@@ -18,8 +18,6 @@ class N8nTimeoutError(N8nClientError):
 
 
 def build_webhook_headers(webhook_secret: str) -> dict[str, str]:
-    """n8n webhook isteklerinde kullanılacak kimlik doğrulama header'ını oluşturur."""
-
     return {
         N8N_WEBHOOK_AUTH_HEADER: webhook_secret,
     }
@@ -31,7 +29,7 @@ async def post_to_n8n(
     timeout_seconds: float,
     webhook_secret: str,
 ) -> dict[str, Any]:
-    """n8n webhook'una JSON gönderir ve JSON nesnesi döndürür."""
+    """Post JSON to n8n and normalize timeout, HTTP, transport, and JSON failures."""
 
     headers = build_webhook_headers(webhook_secret)
 

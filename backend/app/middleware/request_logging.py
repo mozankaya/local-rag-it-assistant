@@ -18,6 +18,8 @@ VALID_REQUEST_ID_PATTERN = re.compile(
 
 
 def resolve_request_id(request: Request) -> str:
+    """Reuse only a safe client request ID; otherwise generate a local ID."""
+
     incoming_request_id = request.headers.get(
         REQUEST_ID_HEADER
     )
@@ -34,6 +36,8 @@ def resolve_request_id(request: Request) -> str:
 
 
 class RequestLoggingMiddleware(BaseHTTPMiddleware):
+    """Attach a safe request ID and emit one structured completion or failure log per request."""
+
     async def dispatch(
         self,
         request: Request,

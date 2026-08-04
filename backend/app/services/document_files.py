@@ -8,7 +8,7 @@ def find_source_document_path(
     source_file_name: str,
     category: str | None = None,
 ) -> Path | None:
-    """Kaynak dokümanı güvenli biçimde source-documents içinde arar."""
+    """Find a source document by basename without allowing paths outside the source root."""
 
     safe_file_name = Path(source_file_name).name
 
@@ -17,7 +17,7 @@ def find_source_document_path(
 
     source_root = source_documents_dir.resolve()
 
-    # Önce dokümanın beklenen kategori klasörünü kontrol ederiz.
+    # Use category metadata first while still enforcing source-root containment.
     if category and category != "unknown":
         category_candidate = (
             source_root / category / safe_file_name
@@ -29,7 +29,7 @@ def find_source_document_path(
         ):
             return category_candidate
 
-    # Kategori bilgisi eksik veya hatalıysa bütün kaynaklarda ararız.
+    # Search the full source tree when category metadata is missing or stale.
     for file_path in source_root.rglob("*"):
         if file_path.is_file() and file_path.name == safe_file_name:
             resolved_path = file_path.resolve()
@@ -44,7 +44,7 @@ def remove_empty_directory(
     directory_path: Path,
     root_directory: Path,
 ) -> None:
-    """Verilen klasörü yalnızca boş ve güvenli kök içindeyse kaldırır."""
+    """Remove a directory only when it is empty and contained by the allowed root."""
 
     resolved_directory = directory_path.resolve()
     resolved_root = root_directory.resolve()
@@ -58,13 +58,11 @@ def remove_empty_directory(
     try:
         resolved_directory.rmdir()
     except OSError:
-        # Klasör boş değilse veya kaldırılamıyorsa işlem yapmayız.
+        # Ignore removal failures because this cleanup is best-effort.
         pass
 
 
 def slugify_text(value: str) -> str:
-    """Metni dosya ve klasör adlarında kullanılabilecek hâle getirir."""
-
     import re
 
     value = value.strip().lower()
@@ -91,8 +89,6 @@ def ensure_allowed_file(
     file_name: str,
     allowed_extensions: set[str],
 ) -> str:
-    """Dosyanın desteklenen uzantılardan birine sahip olduğunu doğrular."""
-
     suffix = Path(file_name).suffix.lower()
 
     if suffix not in allowed_extensions:
@@ -112,7 +108,7 @@ def save_uploaded_file(
     target_path: Path,
     max_upload_size_bytes: int,
 ) -> None:
-    """Yüklenen dosyayı boyut kontrolüyle hedef konuma kaydeder."""
+    """Stream an upload within the size limit, deleting partial output and closing the input on failure."""
 
     uploaded_size = 0
 
@@ -135,7 +131,7 @@ def save_uploaded_file(
                 buffer.write(chunk)
 
     except Exception:
-        # Yükleme yarıda kalırsa eksik dosyayı bırakmayız.
+        # Remove partial output if the upload fails.
         target_path.unlink(missing_ok=True)
         raise
 

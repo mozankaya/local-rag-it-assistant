@@ -146,8 +146,6 @@ def get_document_metadata(
     db: Session,
     document_id: str,
 ):
-    """Dokümanın kaynak dosya adını ve kategorisini getirir."""
-
     return (
         db.execute(
             text("""
@@ -174,8 +172,6 @@ def get_document_metadata(
 
 
 def load_documents_manifest() -> list[dict]:
-    """Projenin documents.json manifest dosyasını okur."""
-
     return document_preprocessing.load_documents_manifest(
         manifest_path=DOCUMENTS_MANIFEST_PATH,
     )
@@ -184,8 +180,6 @@ def load_documents_manifest() -> list[dict]:
 def run_prepare_documents_script(
     allow_empty: bool = False,
 ) -> None:
-    """Projenin doküman ön işleme scriptini çalıştırır."""
-
     document_preprocessing.run_prepare_documents_script(
         project_root_dir=PROJECT_ROOT_DIR,
         prepare_documents_script=PREPARE_DOCUMENTS_SCRIPT,
@@ -195,7 +189,11 @@ def run_prepare_documents_script(
 
 @contextmanager
 def acquire_reindex_lock() -> Iterator[None]:
-    """Reindex süresince PostgreSQL advisory lock tutar."""
+    """Hold a PostgreSQL session-level advisory lock on a dedicated connection.
+
+    Return HTTP 409 if it is already held, and always release it before
+    closing the connection.
+    """
 
     lock_params = {
         "lock_key": REINDEX_ADVISORY_LOCK_ID,
@@ -241,8 +239,6 @@ def list_documents(
     db: Session = Depends(get_db),
     _current_admin: User = Depends(require_admin),
 ):
-    """Dokümanları filtreleyerek ve sayfalayarak listeler."""
-
     search_value = search.strip() if search else None
     category_value = category.strip() if category else None
 
@@ -351,6 +347,8 @@ def download_document(
     db: Session = Depends(get_db),
     _current_admin: User = Depends(require_admin),
 ):
+    """Download only a source file resolved within the configured document root."""
+
     row = get_document_metadata(
         db=db,
         document_id=document_id,
@@ -397,6 +395,8 @@ def upload_document(
     file: UploadFile = File(...),
     _current_admin: User = Depends(require_admin),
 ):
+    """Save and preprocess an upload, removing the source file if preprocessing fails."""
+
     clean_title = title.strip()
     clean_category = slugify_text(category)
 
@@ -459,7 +459,7 @@ def update_document(
     db: Session = Depends(get_db),
     _current_admin: User = Depends(require_admin),
 ):
-    """Mevcut dokümanın kaynak dosyasını güvenli şekilde değiştirir."""
+    """Replace a source document through a temporary backup, restoring the original on failure."""
 
     row = get_document_metadata(
         db=db,
@@ -512,7 +512,7 @@ def update_document(
     backup_file_path = UPDATE_BACKUP_DIR / source_file_path.name
     backup_file_path.unlink(missing_ok=True)
 
-    # Eski dosyayı işlem tamamlanana kadar geçici klasörde tutarız.
+    # Keep the original file until the replacement is fully processed.
     source_file_path.replace(backup_file_path)
 
     try:
@@ -561,7 +561,10 @@ def delete_document(
     db: Session = Depends(get_db),
     _current_admin: User = Depends(require_admin),
 ):
-    """Dokümanı güvenli şekilde siler."""
+    """Delete all document artifacts as one recoverable operation.
+
+    Restore the source and rebuild derived outputs if the database step fails.
+    """
 
     row = get_document_metadata(
         db=db,
@@ -603,14 +606,13 @@ def delete_document(
 
     backup_file_path.unlink(missing_ok=True)
 
-    # Dosyayı hemen silmek yerine geçici klasöre taşıyoruz.
+    # Keep a temporary backup so the source can be restored on failure.
     source_file_path.replace(backup_file_path)
 
     preparation_completed = False
 
     try:
-        # Kalan kaynaklara göre processed dosyaları ve manifesti yeniler.
-        # Son doküman siliniyorsa boş duruma izin verir.
+        # Allow an empty result when the last document is deleted.
         run_prepare_documents_script(allow_empty=True)
         preparation_completed = True
 
@@ -626,14 +628,13 @@ def delete_document(
     except Exception:
         db.rollback()
 
-        # İşlem başarısızsa kaynak dosyayı eski yerine getir.
+        # Restore the source before any recovery preprocessing.
         source_parent_dir.mkdir(parents=True, exist_ok=True)
 
         if backup_file_path.exists():
             backup_file_path.replace(source_file_path)
 
-        # Script başarılı olup DB işlemi başarısız olduysa
-        # processed dosyaları geri getirilen kaynağa göre yenile.
+        # Rebuild processed output only if preprocessing succeeded before the database failure.
         if preparation_completed:
             try:
                 run_prepare_documents_script()
@@ -649,7 +650,7 @@ def delete_document(
 
         raise
 
-    # Her şey başarılıysa geçici yedeğe artık gerek yok.
+    # Remove the backup only after every step succeeds.
     backup_file_path.unlink(missing_ok=True)
 
     remove_empty_directory(
@@ -680,7 +681,7 @@ def reindex_documents(
     db: Session = Depends(get_db),
     _current_admin: User = Depends(require_admin),
 ):
-    """Dokümanları hazırlar ve yeniden indeksler."""
+    """Prepare documents under the reindex lock, clearing database chunks when the manifest is empty."""
 
     with acquire_reindex_lock():
         run_prepare_documents_script(allow_empty=True)
