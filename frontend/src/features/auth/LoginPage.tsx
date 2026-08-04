@@ -6,6 +6,7 @@ import {
   saveAccessToken,
   type CurrentUserResponse,
 } from "../../api/authApi";
+import izeltasLogo from "../../assets/izeltas-logo.png";
 
 type LoginPageProps = {
   onLoginSuccess: (user: CurrentUserResponse) => void;
@@ -43,53 +44,67 @@ function LoginPage({ onLoginSuccess }: LoginPageProps) {
 
   return (
     <main className="login-page">
-      <section className="login-card">
-        <div className="login-brand">IZELTAS</div>
+      <div className="login-shell">
+        <header className="login-brand">
+          <img className="login-logo" src={izeltasLogo} alt="İzeltaş" />
+          <div className="login-product-label">IT DANIŞMA ASİSTANI</div>
+        </header>
 
-        <div className="login-icon">IT</div>
+        <section className="login-card" aria-labelledby="login-title">
+          <div className="login-heading-area">
+            <h1 id="login-title">Hesabınızla giriş yapın</h1>
+            <p>IT süreçleri için yerel ve güvenli destek.</p>
+          </div>
 
-        <h1>İZELTAŞ IT Danışma Asistanı</h1>
-        <p>
-          Lokal LLM ve RAG destekli IT yardım sistemine erişmek için giriş
-          yapın.
-        </p>
+          <form
+            className="login-form"
+            onSubmit={handleSubmit}
+            aria-busy={isLoading}
+          >
+            <label htmlFor="login-email">
+              E-posta
+              <input
+                id="login-email"
+                name="email"
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="E-posta adresinizi girin"
+                autoComplete="email"
+                aria-describedby={errorMessage ? "login-error-message" : undefined}
+              />
+            </label>
 
-        <form className="login-form" onSubmit={handleSubmit}>
-          <label>
-            E-posta
-            <input
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="E-posta adresinizi girin"
-              autoComplete="email"
-            />
-          </label>
+            <label htmlFor="login-password">
+              Şifre
+              <input
+                id="login-password"
+                name="password"
+                type="password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder="Şifrenizi girin"
+                autoComplete="current-password"
+                aria-describedby={errorMessage ? "login-error-message" : undefined}
+              />
+            </label>
 
-          <label>
-            Şifre
-            <input
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              placeholder="Şifrenizi girin"
-              autoComplete="current-password"
-            />
-          </label>
+            {errorMessage && (
+              <div id="login-error-message" className="login-error" role="alert">
+                {errorMessage}
+              </div>
+            )}
 
-          {errorMessage && <div className="login-error">{errorMessage}</div>}
+            <button type="submit" disabled={isLoading} aria-busy={isLoading}>
+              {isLoading ? "Giriş yapılıyor..." : "Giriş Yap"}
+            </button>
+          </form>
 
-          <button type="submit" disabled={isLoading}>
-            {isLoading ? "Giriş yapılıyor..." : "Giriş Yap"}
-          </button>
-        </form>
-
-        <div className="login-helper">
-          <span>Demo kullanıcılar:</span>
-          <small>admin@izeltas.local / Admin123!</small>
-          <small>user@izeltas.local / User123!</small>
-        </div>
-      </section>
+          <p className="login-security-note">
+            Tüm işlemler yerel sistem üzerinde gerçekleştirilir.
+          </p>
+        </section>
+      </div>
     </main>
   );
 }
