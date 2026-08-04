@@ -11,6 +11,7 @@ export interface AdminUser {
   role: UserRole;
   is_active: boolean;
   created_at?: string | null;
+  deactivated_at: string | null;
 }
 
 export type PaginatedAdminUsers = PaginatedResponse<AdminUser>;
@@ -24,10 +25,12 @@ export interface CreateUserRequest {
 
 export class AdminUsersApiError extends Error {
   status: number;
+  detail?: string;
 
-  constructor(status: number) {
-    super(`Admin users request failed with status ${status}`);
+  constructor(status: number, detail?: string) {
+    super(detail ?? `Admin users request failed with status ${status}`);
     this.status = status;
+    this.detail = detail;
   }
 }
 
@@ -38,6 +41,7 @@ const API_URL = (import.meta.env.VITE_ADMIN_API_URL as string | undefined)
 async function authorizedRequest<T>(
   path: string,
   options: RequestInit = {},
+  expectsJson = true,
 ): Promise<T> {
   const token = getAccessToken();
 
@@ -55,8 +59,19 @@ async function authorizedRequest<T>(
   });
 
   if (!response.ok) {
-    throw new AdminUsersApiError(response.status);
+    let detail: string | undefined;
+
+    try {
+      const errorBody = await response.json() as { detail?: unknown };
+      if (typeof errorBody.detail === "string") detail = errorBody.detail;
+    } catch {
+      // Some error responses do not contain a JSON body.
+    }
+
+    throw new AdminUsersApiError(response.status, detail);
   }
+
+  if (!expectsJson) return undefined as T;
 
   return response.json() as Promise<T>;
 }
@@ -95,4 +110,10 @@ export function updateAdminUserStatus(userId: number, isActive: boolean) {
     method: "PATCH",
     body: JSON.stringify({ is_active: isActive }),
   });
+}
+
+export async function deleteAdminUser(userId: number): Promise<void> {
+  await authorizedRequest<void>(`/admin/users/${userId}`, {
+    method: "DELETE",
+  }, false);
 }
