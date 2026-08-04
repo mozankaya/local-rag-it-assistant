@@ -52,7 +52,11 @@ function ChatPage({
             </button>
           </div>
 
-          <ChatBox key={resetSignal} quickQuestion={quickQuestion} />
+          <ChatBox
+            key={resetSignal}
+            quickQuestion={quickQuestion}
+            onUnauthorized={onLogout}
+          />
         </section>
       </main>
     </div>

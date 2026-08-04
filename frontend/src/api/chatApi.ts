@@ -34,6 +34,17 @@ export type FeedbackResponse = {
   feedback?: FeedbackValue;
 };
 
+export class ChatApiError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "ChatApiError";
+    this.status = status;
+    Object.setPrototypeOf(this, ChatApiError.prototype);
+  }
+}
+
 const CHAT_API_URL = import.meta.env.VITE_RAG_API_URL as string;
 const FEEDBACK_API_URL = import.meta.env.VITE_FEEDBACK_API_URL as string;
 
@@ -64,7 +75,10 @@ export async function askQuestion(question: string): Promise<ChatResponse> {
   });
 
   if (!response.ok) {
-    throw new Error(`Request failed with status ${response.status}`);
+    throw new ChatApiError(
+      `Request failed with status ${response.status}`,
+      response.status,
+    );
   }
 
   return response.json() as Promise<ChatResponse>;
