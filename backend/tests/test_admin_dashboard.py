@@ -58,8 +58,6 @@ class FakeSession:
 
 
 def create_user(*, role: str = "admin") -> User:
-    """Testlerde kullanılacak sahte kullanıcıyı oluşturur."""
-
     return User(
         id=1,
         email=f"{role}@example.com",
@@ -160,7 +158,7 @@ def test_admin_can_get_dashboard_summary() -> None:
 
 
 def test_dashboard_summary_returns_zero_for_empty_database() -> None:
-    # FakeSession sonuç verilmediğinde her sorgu için 0 döndürür.
+    # FakeSession returns zero for each query when no results are queued.
     fake_db = FakeSession()
 
     with create_client(

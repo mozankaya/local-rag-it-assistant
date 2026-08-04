@@ -9,7 +9,7 @@ from fastapi import HTTPException, status
 def load_documents_manifest(
     manifest_path: Path,
 ) -> list[dict]:
-    """documents.json dosyasını okuyup doküman listesini döndürür."""
+    """Return an empty manifest when the file is missing and reject invalid manifest shapes."""
 
     if not manifest_path.exists():
         return []
@@ -41,7 +41,7 @@ def run_prepare_documents_script(
     prepare_documents_script: Path,
     allow_empty: bool = False,
 ) -> None:
-    """prepare_documents.py scriptini çalıştırır."""
+    """Run document preparation with the current interpreter and convert subprocess failures to HTTP errors."""
 
     if not prepare_documents_script.is_file():
         raise HTTPException(

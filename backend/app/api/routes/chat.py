@@ -24,6 +24,12 @@ async def chat(
     current_user: User = Depends(get_current_user),
     settings: Settings = Depends(get_settings),
 ) -> ChatResponse:
+    """Forward the question and RAG settings to n8n.
+
+    Static responses may omit a chat log ID; all other responses require
+    a positive integer ID.
+    """
+
     if len(request.question) > settings.max_question_length:
         raise HTTPException(
             status_code=400,

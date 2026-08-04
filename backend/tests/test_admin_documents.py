@@ -71,6 +71,8 @@ class FakeSession:
 
 
 class FakeLockConnection:
+    """Model a dedicated connection that owns a session-level PostgreSQL advisory lock."""
+
     def __init__(
         self,
         *,
@@ -161,8 +163,6 @@ def create_client(
 
 
 def create_reindex_settings() -> SimpleNamespace:
-    """Reindex testlerinde kullanılan ortak n8n ayarlarını oluşturur."""
-
     return SimpleNamespace(
         n8n_reindex_webhook_url="http://n8n.test/reindex",
         reindex_timeout_seconds=15,
@@ -194,6 +194,8 @@ def configure_temporary_paths(
     monkeypatch: MonkeyPatch,
     tmp_path: Path,
 ) -> dict[str, Path]:
+    """Redirect document, manifest, and backup paths to an isolated test tree."""
+
     project_root = tmp_path
 
     data_directory = project_root / "data"
@@ -839,11 +841,9 @@ def test_admin_can_delete_document(
     def fake_prepare_documents_script(
         allow_empty: bool = False,
     ) -> None:
-        # Silme endpoint'i bu seçeneği True göndermelidir.
         assert allow_empty is True
 
-        # Gerçek prepare_documents.py çalışsaydı,
-        # silinen dokümanın processed çıktısı kaldırılırdı.
+        # Mimic the real script removing the deleted document's processed output.
         processed_file.unlink(missing_ok=True)
 
         documents = json.loads(paths["manifest_path"].read_text(encoding="utf-8"))
@@ -957,13 +957,10 @@ def test_delete_restores_document_when_database_commit_fails(
         prepare_calls.append(allow_empty)
 
         if allow_empty:
-            # Silme hazırlığı sırasında kaynak dosya geçici
-            # yedek klasörüne taşınmış olmalıdır.
+            # The source must already be in the temporary backup during delete preparation.
             assert not source_file.exists()
 
-            # Gerçek preprocessing işleminin silinen dokümanın
-            # processed çıktısını ve manifest kaydını kaldırdığını
-            # taklit eder.
+            # Mimic preprocessing removing the deleted document's output and manifest entry.
             processed_file.unlink(missing_ok=True)
 
             paths["manifest_path"].write_text(
@@ -982,12 +979,10 @@ def test_delete_restores_document_when_database_commit_fails(
 
             return
 
-        # Commit başarısız olduktan sonra kaynak dosyanın
-        # preprocessing tekrar çalışmadan önce geri getirilmiş
-        # olması gerekir.
+        # Ensure the source is restored before recovery preprocessing runs.
         assert source_file.exists()
 
-        # Kurtarma preprocessing işlemini taklit eder.
+        # Mimic recovery preprocessing.
         processed_file.write_text(
             "processed content",
             encoding="utf-8",
@@ -1034,12 +1029,9 @@ def test_delete_restores_document_when_database_commit_fails(
         ):
             client.delete("/admin/documents/vpn-guide")
 
-    # Kaynak dosya eski konumuna ve içeriğine dönmelidir.
     assert source_file.exists()
     assert source_file.read_text(encoding="utf-8") == "source content"
 
-    # Processed çıktı kurtarma preprocessing işlemiyle
-    # yeniden oluşturulmalıdır.
     assert processed_file.exists()
     assert processed_file.read_text(encoding="utf-8") == "processed content"
 
@@ -1047,7 +1039,7 @@ def test_delete_restores_document_when_database_commit_fails(
 
     assert restored_manifest == original_manifest
 
-    # İlk çağrı silme hazırlığı, ikinci çağrı kurtarma içindir.
+    # The first call prepares deletion; the second rebuilds outputs after rollback.
     assert prepare_calls == [True, False]
 
     assert fake_db.commit_count == 1
@@ -1066,6 +1058,8 @@ def test_delete_restores_document_when_database_commit_fails(
 def assert_reindex_lock_released(
     lock_connection: FakeLockConnection,
 ) -> None:
+    """Assert that the advisory lock was released before its connection closed."""
+
     assert lock_connection.commit_count == 2
     assert lock_connection.closed is True
 

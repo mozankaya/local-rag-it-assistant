@@ -28,6 +28,8 @@ async def feedback(
     current_user: User = Depends(get_current_user),
     settings: Settings = Depends(get_settings),
 ) -> FeedbackResponse:
+    """Forward feedback to n8n and reject missing, unsuccessful, or malformed chat records."""
+
     payload = request.model_dump()
 
     try:

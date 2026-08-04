@@ -94,6 +94,8 @@ def update_user_role(
     db: Session = Depends(get_db),
     _current_admin: User = Depends(require_admin),
 ):
+    """Reject changes that would demote the last active administrator."""
+
     user = db.query(User).filter(User.id == user_id).first()
 
     if not user:
@@ -129,6 +131,8 @@ def update_user_status(
     db: Session = Depends(get_db),
     current_admin: User = Depends(require_admin),
 ):
+    """Protect the current and last active administrator and preserve the first deactivation time."""
+
     user = db.query(User).filter(User.id == user_id).first()
 
     if not user:
@@ -186,6 +190,8 @@ def permanently_delete_user(
     db: Session = Depends(get_db),
     current_admin: User = Depends(require_admin),
 ) -> None:
+    """Permanently delete another user only after 30 days of recorded inactivity."""
+
     user = db.query(User).filter(User.id == user_id).first()
 
     if not user:

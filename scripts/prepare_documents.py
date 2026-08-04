@@ -1,3 +1,5 @@
+"""Prepare documents with staged, rollback-safe promotion of processed files and the manifest."""
+
 from pathlib import Path
 import json
 import shutil
@@ -25,7 +27,7 @@ MANIFEST_BACKUP_PATH = DATA_DIR / "documents.backup.json"
 
 
 def remove_path(path: Path) -> None:
-    """Dosya veya klasör varsa kaldırır."""
+    """Remove a file or recursively delete a directory when it exists."""
 
     if path.is_dir():
         shutil.rmtree(path)
@@ -34,8 +36,6 @@ def remove_path(path: Path) -> None:
 
 
 def find_source_files() -> list[Path]:
-    """Desteklenen kaynak dokümanları bulur."""
-
     return sorted(
         path
         for path in SOURCE_DIR.rglob("*")
@@ -49,15 +49,7 @@ def find_source_files() -> list[Path]:
 def find_duplicate_ids(
     files: list[Path],
 ) -> dict[str, list[Path]]:
-    """
-    Aynı document_id değerini oluşturacak dosyaları bulur.
-
-    Örnek:
-        vpn-guide.pdf
-        vpn_guide.docx
-
-    İki dosya da vpn-guide document_id değerini üretir.
-    """
+    """Group source files whose normalized names would produce the same document ID."""
 
     grouped_files: dict[str, list[Path]] = {}
 
@@ -75,15 +67,8 @@ def find_duplicate_ids(
         if len(paths) > 1
     }
 
-#staging islemleri
 def prepare_staging_area() -> None:
-    """
-    Önceki geçici dosyaları temizler ve
-    yeni staging klasörünü oluşturur.
-
-    Canlı processed-documents ve documents.json
-    dosyalarına dokunmaz.
-    """
+    """Reset staging outputs without changing live processed documents or the manifest."""
 
     remove_path(PROCESSED_STAGING_DIR)
     remove_path(MANIFEST_STAGING_PATH)
@@ -95,24 +80,19 @@ def prepare_staging_area() -> None:
 
 
 def promote_staging_files() -> None:
-    """
-    Staging alanındaki başarılı sonuçları
-    canlı dosyaların yerine geçirir.
-
-    Hata oluşursa eski dosyaları yedekten geri getirir.
-    """
+    """Replace live outputs with staged files, restoring both backups if promotion fails."""
 
     remove_path(PROCESSED_BACKUP_DIR)
     remove_path(MANIFEST_BACKUP_PATH)
 
-    # Mevcut processed dokümanların yedeğini al.
+    # Back up processed documents before replacing live output.
     if PROCESSED_DIR.exists():
         shutil.copytree(
             PROCESSED_DIR,
             PROCESSED_BACKUP_DIR,
         )
 
-    # Mevcut manifestin yedeğini al.
+    # Back up the manifest before replacing the live copy.
     if MANIFEST_PATH.exists():
         shutil.copy2(
             MANIFEST_PATH,
@@ -120,11 +100,11 @@ def promote_staging_files() -> None:
         )
 
     try:
-        # Eski canlı dosyaları kaldır.
+        # Remove live outputs only after staging and backups are ready.
         remove_path(PROCESSED_DIR)
         remove_path(MANIFEST_PATH)
 
-        # Hazırlanan yeni dosyaları canlı alana taşı.
+        # Use only fully prepared staging outputs as the new live state.
         PROCESSED_STAGING_DIR.rename(
             PROCESSED_DIR
         )
@@ -134,17 +114,17 @@ def promote_staging_files() -> None:
         )
 
     except Exception:
-        # Yarım kalmış yeni dosyaları kaldır.
+        # Remove partially promoted output before restoration.
         remove_path(PROCESSED_DIR)
         remove_path(MANIFEST_PATH)
 
-        # Eski processed dokümanları geri getir.
+        # Restore processed documents before the manifest.
         if PROCESSED_BACKUP_DIR.exists():
             PROCESSED_BACKUP_DIR.rename(
                 PROCESSED_DIR
             )
 
-        # Eski manifesti geri getir.
+        # Restore the manifest only after processed documents.
         if MANIFEST_BACKUP_PATH.exists():
             MANIFEST_BACKUP_PATH.rename(
                 MANIFEST_PATH
@@ -152,17 +132,14 @@ def promote_staging_files() -> None:
 
         raise
 
-    # İşlem başarılıysa yedekleri kaldır.
+    # Remove backups only after promotion succeeds.
     remove_path(PROCESSED_BACKUP_DIR)
     remove_path(MANIFEST_BACKUP_PATH)
 
 
-#error messages
 def print_duplicate_error(
     duplicates: dict[str, list[Path]],
 ) -> None:
-    """Aynı document_id değerini üreten dosyaları gösterir."""
-
     print(
         "Aynı document_id değerini üreten dosyalar bulundu:",
         file=sys.stderr,
@@ -186,15 +163,7 @@ def print_duplicate_error(
 
 
 def create_empty_document_state() -> int:
-    """
-    Kaynak klasörde hiç doküman kalmadığında:
-
-    - Boş processed-documents klasörü oluşturur.
-    - documents.json dosyasını boş liste yapar.
-
-    Bu işlem yalnızca son doküman bilinçli şekilde
-    silinirken kullanılmalıdır.
-    """
+    """Create and promote empty outputs for an explicitly allowed empty-source case."""
 
     try:
         prepare_staging_area()
@@ -238,13 +207,9 @@ def create_empty_document_state() -> int:
 
 
 def main() -> int:
-    """
-    Tüm kaynak dokümanları güvenli şekilde işler.
+    """Build outputs in staging and promote them only if every source succeeds.
 
-    Normal çalışmada kaynak klasör boşsa hata döndürür.
-
-    --allow-empty parametresi kullanılırsa
-    boş doküman durumu oluşturulmasına izin verir.
+    Reject an empty source set unless --allow-empty is present.
     """
 
     SOURCE_DIR.mkdir(
@@ -255,7 +220,6 @@ def main() -> int:
     allow_empty = "--allow-empty" in sys.argv
     files = find_source_files()
 
-    # Kaynak klasörde hiç doküman yok.
     if not files:
         if allow_empty:
             return create_empty_document_state()
@@ -272,14 +236,12 @@ def main() -> int:
 
         return 1
 
-    # Aynı document_id değerini üreten dosyaları kontrol et.
     duplicates = find_duplicate_ids(files)
 
     if duplicates:
         print_duplicate_error(duplicates)
         return 1
 
-    # Yeni dokümanları staging alanında hazırla.
     prepare_staging_area()
 
     manifest: list[dict] = []
@@ -318,7 +280,7 @@ def main() -> int:
                 file=sys.stderr,
             )
 
-    # Bir dosya bile işlenemezse yeni sonuçları kullanma.
+    # Keep live outputs unchanged if any source fails.
     if errors:
         remove_path(PROCESSED_STAGING_DIR)
         remove_path(MANIFEST_STAGING_PATH)
@@ -346,7 +308,6 @@ def main() -> int:
 
         return 1
 
-    # Yeni manifesti oluştur ve staging sonuçlarını canlıya al.
     try:
         MANIFEST_STAGING_PATH.write_text(
             json.dumps(

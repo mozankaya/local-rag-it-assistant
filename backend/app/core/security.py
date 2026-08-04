@@ -47,6 +47,8 @@ def create_access_token(
 
 
 def decode_access_token(token: str) -> dict[str, Any]:
+    """Decode and verify a JWT, raising ValueError for any JWT validation failure."""
+
     settings = get_settings()
 
     try:
