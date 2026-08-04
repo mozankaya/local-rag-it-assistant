@@ -47,3 +47,4 @@ data/processed-documents-backup/
 data/documents.staging.json
 data/documents.backup.json
 data/.document-delete-backup/
+data/.document-update-backup/
