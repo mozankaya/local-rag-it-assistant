@@ -12,39 +12,73 @@ function formatSourceTitle(source: Source) {
   return source.title || source.document_id || "Kaynak";
 }
 
-function formatSourceMeta(source: Source) {
-  const parts = [];
+function normalizeKeyPart(value?: string | null) {
+  return value?.trim().toLocaleLowerCase("tr-TR") ?? "";
+}
 
-  if (source.category) parts.push(source.category);
-  if (source.file_type) parts.push(source.file_type.toUpperCase());
-  if (source.chunk_index) parts.push(`chunk ${source.chunk_index}`);
+function getSourcePresentationKey(source: Source) {
+  const sourceFileName = normalizeKeyPart(source.source_file_name);
+  const title = normalizeKeyPart(source.title);
+  const section = normalizeKeyPart(source.section_title);
+
+  const documentIdentity = sourceFileName
+    ? `file:${sourceFileName}`
+    : `title:${title}`;
+
+  return `${documentIdentity}::${section}`;
+}
+
+function getUniqueSources(sources: Source[]) {
+  const seen = new Set<string>();
+
+  return sources.filter((source) => {
+    const key = getSourcePresentationKey(source);
+    if (seen.has(key)) return false;
+
+    seen.add(key);
+    return true;
+  });
+}
+
+function formatSourceMeta(source: Source) {
+  const parts: string[] = [];
+  const sourceFileName = source.source_file_name?.trim();
+  const category = source.category?.trim();
+
+  if (sourceFileName) parts.push(sourceFileName);
+  if (category) parts.push(category);
 
   return parts.join(" · ");
 }
 
 function SourceTooltip({ sources }: SourceTooltipProps) {
-  const sourceLabel = sources.length === 1 ? "Kaynak" : "Kaynaklar";
+  const uniqueSources = getUniqueSources(sources);
+  const sourceLabel = uniqueSources.length === 1 ? "Kaynak" : "Kaynaklar";
 
   return (
     <details className="source-details">
       <summary className="source-summary">
-        {sourceLabel} ({sources.length})
+        {sourceLabel} ({uniqueSources.length})
       </summary>
 
       <div className="source-list">
-        {sources.map((source, index) => (
-          <div
-            className="source-item"
-            key={`${source.document_id}-${index}`}
-          >
-            <span className="source-icon" aria-hidden="true">▣</span>
+        {uniqueSources.map((source, index) => {
+          const metadata = formatSourceMeta(source);
 
-            <div className="source-copy">
-              <strong>{formatSourceTitle(source)}</strong>
-              <small>{formatSourceMeta(source)}</small>
+          return (
+            <div
+              className="source-item"
+              key={`${getSourcePresentationKey(source)}-${index}`}
+            >
+              <span className="source-icon" aria-hidden="true">▣</span>
+
+              <div className="source-copy">
+                <strong>{formatSourceTitle(source)}</strong>
+                {metadata && <small>{metadata}</small>}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </details>
   );
