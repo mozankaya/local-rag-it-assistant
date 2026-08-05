@@ -6,13 +6,13 @@ N8N_WEBHOOK_AUTH_HEADER = "X-Internal-Webhook-Key"
 
 
 class N8nClientError(Exception):
-    """n8n bağlantısı veya HTTP isteği başarısız olduğunda kullanılır."""
+    """Used when the n8n connection or HTTP request fails."""
 
     pass
 
 
 class N8nTimeoutError(N8nClientError):
-    """n8n isteği zaman aşımına uğradığında kullanılır."""
+    """It is used when the n8n request times out."""
 
     pass
 
@@ -72,7 +72,7 @@ def trigger_n8n_webhook(
     timeout_seconds: float,
     webhook_secret: str,
 ) -> None:
-    """n8n webhook'unu boş POST isteğiyle çalıştırır."""
+    """Triggers the n8n webhook with an empty POST request."""
 
     headers = build_webhook_headers(webhook_secret)
 
