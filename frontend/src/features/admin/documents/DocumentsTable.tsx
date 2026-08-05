@@ -61,11 +61,8 @@ function DocumentsTable({
         <thead>
           <tr>
             <th>Başlık</th>
-            <th>Document ID</th>
             <th>Kategori</th>
             <th>Dosya türü</th>
-            <th>Kaynak dosya adı</th>
-            <th>Chunk sayısı</th>
             <th>Son güncelleme</th>
             <th>İşlemler</th>
           </tr>
@@ -81,10 +78,14 @@ function DocumentsTable({
               <td>
                 <div className="document-title-cell">
                   <span aria-hidden="true">▤</span>
-                  <strong>{document.title}</strong>
+                  <div className="document-title-content">
+                    <strong className="document-title">{document.title}</strong>
+                    <span className="document-source-name">
+                      {displayValue(document.source_file_name)}
+                    </span>
+                  </div>
                 </div>
               </td>
-              <td><code>{document.document_id}</code></td>
               <td>
                 <span className="document-category-badge">
                   {displayCategory(document.category)}
@@ -94,12 +95,6 @@ function DocumentsTable({
                 <span className="document-type-badge">
                   {displayValue(document.file_type).toLocaleUpperCase("tr-TR")}
                 </span>
-              </td>
-              <td className="document-source-name">
-                {displayValue(document.source_file_name)}
-              </td>
-              <td>
-                <strong className="document-chunk-count">{document.chunk_count}</strong>
               </td>
               <td className="document-date">{formatDocumentDate(document.last_updated)}</td>
               <td>

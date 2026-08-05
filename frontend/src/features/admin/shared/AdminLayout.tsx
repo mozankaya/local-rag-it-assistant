@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { CurrentUserResponse } from "../../../api/authApi";
+import izeltasLogo from "../../../assets/izeltas-logo.png";
 
 interface AdminLayoutProps {
   user: CurrentUserResponse;
@@ -34,17 +35,19 @@ function AdminLayout({
     <div className="admin-shell">
       <aside className="admin-sidebar">
         <div className="admin-brand">
-          <span className="admin-brand-mark">İZ</span>
-          <div>
-            <strong>İZELTAŞ</strong>
-            <small>Yönetim Merkezi</small>
-          </div>
+          <img
+            className="admin-brand-logo"
+            src={izeltasLogo}
+            alt="İzeltaş"
+          />
+          <small>IT DANIŞMA ASİSTANI</small>
         </div>
 
         <nav className="admin-nav" aria-label="Admin menüsü">
           <button
             className={`admin-nav-item ${activePage === "dashboard" ? "active" : ""}`}
             type="button"
+            aria-current={activePage === "dashboard" ? "page" : undefined}
             onClick={onGoToDashboard}
           >
             <span aria-hidden="true">▦</span>
@@ -53,6 +56,7 @@ function AdminLayout({
           <button
             className={`admin-nav-item ${activePage === "review-items" ? "active" : ""}`}
             type="button"
+            aria-current={activePage === "review-items" ? "page" : undefined}
             onClick={onGoToReviewItems}
           >
             <span aria-hidden="true">!</span>
@@ -61,6 +65,7 @@ function AdminLayout({
           <button
             className={`admin-nav-item ${activePage === "users" ? "active" : ""}`}
             type="button"
+            aria-current={activePage === "users" ? "page" : undefined}
             onClick={onGoToUsers}
           >
             <span aria-hidden="true">◎</span>
@@ -69,6 +74,7 @@ function AdminLayout({
           <button
             className={`admin-nav-item ${activePage === "documents" ? "active" : ""}`}
             type="button"
+            aria-current={activePage === "documents" ? "page" : undefined}
             onClick={onGoToDocuments}
           >
             <span aria-hidden="true">▤</span>
@@ -77,14 +83,11 @@ function AdminLayout({
           <button
             className={`admin-nav-item ${activePage === "system-status" ? "active" : ""}`}
             type="button"
+            aria-current={activePage === "system-status" ? "page" : undefined}
             onClick={onGoToSystemStatus}
           >
             <span aria-hidden="true">◉</span>
             Sistem Durumu
-          </button>
-          <button className="admin-nav-item" type="button" onClick={onGoToChat}>
-            <span aria-hidden="true">◇</span>
-            Chat ekranı
           </button>
         </nav>
 
@@ -96,9 +99,14 @@ function AdminLayout({
               <small>Yönetici</small>
             </div>
           </div>
-          <button className="admin-logout" type="button" onClick={onLogout}>
-            Çıkış yap
-          </button>
+          <div className="admin-utility-actions">
+            <button className="admin-chat-link" type="button" onClick={onGoToChat}>
+              Chat’e dön <span aria-hidden="true">→</span>
+            </button>
+            <button className="admin-logout" type="button" onClick={onLogout}>
+              Çıkış yap
+            </button>
+          </div>
         </div>
       </aside>
 
@@ -111,9 +119,6 @@ function AdminLayout({
               <p className="admin-page-description">{pageDescription}</p>
             )}
           </div>
-          <button type="button" className="admin-chat-link" onClick={onGoToChat}>
-            Chat’e dön <span aria-hidden="true">→</span>
-          </button>
         </header>
         {children}
       </main>
