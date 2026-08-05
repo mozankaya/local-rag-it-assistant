@@ -1,4 +1,5 @@
 import type { DashboardSummary, FeedbackSummary } from "../../../api/adminApi";
+import { formatPercentage } from "./formatPercentage";
 
 interface SummaryCardsProps {
   summary: DashboardSummary;
@@ -9,7 +10,7 @@ const numberFormatter = new Intl.NumberFormat("tr-TR");
 
 function SummaryCards({ summary, feedback }: SummaryCardsProps) {
   const satisfaction = feedback.total_feedback > 0
-    ? Math.round((feedback.useful_feedback / feedback.total_feedback) * 100)
+    ? (feedback.useful_feedback / feedback.total_feedback) * 100
     : 0;
 
   const cards = [
@@ -33,7 +34,7 @@ function SummaryCards({ summary, feedback }: SummaryCardsProps) {
     },
     {
       label: "Memnuniyet oranı",
-      value: `%${satisfaction}`,
+      value: formatPercentage(satisfaction),
       detail: `${feedback.not_useful_feedback} olumsuz bildirim`,
       icon: "↗",
     },

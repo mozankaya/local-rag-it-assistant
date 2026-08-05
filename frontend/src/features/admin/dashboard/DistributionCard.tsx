@@ -1,3 +1,5 @@
+import { formatPercentage } from "./formatPercentage";
+
 interface DistributionItem {
   key: string;
   label: string;
@@ -12,17 +14,6 @@ interface DistributionCardProps {
 }
 
 const numberFormatter = new Intl.NumberFormat("tr-TR");
-const smallPercentageFormatter = new Intl.NumberFormat("tr-TR", {
-  minimumFractionDigits: 1,
-  maximumFractionDigits: 2,
-});
-
-function formatPercentage(value: number) {
-  if (value === 0) return "%0";
-  if (value < 1) return `%${smallPercentageFormatter.format(value)}`;
-
-  return `%${Math.round(value)}`;
-}
 
 function DistributionCard({
   title,

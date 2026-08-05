@@ -15,11 +15,13 @@ type LoginPageProps = {
 function LoginPage({ onLoginSuccess }: LoginPageProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   async function handleSubmit(event: SyntheticEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (isLoading) return;
 
     setErrorMessage("");
     setIsLoading(true);
@@ -70,24 +72,34 @@ function LoginPage({ onLoginSuccess }: LoginPageProps) {
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 placeholder="E-posta adresinizi girin"
-                autoComplete="email"
+                autoComplete="username"
                 aria-describedby={errorMessage ? "login-error-message" : undefined}
               />
             </label>
 
-            <label htmlFor="login-password">
-              Şifre
-              <input
-                id="login-password"
-                name="password"
-                type="password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                placeholder="Şifrenizi girin"
-                autoComplete="current-password"
-                aria-describedby={errorMessage ? "login-error-message" : undefined}
-              />
-            </label>
+            <div className="login-password-field">
+              <label htmlFor="login-password">Şifre</label>
+              <div className="login-password-input">
+                <input
+                  id="login-password"
+                  name="password"
+                  type={isPasswordVisible ? "text" : "password"}
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  placeholder="Şifrenizi girin"
+                  autoComplete="current-password"
+                  aria-describedby={errorMessage ? "login-error-message" : undefined}
+                />
+                <button
+                  className="login-password-toggle"
+                  type="button"
+                  onClick={() => setIsPasswordVisible((current) => !current)}
+                  aria-label={isPasswordVisible ? "Şifreyi gizle" : "Şifreyi göster"}
+                >
+                  {isPasswordVisible ? "Gizle" : "Göster"}
+                </button>
+              </div>
+            </div>
 
             {errorMessage && (
               <div id="login-error-message" className="login-error" role="alert">
@@ -95,7 +107,12 @@ function LoginPage({ onLoginSuccess }: LoginPageProps) {
               </div>
             )}
 
-            <button type="submit" disabled={isLoading} aria-busy={isLoading}>
+            <button
+              className="login-submit"
+              type="submit"
+              disabled={isLoading}
+              aria-busy={isLoading}
+            >
               {isLoading ? "Giriş yapılıyor..." : "Giriş Yap"}
             </button>
           </form>
