@@ -2,47 +2,21 @@ import type { CurrentUserResponse } from "../../api/authApi";
 
 interface UserTopbarProps {
   user: CurrentUserResponse;
-  onGoToAdmin: () => void;
-  onLogout: () => void;
 }
 
-function UserTopbar({ user, onGoToAdmin, onLogout }: UserTopbarProps) {
+function UserTopbar({ user }: UserTopbarProps) {
+  const roleLabel = user.role === "admin" ? "Yönetici" : "Kullanıcı";
+
   return (
-    <header className="topbar">
-      <div className="brand-area">
-        <div className="brand-logo">IZELTAS</div>
-        <div className="brand-divider" />
-        <div>
-          <h1>İZELTAŞ IT Danışma Asistanı</h1>
-          <p>Lokal LLM & RAG destekli IT yardım sistemi</p>
-        </div>
+    <header className="user-topbar">
+      <div className="user-topbar-heading">
+        <span>İç destek</span>
+        <h1>IT Danışma Asistanı</h1>
       </div>
 
-      <div className="topbar-right">
-        <span className="status-dot" />
-        <span>Çevrimiçi</span>
-
-        <div className="user-chip">
-          {user.full_name} · {user.role}
-        </div>
-
-        {user.role === "admin" && (
-          <button
-            className="admin-button"
-            type="button"
-            onClick={onGoToAdmin}
-          >
-            Admin Panel
-          </button>
-        )}
-
-        <button
-          className="logout-button"
-          type="button"
-          onClick={onLogout}
-        >
-          Çıkış
-        </button>
+      <div className="user-identity">
+        <strong>{user.full_name}</strong>
+        <span>{roleLabel}</span>
       </div>
     </header>
   );
