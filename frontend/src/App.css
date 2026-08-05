@@ -812,7 +812,8 @@ button.user-sidebar-nav-item:hover,
   gap: 18px;
 }
 
-.login-form label {
+.login-form label,
+.login-password-field {
   display: grid;
   gap: 8px;
   min-width: 0;
@@ -835,6 +836,42 @@ button.user-sidebar-nav-item:hover,
   font-size: 15px;
   text-overflow: ellipsis;
   transition: border-color 0.15s ease, outline-color 0.15s ease;
+}
+
+.login-password-input {
+  min-width: 0;
+  position: relative;
+}
+
+.login-password-input input {
+  padding-right: 72px;
+}
+
+.login-password-toggle {
+  min-height: 34px;
+  padding: 0 8px;
+  position: absolute;
+  top: 50%;
+  right: 7px;
+  transform: translateY(-50%);
+  border: 1px solid transparent;
+  border-radius: 7px;
+  outline: 2px solid transparent;
+  outline-offset: 1px;
+  background: transparent;
+  color: #b4b5b9;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.login-password-toggle:hover {
+  border-color: #34363b;
+  background: #202226;
+  color: #fff;
+}
+
+.login-password-toggle:focus-visible {
+  outline-color: rgba(227, 6, 19, 0.5);
 }
 
 .login-form input::placeholder {
@@ -864,7 +901,7 @@ button.user-sidebar-nav-item:hover,
   outline-color: rgba(227, 6, 19, 0.42);
 }
 
-.login-form button {
+.login-submit {
   min-height: 48px;
   padding: 0 18px;
   border: none;
@@ -878,20 +915,20 @@ button.user-sidebar-nav-item:hover,
   transition: background-color 0.15s ease, transform 0.1s ease;
 }
 
-.login-form button:hover:not(:disabled) {
+.login-submit:hover:not(:disabled) {
   background: #c9000c;
 }
 
-.login-form button:active:not(:disabled) {
+.login-submit:active:not(:disabled) {
   background: #b5000a;
   transform: translateY(1px);
 }
 
-.login-form button:focus-visible {
+.login-submit:focus-visible {
   outline-color: rgba(227, 6, 19, 0.5);
 }
 
-.login-form button:disabled {
+.login-submit:disabled {
   background: #8f0911;
   color: rgba(255, 255, 255, 0.74);
   cursor: not-allowed;

@@ -20,6 +20,7 @@ function UserCreateForm({
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [role, setRole] = useState<UserRole>("user");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState("");
@@ -27,6 +28,8 @@ function UserCreateForm({
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (isSubmitting) return;
+
     setMessage("");
     setError("");
     setIsSubmitting(true);
@@ -42,6 +45,7 @@ function UserCreateForm({
       setFullName("");
       setEmail("");
       setPassword("");
+      setIsPasswordVisible(false);
       setRole("user");
       setMessage("Kullanıcı başarıyla oluşturuldu.");
       onCreated();
@@ -99,18 +103,32 @@ function UserCreateForm({
           />
         </label>
 
-        <label>
-          Şifre
-          <input
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            minLength={6}
-            maxLength={72}
-            autoComplete="new-password"
-            required
-          />
-        </label>
+        <div className="user-create-password-field">
+          <label htmlFor="user-create-password">Şifre</label>
+          <div className="user-create-password-input">
+            <input
+              id="user-create-password"
+              type={isPasswordVisible ? "text" : "password"}
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              minLength={6}
+              maxLength={72}
+              autoComplete="new-password"
+              required
+            />
+            <button
+              className="user-create-password-toggle"
+              type="button"
+              onClick={() => setIsPasswordVisible((current) => !current)}
+              aria-label={isPasswordVisible ? "Şifreyi gizle" : "Şifreyi göster"}
+            >
+              {isPasswordVisible ? "Gizle" : "Göster"}
+            </button>
+          </div>
+          <small className="user-create-password-guidance">
+            Şifre 6–72 karakter uzunluğunda olmalıdır.
+          </small>
+        </div>
 
         <label>
           Rol
