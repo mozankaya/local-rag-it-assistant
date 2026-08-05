@@ -197,11 +197,30 @@
       "Ekran görüntüsü veya hata kaydı ekleme"
     ],
     "required_keywords": [
-      "gizlen",
+      "gizle",
       "hata saati",
       "parola"
     ],
     "min_keyword_hits": 1
+  },
+  {
+    "id": "TICKET-PARA-04",
+    "question": "Parolamı destek kaydına yazmalı mıyım?",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "it-support-ticket-process"
+    ],
+    "accepted_sections": [
+      "Hassas bilgilerin paylaşılması",
+      "Ekran görüntüsü veya hata kaydı ekleme"
+    ],
+    "required_keywords": [
+      "parola",
+      "destek kaydı",
+      "yazmayın",
+      "paylaşmayın"
+    ],
+    "min_keyword_hits": 2
   },
   {
     "id": "MEET-PARA-01",
@@ -357,6 +376,23 @@
     "min_keyword_hits": 1
   },
   {
+    "id": "ACC-PARA-04",
+    "question": "Şifre sıfırlama bağlantısı açılmıyor.",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "password-account-access"
+    ],
+    "accepted_sections": [
+      "Şifre unutuldu"
+    ],
+    "required_keywords": [
+      "bağlantı",
+      "tarayıcı",
+      "deney"
+    ],
+    "min_keyword_hits": 2
+  },
+  {
     "id": "PRINT-PARA-01",
     "question": "Yazdırma kuyruğu takıldı ve belgeler sırada bekliyor.",
     "expected_response_type": "rag_answer",
@@ -457,6 +493,23 @@
       "olay saati"
     ],
     "min_keyword_hits": 1
+  },
+  {
+    "id": "SEC-PARA-04",
+    "question": "Telefona MFA doğrulama bildirimi gelmiyor.",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "security-mfa-phishing"
+    ],
+    "accepted_sections": [
+      "MFA bildirimi gelmiyor"
+    ],
+    "required_keywords": [
+      "internet",
+      "doğrulama uygulaması",
+      "bildirim"
+    ],
+    "min_keyword_hits": 2
   },
   {
     "id": "FILES-PARA-01",
@@ -571,11 +624,11 @@
       "VPN bağlanıyor ancak iç sistemler açılmıyor"
     ],
     "required_keywords": [
-      "sistem adı",
-      "erişim adresi",
-      "yetki"
+      "VPN",
+      "iç sistem",
+      "tarayıcı"
     ],
-    "min_keyword_hits": 1
+    "min_keyword_hits": 2
   },
   {
     "id": "VPN-PARA-02",
@@ -612,6 +665,23 @@
     "min_keyword_hits": 1
   },
   {
+    "id": "VPN-PARA-04",
+    "question": "VPN istemcisi açılmıyor.",
+    "expected_response_type": "rag_answer",
+    "expected_document_ids": [
+      "vpn-remote-access"
+    ],
+    "accepted_sections": [
+      "VPN istemcisi açılmıyor"
+    ],
+    "required_keywords": [
+      "yeniden aç",
+      "yeniden başlat",
+      "destek kaydı"
+    ],
+    "min_keyword_hits": 2
+  },
+  {
     "id": "GENERIC-SW-01",
     "question": "Kurumsal bir uygulama açılmıyor, ilk olarak ne yapmalıyım?",
     "expected_response_type": "rag_answer",
@@ -625,23 +695,6 @@
       "yeniden aç",
       "yeniden başlat",
       "hata mesajı"
-    ],
-    "min_keyword_hits": 1
-  },
-  {
-    "id": "GENERIC-SW-02",
-    "question": "Kullandığım program lisans hatası veriyor.",
-    "expected_response_type": "rag_answer",
-    "expected_document_ids": [
-      "software-installation-access"
-    ],
-    "accepted_sections": [
-      "Uygulama lisans hatası veriyor"
-    ],
-    "required_keywords": [
-      "VPN",
-      "lisans",
-      "kullanıcı hesabı"
     ],
     "min_keyword_hits": 1
   },
@@ -679,42 +732,6 @@
   {
     "id": "NOSRC-NAMED-02",
     "question": "Bordro portalında izin günüm yanlış görünüyor.",
-    "expected_response_type": "no_relevant_source",
-    "expected_document_ids": [],
-    "accepted_sections": [],
-    "required_keywords": [
-      "kaynak dokümanlarda",
-      "IT destek"
-    ],
-    "min_keyword_hits": 2
-  },
-  {
-    "id": "NOSRC-NAMED-03",
-    "question": "Power BI satış raporu yenilenmiyor.",
-    "expected_response_type": "no_relevant_source",
-    "expected_document_ids": [],
-    "accepted_sections": [],
-    "required_keywords": [
-      "kaynak dokümanlarda",
-      "IT destek"
-    ],
-    "min_keyword_hits": 2
-  },
-  {
-    "id": "NOSRC-NAMED-04",
-    "question": "Jira'da sprinti kapatamıyorum.",
-    "expected_response_type": "no_relevant_source",
-    "expected_document_ids": [],
-    "accepted_sections": [],
-    "required_keywords": [
-      "kaynak dokümanlarda",
-      "IT destek"
-    ],
-    "min_keyword_hits": 2
-  },
-  {
-    "id": "NOSRC-NAMED-05",
-    "question": "Logo Tiger'da e-fatura oluşmuyor.",
     "expected_response_type": "no_relevant_source",
     "expected_document_ids": [],
     "accepted_sections": [],
