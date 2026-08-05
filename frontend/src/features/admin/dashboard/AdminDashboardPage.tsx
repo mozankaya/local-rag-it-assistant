@@ -29,12 +29,33 @@ interface AdminDashboardPageProps {
 }
 
 const responseTypeLabels: Record<string, string> = {
-  success: "Başarılı yanıt",
-  no_relevant_source: "İlgili kaynak yok",
+  success: "RAG yanıtı",
+  rag_answer: "RAG yanıtı",
+  başarılı_yanıt: "RAG yanıtı",
+  no_source: "İlgili kaynak bulunamadı",
+  no_relevant_source: "İlgili kaynak bulunamadı",
+  ilgili_kaynak_yok: "İlgili kaynak bulunamadı",
   out_of_scope: "Kapsam dışı",
   llm_error: "LLM hatası",
   unknown: "Bilinmiyor",
 };
+
+function normalizeDisplayLookup(value: string) {
+  return value.trim().toLocaleLowerCase("tr-TR").replace(/[\s-]+/g, "_");
+}
+
+function getResponseTypeLabel(responseType: string) {
+  const mappedLabel = responseTypeLabels[normalizeDisplayLookup(responseType)];
+  if (mappedLabel) return mappedLabel;
+
+  return humanize(responseType.trim()) || "Bilinmiyor";
+}
+
+function getCategoryLabel(category: string) {
+  return normalizeDisplayLookup(category) === "unknown"
+    ? "Bilinmeyen"
+    : humanize(category);
+}
 
 function AdminDashboardPage({
   user,
@@ -117,10 +138,11 @@ function AdminDashboardPage({
 
             <section className="admin-distribution-grid">
               <DistributionCard
-                title="Response type dağılımı"
+                title="Yanıt türü dağılımı"
                 subtitle="Üretilen yanıtların sonuç türleri"
                 items={responseTypes.map((item) => ({
-                  label: responseTypeLabels[item.response_type] ?? humanize(item.response_type),
+                  key: item.response_type,
+                  label: getResponseTypeLabel(item.response_type),
                   count: item.count,
                 }))}
                 emptyText="Yanıt türü verisi bulunmuyor."
@@ -129,7 +151,8 @@ function AdminDashboardPage({
                 title="Kategori dağılımı"
                 subtitle="Soruların konu başlıklarına göre dağılımı"
                 items={categories.map((item) => ({
-                  label: humanize(item.category),
+                  key: item.category,
+                  label: getCategoryLabel(item.category),
                   count: item.count,
                 }))}
                 emptyText="Kategori verisi bulunmuyor."

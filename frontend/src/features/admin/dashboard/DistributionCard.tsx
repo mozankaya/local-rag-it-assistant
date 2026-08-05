@@ -1,4 +1,5 @@
 interface DistributionItem {
+  key: string;
   label: string;
   count: number;
 }
@@ -11,6 +12,17 @@ interface DistributionCardProps {
 }
 
 const numberFormatter = new Intl.NumberFormat("tr-TR");
+const smallPercentageFormatter = new Intl.NumberFormat("tr-TR", {
+  minimumFractionDigits: 1,
+  maximumFractionDigits: 2,
+});
+
+function formatPercentage(value: number) {
+  if (value === 0) return "%0";
+  if (value < 1) return `%${smallPercentageFormatter.format(value)}`;
+
+  return `%${Math.round(value)}`;
+}
 
 function DistributionCard({
   title,
@@ -36,12 +48,12 @@ function DistributionCard({
       ) : (
         <div className="distribution-list">
           {items.map((item) => {
-            const percentage = total > 0 ? Math.round((item.count / total) * 100) : 0;
+            const percentage = total > 0 ? (item.count / total) * 100 : 0;
             return (
-              <div className="distribution-row" key={item.label}>
+              <div className="distribution-row" key={item.key}>
                 <div className="distribution-meta">
                   <span>{item.label}</span>
-                  <strong>{numberFormatter.format(item.count)} <small>%{percentage}</small></strong>
+                  <strong>{numberFormatter.format(item.count)} <small>{formatPercentage(percentage)}</small></strong>
                 </div>
                 <div className="distribution-track">
                   <span style={{ width: `${(item.count / maxCount) * 100}%` }} />
