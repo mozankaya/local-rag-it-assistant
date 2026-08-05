@@ -23,36 +23,30 @@ function formatSourceMeta(source: Source) {
 }
 
 function SourceTooltip({ sources }: SourceTooltipProps) {
+  const sourceLabel = sources.length === 1 ? "Kaynak" : "Kaynaklar";
+
   return (
-    <div className="source-tooltip-wrapper">
-      <button
-        className="source-tooltip-trigger"
-        type="button"
-        aria-label="Kaynakları göster"
-      >
-        ⓘ Kaynak
-      </button>
+    <details className="source-details">
+      <summary className="source-summary">
+        {sourceLabel} ({sources.length})
+      </summary>
 
-      <div className="source-tooltip-panel">
-        <h4>Kaynaklar</h4>
+      <div className="source-list">
+        {sources.map((source, index) => (
+          <div
+            className="source-item"
+            key={`${source.document_id}-${index}`}
+          >
+            <span className="source-icon" aria-hidden="true">▣</span>
 
-        <div className="source-tooltip-list">
-          {sources.map((source, index) => (
-            <div
-              className="source-tooltip-item"
-              key={`${source.document_id}-${index}`}
-            >
-              <span className="source-icon">▣</span>
-
-              <div>
-                <strong>{formatSourceTitle(source)}</strong>
-                <small>{formatSourceMeta(source)}</small>
-              </div>
+            <div className="source-copy">
+              <strong>{formatSourceTitle(source)}</strong>
+              <small>{formatSourceMeta(source)}</small>
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
-    </div>
+    </details>
   );
 }
 

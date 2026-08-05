@@ -1,9 +1,10 @@
-import type { RefObject } from "react";
+import type { ReactNode, RefObject } from "react";
 import FeedbackActions from "../../feedback/components/FeedbackActions";
 import type { Message } from "../types";
 import SourceTooltip from "./SourceTooltip";
 
 interface MessageListProps {
+  children?: ReactNode;
   messages: Message[];
   isLoading: boolean;
   feedbackStatus: Record<number, string>;
@@ -15,6 +16,7 @@ interface MessageListProps {
 }
 
 function MessageList({
+  children,
   messages,
   isLoading,
   feedbackStatus,
@@ -22,7 +24,13 @@ function MessageList({
   onFeedback,
 }: MessageListProps) {
   return (
-    <div className="messages">
+    <div
+      className="messages"
+      role="log"
+      aria-label="Sohbet mesajları"
+      aria-live="polite"
+      aria-relevant="additions"
+    >
       {messages.map((message) => (
         <div
           key={message.id}
@@ -33,7 +41,7 @@ function MessageList({
           }`}
         >
           {message.role === "assistant" && (
-            <div className="message-avatar">IT</div>
+            <div className="message-avatar" aria-hidden="true">IT</div>
           )}
 
           <div className={`message-bubble ${message.role}`}>
@@ -56,9 +64,14 @@ function MessageList({
         </div>
       ))}
 
+      {children}
+
       {isLoading && (
-        <div className="message-row message-row-assistant">
-          <div className="message-avatar">IT</div>
+        <div
+          className="message-row message-row-assistant message-row-loading"
+          role="status"
+        >
+          <div className="message-avatar" aria-hidden="true">IT</div>
           <div className="message-bubble assistant">
             <p>Yanıt hazırlanıyor...</p>
           </div>

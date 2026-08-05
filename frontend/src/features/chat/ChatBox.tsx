@@ -45,6 +45,7 @@ function ChatBox({ quickQuestion, onUnauthorized }: ChatBoxProps) {
   const nextIdRef = useRef(2);
   const lastQuickQuestionIdRef = useRef<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const isWelcomeState = messages.length === 1;
 
   const sendQuestion = useCallback(async (questionText: string) => {
     const cleanedQuestion = questionText.trim();
@@ -150,29 +151,39 @@ function ChatBox({ quickQuestion, onUnauthorized }: ChatBoxProps) {
   }, [messages, isLoading]);
 
   return (
-    <div className="chat-box">
-      <div className="starter-row">
-        {starterQuestions.map((starterQuestion) => (
-          <button
-            key={starterQuestion}
-            type="button"
-            onClick={() => handleStarterQuestion(starterQuestion)}
-          >
-            {starterQuestion}
-          </button>
-        ))}
-      </div>
-
+    <div className={`chat-box${isWelcomeState ? " chat-box-welcome" : ""}`}>
       <MessageList
         messages={messages}
         isLoading={isLoading}
         feedbackStatus={feedbackStatus}
         messagesEndRef={messagesEndRef}
         onFeedback={handleFeedback}
-      />
+      >
+        {isWelcomeState && (
+          <div className="starter-row" aria-label="Örnek sorular">
+            {starterQuestions.map((starterQuestion) => (
+              <button
+                key={starterQuestion}
+                type="button"
+                onClick={() => handleStarterQuestion(starterQuestion)}
+              >
+                {starterQuestion}
+              </button>
+            ))}
+          </div>
+        )}
+      </MessageList>
 
-      <form className="chat-input-form" onSubmit={handleSubmit}>
+      <form
+        className="chat-input-form"
+        onSubmit={handleSubmit}
+        aria-busy={isLoading}
+      >
+        <label className="visually-hidden" htmlFor="chat-question">
+          Mesajınız
+        </label>
         <textarea
+          id="chat-question"
           value={question}
           onChange={(event) => setQuestion(event.target.value)}
           placeholder="Mesajınızı buraya yazın..."

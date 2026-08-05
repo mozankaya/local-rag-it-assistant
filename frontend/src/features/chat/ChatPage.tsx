@@ -20,38 +20,23 @@ function ChatPage({
   user,
   quickQuestion,
   resetSignal,
-  onQuickTopic,
   onNewChat,
   onGoToAdmin,
   onLogout,
 }: ChatPageProps) {
   return (
-    <div className="app-shell">
-      <UserTopbar
+    <div className="chat-page">
+      <UserSidebar
         user={user}
+        onNewChat={onNewChat}
         onGoToAdmin={onGoToAdmin}
         onLogout={onLogout}
       />
 
-      <main className="dashboard-layout">
-        <UserSidebar onQuickTopic={onQuickTopic} />
+      <main className="chat-main">
+        <UserTopbar user={user} />
 
-        <section className="chat-panel">
-          <div className="chat-panel-header">
-            <div>
-              <h2>Sohbet</h2>
-              <span>IT destek dokümanlarına göre cevap üretir</span>
-            </div>
-
-            <button
-              className="new-chat-button"
-              type="button"
-              onClick={onNewChat}
-            >
-              Yeni Sohbet
-            </button>
-          </div>
-
+        <section className="chat-content" aria-label="Sohbet">
           <ChatBox
             key={resetSignal}
             quickQuestion={quickQuestion}
