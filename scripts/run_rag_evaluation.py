@@ -9,7 +9,6 @@ from pathlib import Path
 
 import httpx
 
-
 API_URL = os.getenv("RAG_API_BASE_URL", "http://127.0.0.1:8000")
 EMAIL = os.getenv("RAG_LOGIN_EMAIL", "admin@izeltas.local")
 PASSWORD = os.getenv("RAG_LOGIN_PASSWORD", "Admin123!")
@@ -84,9 +83,7 @@ def ask(
 
 def values(sources: list[dict], field: str) -> list[str]:
     return [
-        str(source[field])
-        for source in sources
-        if source.get(field) not in (None, "")
+        str(source[field]) for source in sources if source.get(field) not in (None, "")
     ]
 
 
@@ -119,10 +116,7 @@ def keyword_check(
         return True, 0
 
     normalized_answer = normalize(answer)
-    hits = sum(
-        normalize(keyword) in normalized_answer
-        for keyword in keywords
-    )
+    hits = sum(normalize(keyword) in normalized_answer for keyword in keywords)
     required = min(max(minimum, 1), len(keywords))
 
     return hits >= required, hits
@@ -145,10 +139,7 @@ def format_check(
     if len(lines) != len(bullets):
         problems.append("non_bullet_text")
 
-    cleaned = [
-        normalize(line.removeprefix("- ").rstrip(".!?"))
-        for line in bullets
-    ]
+    cleaned = [normalize(line.removeprefix("- ").rstrip(".!?")) for line in bullets]
     if len(cleaned) != len(set(cleaned)):
         problems.append("duplicate_bullets")
 
@@ -255,24 +246,16 @@ def summary(rows: list[dict], model: str) -> dict:
         "source_match_count": sum(row["source_match"] for row in rows),
         "section_match_count": sum(row["section_match"] for row in rows),
         "keyword_match_count": sum(row["keyword_match"] for row in rows),
-        "response_type_match_count": sum(
-            row["response_type_match"] for row in rows
-        ),
-        "answer_format_match_count": sum(
-            row["answer_format_match"] for row in rows
-        ),
+        "response_type_match_count": sum(row["response_type_match"] for row in rows),
+        "answer_format_match_count": sum(row["answer_format_match"] for row in rows),
         "request_error_count": sum(bool(row["error"]) for row in rows),
     }
 
     result["average_response_time_seconds"] = (
         round(sum(times) / len(times), 3) if times else ""
     )
-    result["min_response_time_seconds"] = (
-        round(min(times), 3) if times else ""
-    )
-    result["max_response_time_seconds"] = (
-        round(max(times), 3) if times else ""
-    )
+    result["min_response_time_seconds"] = round(min(times), 3) if times else ""
+    result["max_response_time_seconds"] = round(max(times), 3) if times else ""
 
     return result
 
@@ -305,10 +288,7 @@ def main() -> None:
 
         for case in cases:
             for run in range(1, args.repeat + 1):
-                print(
-                    f"[{args.model}] {case['id']} "
-                    f"run {run}/{args.repeat}"
-                )
+                print(f"[{args.model}] {case['id']} " f"run {run}/{args.repeat}")
 
                 try:
                     response, elapsed = ask(
