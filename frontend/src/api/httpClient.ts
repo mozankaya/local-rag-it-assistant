@@ -1,6 +1,5 @@
-import { getAccessToken } from "./authApi";
-
 export type ApiErrorKind = "http" | "network";
+export type AuthMode = "none" | "optional" | "required";
 
 interface ApiErrorOptions {
   status?: number;
@@ -17,8 +16,14 @@ export class ApiError extends Error {
   readonly kind: ApiErrorKind;
   readonly cause?: unknown;
 
-  constructor(message: string, options: ApiErrorOptions) {
+  constructor(message: string, status: number);
+  constructor(message: string, options: ApiErrorOptions);
+  constructor(message: string, optionsOrStatus: ApiErrorOptions | number) {
     super(message);
+    const options = typeof optionsOrStatus === "number"
+      ? { kind: "http" as const, status: optionsOrStatus }
+      : optionsOrStatus;
+
     this.name = "ApiError";
     this.status = options.status;
     this.detail = options.detail;
@@ -33,25 +38,31 @@ export interface HttpRequestOptions {
   method?: string;
   headers?: HeadersInit;
   body?: BodyInit | null;
-  requiredAuthMessage: string;
+  auth?: AuthMode;
+  requiredAuthMessage?: string;
   fallbackErrorMessage: (status: number) => string;
   parseErrorBody?: boolean;
   useDetailAsMessage?: boolean;
 }
 
-function mergeRequiredAuthHeader(
+function mergeAuthHeader(
   headers: HeadersInit | undefined,
-  missingAuthMessage: string,
+  auth: AuthMode,
+  missingAuthMessage: string | undefined,
 ): Headers {
-  const token = getAccessToken();
+  const mergedHeaders = new Headers();
 
-  if (!token) {
-    throw new Error(missingAuthMessage);
+  if (auth !== "none") {
+    const token = localStorage.getItem("access_token");
+
+    if (!token && auth === "required") {
+      throw new Error(missingAuthMessage ?? "Access token not found.");
+    }
+
+    if (token) {
+      mergedHeaders.set("Authorization", `Bearer ${token}`);
+    }
   }
-
-  const mergedHeaders = new Headers({
-    Authorization: `Bearer ${token}`,
-  });
 
   if (headers) {
     new Headers(headers).forEach((value, key) => {
@@ -87,8 +98,9 @@ async function request(
   url: string,
   options: HttpRequestOptions,
 ): Promise<Response> {
-  const headers = mergeRequiredAuthHeader(
+  const headers = mergeAuthHeader(
     options.headers,
+    options.auth ?? "required",
     options.requiredAuthMessage,
   );
 

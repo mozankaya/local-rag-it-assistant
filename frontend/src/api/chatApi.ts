@@ -1,3 +1,7 @@
+import { ApiError, requestJson } from "./httpClient";
+
+export { ApiError as ChatApiError };
+
 export type ChatRequest = {
   question: string;
 };
@@ -34,54 +38,24 @@ export type FeedbackResponse = {
   feedback?: FeedbackValue;
 };
 
-export class ChatApiError extends Error {
-  status: number;
-
-  constructor(message: string, status: number) {
-    super(message);
-    this.name = "ChatApiError";
-    this.status = status;
-    Object.setPrototypeOf(this, ChatApiError.prototype);
-  }
-}
-
 const CHAT_API_URL = import.meta.env.VITE_RAG_API_URL as string;
 const FEEDBACK_API_URL = import.meta.env.VITE_FEEDBACK_API_URL as string;
-
-function getAuthHeaders(): HeadersInit {
-  const token = localStorage.getItem("access_token");
-
-  if (!token) {
-    return {
-      "Content-Type": "application/json",
-    };
-  }
-
-  return {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`,
-  };
-}
 
 export async function askQuestion(question: string): Promise<ChatResponse> {
   if (!CHAT_API_URL) {
     throw new Error("VITE_RAG_API_URL is not defined.");
   }
 
-  const response = await fetch(CHAT_API_URL, {
+  return requestJson<ChatResponse>(CHAT_API_URL, {
     method: "POST",
-    headers: getAuthHeaders(),
+    headers: {
+      "Content-Type": "application/json",
+    },
     body: JSON.stringify({ question } satisfies ChatRequest),
+    auth: "optional",
+    fallbackErrorMessage: (status) =>
+      `Request failed with status ${status}`,
   });
-
-  if (!response.ok) {
-    throw new ChatApiError(
-      `Request failed with status ${response.status}`,
-      response.status,
-    );
-  }
-
-  return response.json() as Promise<ChatResponse>;
 }
 
 export async function sendFeedback(
@@ -91,15 +65,22 @@ export async function sendFeedback(
     throw new Error("VITE_FEEDBACK_API_URL is not defined.");
   }
 
-  const response = await fetch(FEEDBACK_API_URL, {
-    method: "POST",
-    headers: getAuthHeaders(),
-    body: JSON.stringify(feedbackRequest),
-  });
+  try {
+    return await requestJson<FeedbackResponse>(FEEDBACK_API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(feedbackRequest),
+      auth: "optional",
+      fallbackErrorMessage: (status) =>
+        `Feedback request failed with status ${status}`,
+    });
+  } catch (error) {
+    if (error instanceof ApiError && error.kind === "http") {
+      throw new Error(error.message, { cause: error });
+    }
 
-  if (!response.ok) {
-    throw new Error(`Feedback request failed with status ${response.status}`);
+    throw error;
   }
-
-  return response.json() as Promise<FeedbackResponse>;
 }
