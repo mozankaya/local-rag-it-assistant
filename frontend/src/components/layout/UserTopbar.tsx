@@ -1,4 +1,5 @@
 import type { CurrentUserResponse } from "../../api/authApi";
+import "./UserTopbar.css";
 
 interface UserTopbarProps {
   user: CurrentUserResponse;

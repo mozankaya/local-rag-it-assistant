@@ -2,6 +2,7 @@ import type { ReactNode, RefObject } from "react";
 import FeedbackActions from "../../feedback/components/FeedbackActions";
 import type { Message } from "../types";
 import SourceTooltip from "./SourceTooltip";
+import "./MessageList.css";
 
 interface MessageListProps {
   children?: ReactNode;

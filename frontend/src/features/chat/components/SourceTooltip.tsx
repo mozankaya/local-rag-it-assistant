@@ -1,4 +1,5 @@
 import type { Source } from "../../../api/chatApi";
+import "./SourceTooltip.css";
 
 interface SourceTooltipProps {
   sources: Source[];

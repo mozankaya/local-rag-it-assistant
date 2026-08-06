@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import type { CurrentUserResponse } from "../../../api/authApi";
 import izeltasLogo from "../../../assets/izeltas-logo.png";
+import "./AdminLayout.css";
+import "./AdminShared.css";
 
 interface AdminLayoutProps {
   user: CurrentUserResponse;

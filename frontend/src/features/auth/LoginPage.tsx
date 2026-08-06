@@ -7,6 +7,7 @@ import {
   type CurrentUserResponse,
 } from "../../api/authApi";
 import izeltasLogo from "../../assets/izeltas-logo.png";
+import "./LoginPage.css";
 
 type LoginPageProps = {
   onLoginSuccess: (user: CurrentUserResponse) => void;

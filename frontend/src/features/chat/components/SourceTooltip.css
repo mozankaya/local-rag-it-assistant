@@ -1,0 +1,79 @@
+.source-details {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid #292b2f;
+}
+
+.source-summary {
+  width: fit-content;
+  min-height: 44px;
+  padding: 0 8px;
+  display: flex;
+  align-items: center;
+  border-radius: 8px;
+  color: #b4b5b9;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.source-summary::marker {
+  color: #e30613;
+}
+
+.source-summary:hover {
+  color: #ffffff;
+}
+
+.source-summary:focus-visible {
+  outline: 2px solid rgba(227, 6, 19, 0.72);
+  outline-offset: 2px;
+}
+
+.source-list {
+  margin-top: 4px;
+  border-top: 1px solid #292b2f;
+}
+
+.source-item {
+  min-width: 0;
+  padding: 11px 2px;
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  border-bottom: 1px solid #292b2f;
+}
+
+.source-item:last-child {
+  border-bottom: none;
+}
+
+.source-icon {
+  flex: 0 0 auto;
+  color: #e30613;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.source-copy {
+  min-width: 0;
+}
+
+.source-copy strong,
+.source-copy small {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.source-copy strong {
+  color: #d7d7d9;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.source-copy small {
+  margin-top: 3px;
+  color: #8d8f95;
+  font-size: 11px;
+  line-height: 1.45;
+}

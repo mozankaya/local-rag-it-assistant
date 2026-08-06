@@ -13,7 +13,7 @@ import type { UserRole } from "../../../types/user";
 import AdminLayout from "../shared/AdminLayout";
 import UserCreateForm from "./UserCreateForm";
 import UsersTable from "./UsersTable";
-import "../../../components/admin/admin.css";
+import "./AdminUsersPage.css";
 
 interface AdminUsersPageProps {
   user: CurrentUserResponse;

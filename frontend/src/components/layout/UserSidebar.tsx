@@ -1,5 +1,6 @@
 import type { CurrentUserResponse } from "../../api/authApi";
 import izeltasLogo from "../../assets/izeltas-logo.png";
+import "./UserSidebar.css";
 
 interface UserSidebarProps {
   user: CurrentUserResponse;
