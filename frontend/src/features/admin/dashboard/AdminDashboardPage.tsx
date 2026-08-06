@@ -31,10 +31,8 @@ interface AdminDashboardPageProps {
 const responseTypeLabels: Record<string, string> = {
   success: "RAG yanıtı",
   rag_answer: "RAG yanıtı",
-  başarılı_yanıt: "RAG yanıtı",
   no_source: "İlgili kaynak bulunamadı",
   no_relevant_source: "İlgili kaynak bulunamadı",
-  ilgili_kaynak_yok: "İlgili kaynak bulunamadı",
   out_of_scope: "Kapsam dışı",
   llm_error: "LLM hatası",
   unknown: "Bilinmiyor",
