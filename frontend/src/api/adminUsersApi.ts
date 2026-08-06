@@ -1,7 +1,12 @@
-import { getAccessToken } from "./authApi";
+import {
+  requestEmpty,
+  requestJson,
+  type HttpRequestOptions,
+} from "./httpClient";
 import type { PaginatedResponse } from "../types/pagination";
 import type { UserRole } from "../types/user";
 
+export { ApiError as AdminUsersApiError } from "./httpClient";
 export type { UserRole } from "../types/user";
 
 export interface AdminUser {
@@ -23,57 +28,54 @@ export interface CreateUserRequest {
   role: UserRole;
 }
 
-export class AdminUsersApiError extends Error {
-  status: number;
-  detail?: string;
-
-  constructor(status: number, detail?: string) {
-    super(detail ?? `Admin users request failed with status ${status}`);
-    this.status = status;
-    this.detail = detail;
-  }
-}
-
 const AUTH_API_URL = import.meta.env.VITE_AUTH_API_URL as string;
 const API_URL = (import.meta.env.VITE_ADMIN_API_URL as string | undefined)
   ?? AUTH_API_URL?.replace(/\/auth\/?$/, "");
 
+type RequestOptions = Pick<HttpRequestOptions, "method" | "headers" | "body">;
+
+function getRequestOptions(options: RequestOptions): HttpRequestOptions {
+  const headers = new Headers({
+    "Content-Type": "application/json",
+  });
+
+  if (options.headers) {
+    new Headers(options.headers).forEach((value, key) => {
+      headers.set(key, value);
+    });
+  }
+
+  return {
+    ...options,
+    headers,
+    requiredAuthMessage: "API URL or access token is missing.",
+    fallbackErrorMessage: (status) =>
+      `Admin users request failed with status ${status}`,
+    parseErrorBody: true,
+    useDetailAsMessage: true,
+  };
+}
+
 async function authorizedRequest<T>(
   path: string,
-  options: RequestInit = {},
-  expectsJson = true,
+  options: RequestOptions = {},
 ): Promise<T> {
-  const token = getAccessToken();
-
-  if (!API_URL || !token) {
+  if (!API_URL) {
     throw new Error("API URL or access token is missing.");
   }
 
-  const response = await fetch(`${API_URL}${path}`, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-      ...options.headers,
-    },
-  });
+  return requestJson<T>(`${API_URL}${path}`, getRequestOptions(options));
+}
 
-  if (!response.ok) {
-    let detail: string | undefined;
-
-    try {
-      const errorBody = await response.json() as { detail?: unknown };
-      if (typeof errorBody.detail === "string") detail = errorBody.detail;
-    } catch {
-      // Some error responses do not contain a JSON body.
-    }
-
-    throw new AdminUsersApiError(response.status, detail);
+async function authorizedEmptyRequest(
+  path: string,
+  options: RequestOptions = {},
+): Promise<void> {
+  if (!API_URL) {
+    throw new Error("API URL or access token is missing.");
   }
 
-  if (!expectsJson) return undefined as T;
-
-  return response.json() as Promise<T>;
+  await requestEmpty(`${API_URL}${path}`, getRequestOptions(options));
 }
 
 export function getAdminUsers(limit = 10, offset = 0, search = "") {
@@ -113,7 +115,7 @@ export function updateAdminUserStatus(userId: number, isActive: boolean) {
 }
 
 export async function deleteAdminUser(userId: number): Promise<void> {
-  await authorizedRequest<void>(`/admin/users/${userId}`, {
+  await authorizedEmptyRequest(`/admin/users/${userId}`, {
     method: "DELETE",
-  }, false);
+  });
 }

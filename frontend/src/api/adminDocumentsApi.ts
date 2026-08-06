@@ -1,5 +1,11 @@
-import { getAccessToken } from "./authApi";
+import {
+  requestBlob,
+  requestJson,
+  type HttpRequestOptions,
+} from "./httpClient";
 import type { PaginatedResponse } from "../types/pagination";
+
+export { ApiError as AdminDocumentsApiError } from "./httpClient";
 
 export interface AdminDocument {
   document_id: string;
@@ -52,53 +58,32 @@ export interface DeleteDocumentResponse {
   document_id: string;
 }
 
-export class AdminDocumentsApiError extends Error {
-  status: number;
-  detail?: string;
-
-  constructor(status: number, detail?: string) {
-    super(detail ?? `Admin documents request failed with status ${status}`);
-    this.status = status;
-    this.detail = detail;
-  }
-}
-
 const AUTH_API_URL = import.meta.env.VITE_AUTH_API_URL as string;
 const API_URL = (import.meta.env.VITE_ADMIN_API_URL as string | undefined)
   ?? AUTH_API_URL?.replace(/\/auth\/?$/, "");
 
+type RequestOptions = Pick<HttpRequestOptions, "method" | "headers" | "body">;
+
+function getRequestOptions(options: RequestOptions): HttpRequestOptions {
+  return {
+    ...options,
+    requiredAuthMessage: "API URL or access token is missing.",
+    fallbackErrorMessage: (status) =>
+      `Admin documents request failed with status ${status}`,
+    parseErrorBody: true,
+    useDetailAsMessage: true,
+  };
+}
+
 async function authorizedRequest<T>(
   path: string,
-  options: RequestInit = {},
+  options: RequestOptions = {},
 ): Promise<T> {
-  const token = getAccessToken();
-
-  if (!API_URL || !token) {
+  if (!API_URL) {
     throw new Error("API URL or access token is missing.");
   }
 
-  const response = await fetch(`${API_URL}${path}`, {
-    ...options,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      ...options.headers,
-    },
-  });
-
-  if (!response.ok) {
-    let detail: string | undefined;
-
-    try {
-      const errorBody = await response.json() as { detail?: unknown };
-      if (typeof errorBody.detail === "string") detail = errorBody.detail;
-    } catch {
-      // Some error responses do not contain a JSON body.
-    }
-
-    throw new AdminDocumentsApiError(response.status, detail);
-  }
-
-  return response.json() as Promise<T>;
+  return requestJson<T>(`${API_URL}${path}`, getRequestOptions(options));
 }
 
 function authorizedGet<T>(path: string): Promise<T> {
@@ -167,24 +152,16 @@ export function deleteAdminDocument(documentId: string) {
 }
 
 export async function downloadAdminDocument(documentId: string): Promise<Blob> {
-  const token = getAccessToken();
-
-  if (!API_URL || !token) {
+  if (!API_URL) {
     throw new Error("API URL or access token is missing.");
   }
 
-  const response = await fetch(
+  return requestBlob(
     `${API_URL}/admin/documents/${encodeURIComponent(documentId)}/download`,
     {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      requiredAuthMessage: "API URL or access token is missing.",
+      fallbackErrorMessage: (status) =>
+        `Admin documents request failed with status ${status}`,
     },
   );
-
-  if (!response.ok) {
-    throw new AdminDocumentsApiError(response.status);
-  }
-
-  return response.blob();
 }
