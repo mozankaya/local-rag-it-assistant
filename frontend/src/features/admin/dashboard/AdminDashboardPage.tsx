@@ -16,6 +16,7 @@ import AdminLayout from "../shared/AdminLayout";
 import DistributionCard from "./DistributionCard";
 import SummaryCards from "./SummaryCards";
 import "../../../components/admin/admin.css";
+import "./AdminDashboardPage.css";
 
 interface AdminDashboardPageProps {
   user: CurrentUserResponse;
