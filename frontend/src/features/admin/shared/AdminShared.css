@@ -47,11 +47,6 @@
   font-weight: 800;
 }
 
-.user-create-password-toggle:focus-visible {
-  outline: 2px solid rgba(227, 6, 19, 0.78);
-  outline-offset: 1px;
-}
-
 .admin-success,
 .admin-form-error {
   margin: 0 22px 20px;

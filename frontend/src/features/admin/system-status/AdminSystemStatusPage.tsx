@@ -6,7 +6,6 @@ import {
 } from "../../../api/adminApi";
 import type { CurrentUserResponse } from "../../../api/authApi";
 import AdminLayout from "../shared/AdminLayout";
-import "../../../components/admin/admin.css";
 import "./AdminSystemStatusPage.css";
 
 interface AdminSystemStatusPageProps {
