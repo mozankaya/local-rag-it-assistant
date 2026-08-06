@@ -20,6 +20,7 @@ import DocumentUploadModal from "./DocumentUploadModal";
 import DocumentUpdateModal from "./DocumentUpdateModal";
 import DocumentsTable from "./DocumentsTable";
 import "../../../components/admin/admin.css";
+import "./AdminDocumentsPage.css";
 
 interface AdminDocumentsPageProps {
   user: CurrentUserResponse;
