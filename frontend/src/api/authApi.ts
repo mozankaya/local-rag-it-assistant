@@ -1,3 +1,5 @@
+import { ApiError, requestJson } from "./httpClient";
+
 export type LoginRequest = {
   email: string;
   password: string;
@@ -37,19 +39,23 @@ export async function loginUser(
     throw new Error("VITE_AUTH_API_URL is not defined.");
   }
 
-  const response = await fetch(`${AUTH_API_URL}/login`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(loginRequest),
-  });
+  try {
+    return await requestJson<TokenResponse>(`${AUTH_API_URL}/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(loginRequest),
+      auth: "none",
+      fallbackErrorMessage: () => "Login failed.",
+    });
+  } catch (error) {
+    if (error instanceof ApiError && error.kind === "http") {
+      throw new Error("Login failed.", { cause: error });
+    }
 
-  if (!response.ok) {
-    throw new Error("Login failed.");
+    throw error;
   }
-
-  return response.json() as Promise<TokenResponse>;
 }
 
 export async function getCurrentUser(): Promise<CurrentUserResponse> {
@@ -57,22 +63,18 @@ export async function getCurrentUser(): Promise<CurrentUserResponse> {
     throw new Error("VITE_AUTH_API_URL is not defined.");
   }
 
-  const token = getAccessToken();
+  try {
+    return await requestJson<CurrentUserResponse>(`${AUTH_API_URL}/me`, {
+      method: "GET",
+      auth: "required",
+      requiredAuthMessage: "Access token not found.",
+      fallbackErrorMessage: () => "Current user request failed.",
+    });
+  } catch (error) {
+    if (error instanceof ApiError && error.kind === "http") {
+      throw new Error("Current user request failed.", { cause: error });
+    }
 
-  if (!token) {
-    throw new Error("Access token not found.");
+    throw error;
   }
-
-  const response = await fetch(`${AUTH_API_URL}/me`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error("Current user request failed.");
-  }
-
-  return response.json() as Promise<CurrentUserResponse>;
 }

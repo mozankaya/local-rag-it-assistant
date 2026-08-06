@@ -1,5 +1,7 @@
-import { getAccessToken } from "./authApi";
+import { requestJson } from "./httpClient";
 import type { PaginatedResponse } from "../types/pagination";
+
+export { ApiError as AdminApiError } from "./httpClient";
 
 export interface DashboardSummary {
   total_questions: number;
@@ -71,37 +73,20 @@ export interface ReviewItem {
 
 export type PaginatedReviewItems = PaginatedResponse<ReviewItem>;
 
-export class AdminApiError extends Error {
-  status: number;
-
-  constructor(status: number) {
-    super(`Admin request failed with status ${status}`);
-    this.status = status;
-  }
-}
-
 const AUTH_API_URL = import.meta.env.VITE_AUTH_API_URL as string;
 const ADMIN_API_URL = (import.meta.env.VITE_ADMIN_API_URL as string | undefined)
   ?? AUTH_API_URL?.replace(/\/auth\/?$/, "");
 
 async function adminRequest<T>(path: string): Promise<T> {
-  const token = getAccessToken();
-
-  if (!ADMIN_API_URL || !token) {
+  if (!ADMIN_API_URL) {
     throw new Error("Admin API URL or access token is missing.");
   }
 
-  const response = await fetch(`${ADMIN_API_URL}${path}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+  return requestJson<T>(`${ADMIN_API_URL}${path}`, {
+    requiredAuthMessage: "Admin API URL or access token is missing.",
+    fallbackErrorMessage: (status) =>
+      `Admin request failed with status ${status}`,
   });
-
-  if (!response.ok) {
-    throw new AdminApiError(response.status);
-  }
-
-  return response.json() as Promise<T>;
 }
 
 export function getDashboardSummary() {
