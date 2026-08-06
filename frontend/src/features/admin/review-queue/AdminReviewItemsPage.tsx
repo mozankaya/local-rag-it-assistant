@@ -8,6 +8,7 @@ import type { CurrentUserResponse } from "../../../api/authApi";
 import AdminLayout from "../shared/AdminLayout";
 import ReviewItemsList, { type ReviewFilter } from "./ReviewItemsList";
 import "../../../components/admin/admin.css";
+import "./AdminReviewItemsPage.css";
 
 interface AdminReviewItemsPageProps {
   user: CurrentUserResponse;
