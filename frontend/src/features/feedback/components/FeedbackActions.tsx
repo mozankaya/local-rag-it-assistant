@@ -1,3 +1,5 @@
+import "./FeedbackActions.css";
+
 interface FeedbackActionsProps {
   status?: string;
   onFeedback: (feedback: "useful" | "not_useful") => void;

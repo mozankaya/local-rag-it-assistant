@@ -2,6 +2,7 @@ import type { CurrentUserResponse } from "../../api/authApi";
 import UserSidebar from "../../components/layout/UserSidebar";
 import UserTopbar from "../../components/layout/UserTopbar";
 import ChatBox from "./ChatBox";
+import "./ChatPage.css";
 
 interface ChatPageProps {
   user: CurrentUserResponse;

@@ -8,6 +8,7 @@ import {
 } from "../../api/chatApi";
 import MessageList from "./components/MessageList";
 import type { Message } from "./types";
+import "./ChatBox.css";
 
 interface ChatBoxProps {
   quickQuestion: {
