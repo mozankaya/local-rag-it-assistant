@@ -18,6 +18,7 @@
         0
       ],
       "id": "dd6bfa54-047f-4202-8033-bf91d505244b",
+      "notes": "Runs the retention cleanup automatically on its configured schedule.",
       "name": "Schedule Trigger"
     },
     {
@@ -33,6 +34,7 @@
         0
       ],
       "id": "969ac432-7075-4d5f-b026-df82d33109ea",
+      "notes": "Deletes chat and feedback logs older than the 30-day retention period.",
       "name": "Delete Expired Logs",
       "retryOnFail": true,
       "credentials": {

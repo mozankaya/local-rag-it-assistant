@@ -12,7 +12,7 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        0,
+        -32,
         0
       ],
       "id": "8b8ac394-eb13-459c-be6f-19e0afab1144",
@@ -23,7 +23,8 @@
           "id": "kmSsL1EFXjtX3g0l",
           "name": "Internal Webhook Header Auth"
         }
-      }
+      },
+      "notes": "Receives authenticated feedback requests from the FastAPI gateway."
     },
     {
       "parameters": {
@@ -33,11 +34,12 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        208,
+        192,
         0
       ],
       "id": "5aa8d2a4-693c-4493-91a4-bac9ab84da18",
-      "name": "Validate Feedback"
+      "name": "Validate Feedback",
+      "notes": "Validates the chat log ID and accepted feedback value."
     },
     {
       "parameters": {
@@ -47,11 +49,12 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        752,
+        640,
         0
       ],
       "id": "2255ffbf-ddcd-4dc4-b950-154e5cacfce9",
-      "name": "Format Feedback Response"
+      "name": "Format Feedback Response",
+      "notes": "Builds a consistent response for successful and missing chat log cases."
     },
     {
       "parameters": {
@@ -62,11 +65,12 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        960,
+        880,
         0
       ],
       "id": "809f1d39-0fd9-4141-8aea-df5b16b80e8f",
-      "name": "Respond to Webhook"
+      "name": "Respond to Webhook",
+      "notes": "Returns the feedback result to the caller."
     },
     {
       "parameters": {
@@ -79,7 +83,7 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        480,
+        416,
         0
       ],
       "id": "b385b648-d44f-44cd-857b-83a97c6b8807",
@@ -90,7 +94,8 @@
           "id": "jShdzm8IEPIqSd41",
           "name": "Postgres account"
         }
-      }
+      },
+      "notes": "Stores or updates feedback linked to the selected chat log."
     }
   ],
   "pinData": {},

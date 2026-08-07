@@ -9,22 +9,24 @@
       "type": "n8n-nodes-base.readWriteFile",
       "typeVersion": 1.1,
       "position": [
-        416,
-        0
+        -1632,
+        128
       ],
       "id": "178eb560-0096-4c3a-ae71-a25fec37f761",
-      "name": "Read Manifest"
+      "name": "Read Manifest",
+      "notes": "Reads the document manifest from local workflow storage."
     },
     {
       "parameters": {},
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
       "position": [
-        0,
-        0
+        -2048,
+        128
       ],
       "id": "94f5412b-c1dc-4b8d-af7c-a520fbe22621",
-      "name": "Manual Trigger"
+      "name": "Manual Trigger",
+      "notes": "Starts the ingestion workflow manually for maintenance or testing."
     },
     {
       "parameters": {
@@ -33,11 +35,12 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        624,
-        0
+        -1424,
+        128
       ],
       "id": "b79b4a0a-571a-4d7a-88c4-ff454efcbc2b",
-      "name": "Create File List"
+      "name": "Create File List",
+      "notes": "Validates manifest entries and builds local paths for the source documents."
     },
     {
       "parameters": {
@@ -47,24 +50,26 @@
       "type": "n8n-nodes-base.readWriteFile",
       "typeVersion": 1.1,
       "position": [
-        832,
-        0
+        -1216,
+        128
       ],
       "id": "f97d17e4-63b4-47fb-9a91-e8174583a709",
-      "name": "Read Files from Disk"
+      "name": "Read Files from Disk",
+      "notes": "Loads each source document from local workflow storage."
     },
     {
       "parameters": {
-        "jsCode": "const items = $input.all();\nconst fileListItems = $('Create File List').all();\nconst output = [];\n\n// ============================================================\n// METİN TEMİZLİĞİ\n// ============================================================\n\nfunction cleanText(text) {\n  return String(text || '')\n    // İşlenmiş dosyalardaki metadata yorumlarını kaldırır.\n    .replace(/<!--[\\s\\S]*?-->/g, '')\n\n    // Satır sonlarını standartlaştırır.\n    .replace(/\\r\\n/g, '\\n')\n\n    // Fazla boş satırları temizler.\n    .replace(/\\n{3,}/g, '\\n\\n')\n\n    .trim();\n}\n\n// ============================================================\n// HER DOSYAYI BÖLÜMLERE AYIR\n// ============================================================\n\nfor (\n  let itemIndex = 0;\n  itemIndex < items.length;\n  itemIndex++\n) {\n  const metadata = fileListItems[itemIndex]?.json;\n\n  if (!metadata?.document_id) {\n    throw new Error(\n      `Document metadata not found for item index ${itemIndex}`\n    );\n  }\n\n  // Read Files from Disk node'undan binary dosyayı okur.\n  // @ts-ignore\n  const buffer =\n    await this.helpers.getBinaryDataBuffer(\n      itemIndex,\n      'data'\n    );\n\n  const fileContent = cleanText(\n    buffer.toString('utf8')\n  );\n\n  const lines = fileContent.split('\\n');\n\n  // Dokümandaki H1 başlıklarını bulur.\n  // İşlenmiş dosyalarda birden fazla H1 varsa\n  // son H1 genellikle Türkçe ve açıklayıcı başlıktır.\n  const h1Titles = lines\n    .map((line) => {\n      const match = line.match(/^#\\s+(.+)$/);\n\n      return match\n        ? match[1].trim()\n        : null;\n    })\n    .filter(Boolean);\n\n  const documentHeading =\n    h1Titles[h1Titles.length - 1] ||\n    metadata.title ||\n    metadata.document_id;\n\n  let currentSectionTitle = 'Genel';\n  let currentLines = [];\n  let chunkIndex = 1;\n\n  // ==========================================================\n  // MEVCUT BÖLÜMÜ OUTPUT'A EKLE\n  // ==========================================================\n\n  function pushSection() {\n    const content = cleanText(\n      currentLines.join('\\n')\n    );\n\n    if (!content) {\n      return;\n    }\n\n    /*\n     * EmbeddingGemma için kullanılan metin:\n     *\n     * title:\n     *   Doküman başlığı + bölüm başlığı\n     *\n     * text:\n     *   Bölümün gerçek içeriği\n     *\n     * Örnek:\n     *\n     * title: IT Destek Kaydı Oluşturma ve Takip Süreci -\n     * Destek kaydında bulunması gereken bilgiler\n     * |\n     * text: Kullanıcı adı, sicil numarası...\n     */\n\n    const embeddingTitle = [\n      documentHeading,\n      currentSectionTitle\n    ]\n      .filter(Boolean)\n      .join(' - ');\n\n    const embeddingText =\n      `title: ${embeddingTitle} | text: ${content}`;\n\n    output.push({\n      json: {\n        // Default Data Loader bu alanı embedding'e gönderir.\n        text: embeddingText,\n\n        metadata: {\n          document_id:\n            metadata.document_id,\n\n          // Frontend ve kaynak gösterimi için\n          // mevcut manifest başlığını koruyoruz.\n          title:\n            metadata.title,\n\n          category:\n            metadata.category,\n\n          section_title:\n            currentSectionTitle,\n\n          chunk_index:\n            chunkIndex,\n\n          file_name:\n            metadata.file_name,\n\n          source_file_name:\n            metadata.source_file_name ||\n            metadata.file_name,\n\n          file_type:\n            metadata.file_type || null,\n\n          content_hash:\n            metadata.content_hash || null,\n\n          last_updated:\n            metadata.last_updated || null\n        }\n      }\n    });\n\n    chunkIndex++;\n  }\n\n  // ==========================================================\n  // SATIRLARI İŞLE\n  // ==========================================================\n\n  for (const line of lines) {\n    const sectionMatch =\n      line.match(/^##\\s+(.+)$/);\n\n    if (sectionMatch) {\n      // Yeni bölüme geçmeden önce önceki bölümü kaydet.\n      pushSection();\n\n      currentSectionTitle =\n        sectionMatch[1].trim();\n\n      /*\n       * ## başlığını content içine tekrar eklemiyoruz.\n       * Bölüm başlığı zaten embeddingTitle içinde bulunuyor.\n       */\n      currentLines = [];\n\n      continue;\n    }\n\n    /*\n     * # ana başlıkları bölüm içeriğine eklemiyoruz.\n     * Doküman başlığı zaten embeddingTitle içinde bulunuyor.\n     */\n    if (/^#\\s+/.test(line)) {\n      continue;\n    }\n\n    currentLines.push(line);\n  }\n\n  // Dosyanın son bölümünü de kaydet.\n  pushSection();\n}\n\nreturn output;"
+        "jsCode": "const items = $input.all();\nconst fileListItems = $('Create File List').all();\nconst output = [];\n\n// Remove generated metadata comments and normalize whitespace.\n\nfunction cleanText(text) {\n  return String(text || '')\n    .replace(/<!--[\\s\\S]*?-->/g, '')\n\n    .replace(/\\r\\n/g, '\\n')\n\n    .replace(/\\n{3,}/g, '\\n\\n')\n\n    .trim();\n}\n\nfor (\n  let itemIndex = 0;\n  itemIndex < items.length;\n  itemIndex++\n) {\n  const metadata = fileListItems[itemIndex]?.json;\n\n  if (!metadata?.document_id) {\n    throw new Error(\n      `Document metadata not found for item index ${itemIndex}`\n    );\n  }\n\n  // @ts-ignore\n  const buffer =\n    await this.helpers.getBinaryDataBuffer(\n      itemIndex,\n      'data'\n    );\n\n  const fileContent = cleanText(\n    buffer.toString('utf8')\n  );\n\n  const lines = fileContent.split('\\n');\n\n  // Prefer the final H1 because processed files may contain multiple titles.\n  const h1Titles = lines\n    .map((line) => {\n      const match = line.match(/^#\\s+(.+)$/);\n\n      return match\n        ? match[1].trim()\n        : null;\n    })\n    .filter(Boolean);\n\n  const documentHeading =\n    h1Titles[h1Titles.length - 1] ||\n    metadata.title ||\n    metadata.document_id;\n\n  let currentSectionTitle = 'Genel';\n  let currentLines = [];\n  let chunkIndex = 1;\n\n\n  function pushSection() {\n    const content = cleanText(\n      currentLines.join('\\n')\n    );\n\n    if (!content) {\n      return;\n    }\n\n    // Format embeddings as: title: <document title> - <section title> | text: <content>\n\n    const embeddingTitle = [\n      documentHeading,\n      currentSectionTitle\n    ]\n      .filter(Boolean)\n      .join(' - ');\n\n    const embeddingText =\n      `title: ${embeddingTitle} | text: ${content}`;\n\n    output.push({\n      json: {\n        // The Default Data Loader embeds this field.\n        text: embeddingText,\n\n        metadata: {\n          document_id:\n            metadata.document_id,\n\n          // Keep the manifest title for frontend source attribution.\n          title:\n            metadata.title,\n\n          category:\n            metadata.category,\n\n          section_title:\n            currentSectionTitle,\n\n          chunk_index:\n            chunkIndex,\n\n          file_name:\n            metadata.file_name,\n\n          source_file_name:\n            metadata.source_file_name ||\n            metadata.file_name,\n\n          file_type:\n            metadata.file_type || null,\n\n          content_hash:\n            metadata.content_hash || null,\n\n          last_updated:\n            metadata.last_updated || null\n        }\n      }\n    });\n\n    chunkIndex++;\n  }\n\n  for (const line of lines) {\n    const sectionMatch =\n      line.match(/^##\\s+(.+)$/);\n\n    if (sectionMatch) {\n      pushSection();\n\n      currentSectionTitle =\n        sectionMatch[1].trim();\n\n      // Exclude H2 headings because they are already included in the embedding title.\n      currentLines = [];\n\n      continue;\n    }\n\n    // Exclude H1 headings because they are already included in the embedding title.\n    if (/^#\\s+/.test(line)) {\n      continue;\n    }\n\n    currentLines.push(line);\n  }\n\n  pushSection();\n}\n\nreturn output;"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1040,
-        0
+        -1008,
+        128
       ],
       "id": "f84b5cc5-8b03-457f-8da1-c31ef1f83321",
-      "name": "Prepare LangChain Documents"
+      "name": "Prepare LangChain Documents",
+      "notes": "Cleans document text, separates sections, and attaches manifest metadata."
     },
     {
       "parameters": {
@@ -121,11 +126,12 @@
       "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
       "typeVersion": 1.1,
       "position": [
-        1392,
-        208
+        -672,
+        336
       ],
       "id": "70c35565-c83b-4571-90b7-ab78bc108e6b",
-      "name": "Default Data Loader"
+      "name": "Default Data Loader",
+      "notes": "Converts prepared text and metadata into LangChain documents for chunking."
     },
     {
       "parameters": {
@@ -136,11 +142,12 @@
       "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
       "typeVersion": 1,
       "position": [
-        1392,
-        384
+        -672,
+        512
       ],
       "id": "20b8d114-e65e-46d6-a121-f6833a11e2db",
-      "name": "Recursive Character Text Splitter"
+      "name": "Recursive Character Text Splitter",
+      "notes": "Splits prepared documents into the configured text chunks."
     },
     {
       "parameters": {
@@ -149,8 +156,8 @@
       "type": "@n8n/n8n-nodes-langchain.embeddingsOllama",
       "typeVersion": 1,
       "position": [
-        1152,
-        208
+        -912,
+        336
       ],
       "id": "c6225190-0aec-4ebc-ab12-f88800d50573",
       "name": "Embeddings Ollama",
@@ -159,7 +166,8 @@
           "id": "2lvtTgqp93db9Ksy",
           "name": "Ollama account"
         }
-      }
+      },
+      "notes": "Generates document embeddings with the configured local Ollama model."
     },
     {
       "parameters": {
@@ -172,8 +180,8 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        0,
-        224
+        -2048,
+        320
       ],
       "id": "fe5b4b3e-a9c1-4ba5-aec3-5f3166e8028d",
       "name": "Webhook",
@@ -183,7 +191,8 @@
           "id": "kmSsL1EFXjtX3g0l",
           "name": "Internal Webhook Header Auth"
         }
-      }
+      },
+      "notes": "Receives authenticated reindex requests that start this ingestion workflow."
     },
     {
       "parameters": {
@@ -194,8 +203,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        208,
-        0
+        -1840,
+        128
       ],
       "id": "2d87435e-acb5-4fb4-a2b9-4de4d20d1553",
       "name": "Clear Staging Chunks",
@@ -205,7 +214,8 @@
           "id": "jShdzm8IEPIqSd41",
           "name": "Postgres account"
         }
-      }
+      },
+      "notes": "Clears the staging vector table before loading a new document set."
     },
     {
       "parameters": {
@@ -220,8 +230,8 @@
       "type": "@n8n/n8n-nodes-langchain.vectorStorePGVector",
       "typeVersion": 1.3,
       "position": [
-        1248,
-        0
+        -816,
+        128
       ],
       "id": "a25a74b7-4528-4be4-8561-a1f10d02fe2c",
       "name": "Insert Documents to PGVector Staging",
@@ -230,7 +240,8 @@
           "id": "jShdzm8IEPIqSd41",
           "name": "Postgres account"
         }
-      }
+      },
+      "notes": "Writes document chunks and embeddings to the staging vector table."
     },
     {
       "parameters": {
@@ -241,8 +252,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        1632,
-        0
+        -480,
+        128
       ],
       "id": "241ff475-dc61-4cb2-8d79-9047a6a6de1e",
       "name": "Validate Staging Chunks",
@@ -252,7 +263,8 @@
           "id": "jShdzm8IEPIqSd41",
           "name": "Postgres account"
         }
-      }
+      },
+      "notes": "Checks staging chunks for valid embeddings, content, metadata, and unique chunk keys."
     },
     {
       "parameters": {
@@ -282,11 +294,12 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        1840,
-        0
+        -272,
+        128
       ],
       "id": "fe21f856-3b30-4531-851d-d4d38534c6d4",
-      "name": "Is Staging Valid?"
+      "name": "Is Staging Valid?",
+      "notes": "Routes validated staging data to promotion or validation failure handling."
     },
     {
       "parameters": {
@@ -295,11 +308,12 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2048,
-        128
+        -16,
+        256
       ],
       "id": "9d9cc82a-6fa3-4f2c-b0c3-732033c724eb",
-      "name": "Fail Reindex Validation"
+      "name": "Fail Reindex Validation",
+      "notes": "Stops ingestion with details when staging validation fails."
     },
     {
       "parameters": {
@@ -312,8 +326,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        2048,
-        -128
+        -16,
+        0
       ],
       "id": "a9901945-1070-4012-8335-3f9b0a17d4d4",
       "name": "Promote Staging to Active",
@@ -323,7 +337,8 @@
           "id": "jShdzm8IEPIqSd41",
           "name": "Postgres account"
         }
-      }
+      },
+      "notes": "Replaces the active vector data with the validated staging chunks."
     }
   ],
   "pinData": {},
