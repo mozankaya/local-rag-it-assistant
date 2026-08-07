@@ -16,6 +16,7 @@
         0
       ],
       "id": "8b8ac394-eb13-459c-be6f-19e0afab1144",
+      "notes": "Receives authenticated feedback requests from the FastAPI gateway.",
       "name": "Webhook",
       "webhookId": "62bd7712-3b07-4c2e-b9eb-e40f92e911b5",
       "credentials": {
@@ -37,6 +38,7 @@
         0
       ],
       "id": "5aa8d2a4-693c-4493-91a4-bac9ab84da18",
+      "notes": "Validates the chat log ID and accepted feedback value.",
       "name": "Validate Feedback"
     },
     {
@@ -51,6 +53,7 @@
         0
       ],
       "id": "2255ffbf-ddcd-4dc4-b950-154e5cacfce9",
+      "notes": "Builds a consistent response for successful and missing chat log cases.",
       "name": "Format Feedback Response"
     },
     {
@@ -66,6 +69,7 @@
         0
       ],
       "id": "809f1d39-0fd9-4141-8aea-df5b16b80e8f",
+      "notes": "Returns the feedback result to the caller.",
       "name": "Respond to Webhook"
     },
     {
@@ -83,6 +87,7 @@
         0
       ],
       "id": "b385b648-d44f-44cd-857b-83a97c6b8807",
+      "notes": "Stores or updates feedback linked to the selected chat log.",
       "name": "Save Feedback",
       "retryOnFail": true,
       "credentials": {
