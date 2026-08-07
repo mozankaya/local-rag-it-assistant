@@ -12,11 +12,10 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        0,
-        0
+        -1776,
+        304
       ],
       "id": "08f087df-6686-4804-bb65-105619ab3247",
-      "notes": "Receives authenticated RAG requests from the FastAPI gateway.",
       "name": "Webhook",
       "webhookId": "58ba8295-e933-4a79-8ddf-bab27ed9196f",
       "credentials": {
@@ -24,7 +23,8 @@
           "id": "kmSsL1EFXjtX3g0l",
           "name": "Internal Webhook Header Auth"
         }
-      }
+      },
+      "notes": "Receives authenticated RAG requests from the FastAPI gateway."
     },
     {
       "parameters": {
@@ -34,12 +34,12 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        208,
-        0
+        -1568,
+        304
       ],
       "id": "159a2d0c-0798-4962-ac9b-599673dfda39",
-      "notes": "Validates the incoming question and prepares bounded RAG settings.",
-      "name": "Get User Question"
+      "name": "Get User Question",
+      "notes": "Validates the incoming question and prepares bounded RAG settings."
     },
     {
       "parameters": {
@@ -48,12 +48,12 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        416,
-        0
+        -1360,
+        304
       ],
       "id": "71a7f0ce-4414-4a82-a0aa-05229634a4e6",
-      "notes": "Recognizes greetings, assistant questions, and thanks that have static responses.",
-      "name": "Detect Simple Intent"
+      "name": "Detect Simple Intent",
+      "notes": "Recognizes greetings, assistant questions, and thanks that have static responses."
     },
     {
       "parameters": {
@@ -83,12 +83,12 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        624,
-        0
+        -1152,
+        304
       ],
       "id": "cce06eb6-9f47-4b0c-8ce2-1128b562a26d",
-      "notes": "Routes recognized simple intents directly to the static response.",
-      "name": "IF Static Response"
+      "name": "IF Static Response",
+      "notes": "Routes recognized simple intents directly to the static response."
     },
     {
       "parameters": {
@@ -99,12 +99,12 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        880,
-        -144
+        -896,
+        160
       ],
       "id": "dac562a2-262f-493c-b0fc-66217e437a38",
-      "notes": "Returns the predefined response for a recognized simple intent.",
-      "name": "Respond Static Answer"
+      "name": "Respond Static Answer",
+      "notes": "Returns the predefined response for a recognized simple intent."
     },
     {
       "parameters": {
@@ -117,11 +117,10 @@
       "type": "@n8n/n8n-nodes-langchain.vectorStorePGVector",
       "typeVersion": 1.3,
       "position": [
-        880,
-        16
+        -896,
+        320
       ],
       "id": "def2d8f5-8f42-4237-98f5-986ba51655bf",
-      "notes": "Retrieves the most relevant document chunks using vector similarity search.",
       "name": "Get Similar Documents",
       "notesInFlow": false,
       "credentials": {
@@ -129,7 +128,8 @@
           "id": "jShdzm8IEPIqSd41",
           "name": "Postgres account"
         }
-      }
+      },
+      "notes": "Retrieves the most relevant document chunks using vector similarity search."
     },
     {
       "parameters": {
@@ -138,18 +138,18 @@
       "type": "@n8n/n8n-nodes-langchain.embeddingsOllama",
       "typeVersion": 1,
       "position": [
-        1072,
-        160
+        -704,
+        464
       ],
       "id": "44c40ced-dc66-42aa-b5a5-18809944de72",
-      "notes": "Generates the query embedding with the configured local Ollama model.",
       "name": "Embeddings Ollama",
       "credentials": {
         "ollamaApi": {
           "id": "2lvtTgqp93db9Ksy",
           "name": "Ollama account"
         }
-      }
+      },
+      "notes": "Generates the query embedding with the configured local Ollama model."
     },
     {
       "parameters": {
@@ -163,18 +163,18 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        2256,
-        304
+        384,
+        640
       ],
       "id": "39ccf32e-bffc-417b-8191-77e9c21db994",
-      "notes": "Provides the local language model used to generate source-grounded answers.",
       "name": "Ollama Chat Model",
       "credentials": {
         "ollamaApi": {
           "id": "2lvtTgqp93db9Ksy",
           "name": "Ollama account"
         }
-      }
+      },
+      "notes": "Provides the local language model used to generate source-grounded answers."
     },
     {
       "parameters": {
@@ -185,13 +185,13 @@
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.9,
       "position": [
-        2080,
-        128
+        192,
+        496
       ],
       "id": "33ac829a-3a4d-4d7d-a5b9-b207b67a0c24",
-      "notes": "Generates a source-grounded answer with the local language model.",
       "name": "Generate Answer - LangChain",
-      "onError": "continueRegularOutput"
+      "onError": "continueRegularOutput",
+      "notes": "Generates a source-grounded answer with the local language model."
     },
     {
       "parameters": {
@@ -201,12 +201,12 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2672,
-        128
+        672,
+        496
       ],
       "id": "cb815feb-a170-483e-a521-398ef803809f",
-      "notes": "Normalizes the model output, applies safety checks, and prepares the RAG response.",
-      "name": "Format Answer"
+      "name": "Format Answer",
+      "notes": "Normalizes the model output, applies safety checks, and prepares the RAG response."
     },
     {
       "parameters": {
@@ -217,12 +217,12 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
       "position": [
-        3760,
-        48
+        1616,
+        320
       ],
       "id": "db925f28-a155-4a6c-a4d6-328fa22b2be9",
-      "notes": "Returns the stored chat result and generated response to the caller.",
-      "name": "Respond Full LangChain Answer"
+      "name": "Respond Full LangChain Answer",
+      "notes": "Returns the stored chat result and generated response to the caller."
     },
     {
       "parameters": {
@@ -367,18 +367,18 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        3328,
-        48
+        1184,
+        320
       ],
       "id": "0cc8eef1-930b-4d45-8211-b76dcd843b58",
-      "notes": "Stores masked chat content, sources, and response metadata in the chat log.",
       "name": "Insert Chat Log",
       "credentials": {
         "postgres": {
           "id": "jShdzm8IEPIqSd41",
           "name": "Postgres account"
         }
-      }
+      },
+      "notes": "Stores masked chat content, sources, and response metadata in the chat log."
     },
     {
       "parameters": {
@@ -388,12 +388,12 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3552,
-        48
+        1408,
+        320
       ],
       "id": "6445a47a-5f9b-49ef-87f9-44d47906da93",
-      "notes": "Combines the stored chat log ID with the original response payload.",
-      "name": "Format Chat Response"
+      "name": "Format Chat Response",
+      "notes": "Combines the stored chat log ID with the original response payload."
     },
     {
       "parameters": {
@@ -423,12 +423,12 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        1392,
-        16
+        -384,
+        320
       ],
       "id": "4578aae4-34ca-4e76-bf92-63e6e03e96a1",
-      "notes": "Routes missing-context questions to scope classification and relevant-context questions to answer generation.",
-      "name": "IF No Relevant Source"
+      "name": "IF No Relevant Source",
+      "notes": "Routes missing-context questions to scope classification and relevant-context questions to answer generation."
     },
     {
       "parameters": {
@@ -438,12 +438,12 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2416,
-        -48
+        672,
+        256
       ],
       "id": "2e3a44b2-99fc-4ff8-b13a-fde7bff7633f",
-      "notes": "Builds the standard response for an in-scope question with no relevant source.",
-      "name": "Prepare No Source Response"
+      "name": "Prepare No Source Response",
+      "notes": "Builds the standard response for an in-scope question with no relevant source."
     },
     {
       "parameters": {
@@ -453,12 +453,12 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3104,
-        48
+        960,
+        320
       ],
       "id": "695aa610-c6b7-4d51-b05d-75338844c0be",
-      "notes": "Masks sensitive values and prepares chat data and metadata for storage.",
-      "name": "Prepare Chat Log Data"
+      "name": "Prepare Chat Log Data",
+      "notes": "Masks sensitive values and prepares chat data and metadata for storage."
     },
     {
       "parameters": {
@@ -467,12 +467,12 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2496,
-        -256
+        672,
+        48
       ],
       "id": "3e479788-40b2-43ef-ad1b-e802ec4013a7",
-      "notes": "Builds the standard response for a question classified outside IT support.",
-      "name": "Prepare Out of Scope Response"
+      "name": "Prepare Out of Scope Response",
+      "notes": "Builds the standard response for a question classified outside IT support."
     },
     {
       "parameters": {
@@ -483,13 +483,13 @@
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.9,
       "position": [
-        1792,
-        -304
+        -16,
+        128
       ],
       "id": "6ce26800-82ce-4594-8537-d2386e53884b",
-      "notes": "Classifies whether a question without relevant context belongs to IT support.",
       "name": "Classify Question Scope",
-      "onError": "continueRegularOutput"
+      "onError": "continueRegularOutput",
+      "notes": "Classifies whether a question without relevant context belongs to IT support."
     },
     {
       "parameters": {
@@ -502,18 +502,18 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        1872,
-        -96
+        112,
+        304
       ],
       "id": "d61a3543-ccca-4d40-a08b-7a5af85d5740",
-      "notes": "Provides the local language model used for IT scope classification.",
       "name": "Scope Classifier Model",
       "credentials": {
         "ollamaApi": {
           "id": "2lvtTgqp93db9Ksy",
           "name": "Ollama account"
         }
-      }
+      },
+      "notes": "Provides the local language model used for IT scope classification."
     },
     {
       "parameters": {
@@ -523,12 +523,12 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2064,
-        -240
+        288,
+        128
       ],
       "id": "ec54aca6-0d54-4808-9a25-8888be7fc33f",
-      "notes": "Normalizes classifier output and applies the safe IT-related fallback.",
-      "name": "Format Scope Result"
+      "name": "Format Scope Result",
+      "notes": "Normalizes classifier output and applies the safe IT-related fallback."
     },
     {
       "parameters": {
@@ -558,12 +558,12 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        2256,
-        -240
+        480,
+        128
       ],
       "id": "eb2dabdc-477a-44f2-a2ec-f49a08766188",
-      "notes": "Routes classified questions to the out-of-scope or no-source response.",
-      "name": "IF Out Of Scope"
+      "name": "IF Out Of Scope",
+      "notes": "Routes classified questions to the out-of-scope or no-source response."
     },
     {
       "parameters": {
@@ -572,12 +572,12 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1216,
-        16
+        -560,
+        320
       ],
       "id": "e0a2baf9-93d5-4fd0-a280-138a2481cb62",
-      "notes": "Filters retrieved chunks and builds the context and source list used for the RAG response.",
-      "name": "Prepare Retrieval Context"
+      "name": "Prepare Retrieval Context",
+      "notes": "Filters retrieved chunks and builds the context and source list used for the RAG response."
     },
     {
       "parameters": {
@@ -587,12 +587,12 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1744,
-        144
+        -192,
+        496
       ],
       "id": "d0dd4f82-956e-4872-9e49-9cd750ec596c",
-      "notes": "Builds the source-grounded answer prompt from the question and retrieved context.",
-      "name": "Build RAG Prompt"
+      "name": "Build RAG Prompt",
+      "notes": "Builds the source-grounded answer prompt from the question and retrieved context."
     },
     {
       "parameters": {
@@ -602,12 +602,12 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1600,
-        -224
+        -176,
+        128
       ],
       "id": "58c789e8-2535-4b76-8aea-87a99e541c55",
-      "notes": "Builds the IT scope classification prompt when no relevant context is available.",
-      "name": "Build Scope Prompt"
+      "name": "Build Scope Prompt",
+      "notes": "Builds the IT scope classification prompt when no relevant context is available."
     }
   ],
   "pinData": {},

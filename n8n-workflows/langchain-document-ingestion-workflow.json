@@ -9,24 +9,24 @@
       "type": "n8n-nodes-base.readWriteFile",
       "typeVersion": 1.1,
       "position": [
-        416,
-        0
+        -1632,
+        128
       ],
       "id": "178eb560-0096-4c3a-ae71-a25fec37f761",
-      "notes": "Reads the document manifest from local workflow storage.",
-      "name": "Read Manifest"
+      "name": "Read Manifest",
+      "notes": "Reads the document manifest from local workflow storage."
     },
     {
       "parameters": {},
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
       "position": [
-        0,
-        0
+        -2048,
+        128
       ],
       "id": "94f5412b-c1dc-4b8d-af7c-a520fbe22621",
-      "notes": "Starts the ingestion workflow manually for maintenance or testing.",
-      "name": "Manual Trigger"
+      "name": "Manual Trigger",
+      "notes": "Starts the ingestion workflow manually for maintenance or testing."
     },
     {
       "parameters": {
@@ -35,12 +35,12 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        624,
-        0
+        -1424,
+        128
       ],
       "id": "b79b4a0a-571a-4d7a-88c4-ff454efcbc2b",
-      "notes": "Validates manifest entries and builds local paths for the source documents.",
-      "name": "Create File List"
+      "name": "Create File List",
+      "notes": "Validates manifest entries and builds local paths for the source documents."
     },
     {
       "parameters": {
@@ -50,12 +50,12 @@
       "type": "n8n-nodes-base.readWriteFile",
       "typeVersion": 1.1,
       "position": [
-        832,
-        0
+        -1216,
+        128
       ],
       "id": "f97d17e4-63b4-47fb-9a91-e8174583a709",
-      "notes": "Loads each source document from local workflow storage.",
-      "name": "Read Files from Disk"
+      "name": "Read Files from Disk",
+      "notes": "Loads each source document from local workflow storage."
     },
     {
       "parameters": {
@@ -64,12 +64,12 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1040,
-        0
+        -1008,
+        128
       ],
       "id": "f84b5cc5-8b03-457f-8da1-c31ef1f83321",
-      "notes": "Cleans document text, separates sections, and attaches manifest metadata.",
-      "name": "Prepare LangChain Documents"
+      "name": "Prepare LangChain Documents",
+      "notes": "Cleans document text, separates sections, and attaches manifest metadata."
     },
     {
       "parameters": {
@@ -126,12 +126,12 @@
       "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
       "typeVersion": 1.1,
       "position": [
-        1392,
-        208
+        -672,
+        336
       ],
       "id": "70c35565-c83b-4571-90b7-ab78bc108e6b",
-      "notes": "Converts prepared text and metadata into LangChain documents for chunking.",
-      "name": "Default Data Loader"
+      "name": "Default Data Loader",
+      "notes": "Converts prepared text and metadata into LangChain documents for chunking."
     },
     {
       "parameters": {
@@ -142,12 +142,12 @@
       "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
       "typeVersion": 1,
       "position": [
-        1392,
-        384
+        -672,
+        512
       ],
       "id": "20b8d114-e65e-46d6-a121-f6833a11e2db",
-      "notes": "Splits prepared documents into the configured text chunks.",
-      "name": "Recursive Character Text Splitter"
+      "name": "Recursive Character Text Splitter",
+      "notes": "Splits prepared documents into the configured text chunks."
     },
     {
       "parameters": {
@@ -156,18 +156,18 @@
       "type": "@n8n/n8n-nodes-langchain.embeddingsOllama",
       "typeVersion": 1,
       "position": [
-        1152,
-        208
+        -912,
+        336
       ],
       "id": "c6225190-0aec-4ebc-ab12-f88800d50573",
-      "notes": "Generates document embeddings with the configured local Ollama model.",
       "name": "Embeddings Ollama",
       "credentials": {
         "ollamaApi": {
           "id": "2lvtTgqp93db9Ksy",
           "name": "Ollama account"
         }
-      }
+      },
+      "notes": "Generates document embeddings with the configured local Ollama model."
     },
     {
       "parameters": {
@@ -180,11 +180,10 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        0,
-        224
+        -2048,
+        320
       ],
       "id": "fe5b4b3e-a9c1-4ba5-aec3-5f3166e8028d",
-      "notes": "Receives authenticated reindex requests that start this ingestion workflow.",
       "name": "Webhook",
       "webhookId": "27b2c3bb-24b0-415c-b865-e01b651404ce",
       "credentials": {
@@ -192,7 +191,8 @@
           "id": "kmSsL1EFXjtX3g0l",
           "name": "Internal Webhook Header Auth"
         }
-      }
+      },
+      "notes": "Receives authenticated reindex requests that start this ingestion workflow."
     },
     {
       "parameters": {
@@ -203,11 +203,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        208,
-        0
+        -1840,
+        128
       ],
       "id": "2d87435e-acb5-4fb4-a2b9-4de4d20d1553",
-      "notes": "Clears the staging vector table before loading a new document set.",
       "name": "Clear Staging Chunks",
       "retryOnFail": true,
       "credentials": {
@@ -215,7 +214,8 @@
           "id": "jShdzm8IEPIqSd41",
           "name": "Postgres account"
         }
-      }
+      },
+      "notes": "Clears the staging vector table before loading a new document set."
     },
     {
       "parameters": {
@@ -230,18 +230,18 @@
       "type": "@n8n/n8n-nodes-langchain.vectorStorePGVector",
       "typeVersion": 1.3,
       "position": [
-        1248,
-        0
+        -816,
+        128
       ],
       "id": "a25a74b7-4528-4be4-8561-a1f10d02fe2c",
-      "notes": "Writes document chunks and embeddings to the staging vector table.",
       "name": "Insert Documents to PGVector Staging",
       "credentials": {
         "postgres": {
           "id": "jShdzm8IEPIqSd41",
           "name": "Postgres account"
         }
-      }
+      },
+      "notes": "Writes document chunks and embeddings to the staging vector table."
     },
     {
       "parameters": {
@@ -252,11 +252,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        1632,
-        0
+        -480,
+        128
       ],
       "id": "241ff475-dc61-4cb2-8d79-9047a6a6de1e",
-      "notes": "Checks staging chunks for valid embeddings, content, metadata, and unique chunk keys.",
       "name": "Validate Staging Chunks",
       "retryOnFail": true,
       "credentials": {
@@ -264,7 +263,8 @@
           "id": "jShdzm8IEPIqSd41",
           "name": "Postgres account"
         }
-      }
+      },
+      "notes": "Checks staging chunks for valid embeddings, content, metadata, and unique chunk keys."
     },
     {
       "parameters": {
@@ -294,12 +294,12 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        1840,
-        0
+        -272,
+        128
       ],
       "id": "fe21f856-3b30-4531-851d-d4d38534c6d4",
-      "notes": "Routes validated staging data to promotion or validation failure handling.",
-      "name": "Is Staging Valid?"
+      "name": "Is Staging Valid?",
+      "notes": "Routes validated staging data to promotion or validation failure handling."
     },
     {
       "parameters": {
@@ -308,12 +308,12 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2048,
-        128
+        -16,
+        256
       ],
       "id": "9d9cc82a-6fa3-4f2c-b0c3-732033c724eb",
-      "notes": "Stops ingestion with details when staging validation fails.",
-      "name": "Fail Reindex Validation"
+      "name": "Fail Reindex Validation",
+      "notes": "Stops ingestion with details when staging validation fails."
     },
     {
       "parameters": {
@@ -326,11 +326,10 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        2048,
-        -128
+        -16,
+        0
       ],
       "id": "a9901945-1070-4012-8335-3f9b0a17d4d4",
-      "notes": "Replaces the active vector data with the validated staging chunks.",
       "name": "Promote Staging to Active",
       "retryOnFail": true,
       "credentials": {
@@ -338,7 +337,8 @@
           "id": "jShdzm8IEPIqSd41",
           "name": "Postgres account"
         }
-      }
+      },
+      "notes": "Replaces the active vector data with the validated staging chunks."
     }
   ],
   "pinData": {},
