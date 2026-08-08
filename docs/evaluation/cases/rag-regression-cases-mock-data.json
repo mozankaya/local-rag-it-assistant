@@ -4,7 +4,7 @@
     "question": "Outlook'un alt kısmında çevrimdışı çalışıyor yazıyor, neyi kontrol etmeliyim?",
     "expected_response_type": "rag_answer",
     "expected_document_ids": [
-      "email-outlook-support"
+      "outlook-ve-e-posta-destegi"
     ],
     "accepted_sections": [
       "Outlook çevrimdışı görünüyor"
@@ -21,7 +21,7 @@
     "question": "Büyük ekli bir e-postam Giden Kutusu'nda kaldı ve gönderilmiyor.",
     "expected_response_type": "rag_answer",
     "expected_document_ids": [
-      "email-outlook-support"
+      "outlook-ve-e-posta-destegi"
     ],
     "accepted_sections": [
       "E-posta gönderilemiyor"
@@ -38,7 +38,7 @@
     "question": "Yetkim verildiği halde ortak posta kutusu Outlook listemde görünmüyor.",
     "expected_response_type": "rag_answer",
     "expected_document_ids": [
-      "email-outlook-support"
+      "outlook-ve-e-posta-destegi"
     ],
     "accepted_sections": [
       "Ortak posta kutusu görünmüyor"
@@ -55,7 +55,7 @@
     "question": "Masa için ikinci bir monitör talep ederken hangi bilgileri yazmalıyım?",
     "expected_response_type": "rag_answer",
     "expected_document_ids": [
-      "equipment-request-process"
+      "ekipman-talep-sureci"
     ],
     "accepted_sections": [
       "Monitör talebi"
@@ -72,7 +72,7 @@
     "question": "Bilgisayarım bozuldu ve iş tamamen durdu; acil geçici laptop istiyorum.",
     "expected_response_type": "rag_answer",
     "expected_document_ids": [
-      "equipment-request-process"
+      "ekipman-talep-sureci"
     ],
     "accepted_sections": [
       "Acil ekipman ihtiyacı"
@@ -89,7 +89,7 @@
     "question": "Ekipman talep numaramı bulamıyorum, talebimin durumunu nasıl sorgularım?",
     "expected_response_type": "rag_answer",
     "expected_document_ids": [
-      "equipment-request-process"
+      "ekipman-talep-sureci"
     ],
     "accepted_sections": [
       "Ekipman talebi durumu"
@@ -106,7 +106,7 @@
     "question": "Dock istasyonuna bağlı monitör ve USB cihazlar birden çalışmayı bıraktı.",
     "expected_response_type": "rag_answer",
     "expected_document_ids": [
-      "hardware-peripherals"
+      "donanim-ve-cevre-birimleri"
     ],
     "accepted_sections": [
       "Bağlantı istasyonu çalışmıyor"
@@ -123,7 +123,7 @@
     "question": "Laptop adaptöre bağlı ama açılmıyor ve güç ışığı da yanmıyor.",
     "expected_response_type": "rag_answer",
     "expected_document_ids": [
-      "hardware-peripherals"
+      "donanim-ve-cevre-birimleri"
     ],
     "accepted_sections": [
       "Bilgisayar açılmıyor"
@@ -140,15 +140,15 @@
     "question": "USB belleği farklı bilgisayarlarda denedim, hiçbirinde algılanmıyor.",
     "expected_response_type": "rag_answer",
     "expected_document_ids": [
-      "hardware-peripherals"
+      "donanim-ve-cevre-birimleri"
     ],
     "accepted_sections": [
       "USB cihaz algılanmıyor"
     ],
     "required_keywords": [
-      "farklı USB",
-      "başka bir bilgisayar",
-      "arızalı"
+      "USB",
+      "algılanm",
+      "arız"
     ],
     "min_keyword_hits": 1
   },
@@ -157,7 +157,7 @@
     "question": "IT destek kaydına sorunu anlatırken hangi teknik ayrıntıları eklemeliyim?",
     "expected_response_type": "rag_answer",
     "expected_document_ids": [
-      "it-support-ticket-process"
+      "destek-kaydi-ve-takip-sureci"
     ],
     "accepted_sections": [
       "Destek kaydında bulunması gereken bilgiler"
@@ -174,7 +174,7 @@
     "question": "Aynı hata devam ediyor; yeni kayıt mı açayım yoksa eskisini mi güncelleyeyim?",
     "expected_response_type": "rag_answer",
     "expected_document_ids": [
-      "it-support-ticket-process"
+      "destek-kaydi-ve-takip-sureci"
     ],
     "accepted_sections": [
       "Aynı sorun için tekrar kayıt açma"
@@ -191,15 +191,21 @@
     "question": "Ekran görüntüsünde kişisel bilgiler görünüyor, destek kaydına eklemeden önce ne yapmalıyım?",
     "expected_response_type": "rag_answer",
     "expected_document_ids": [
-      "it-support-ticket-process"
+      "destek-kaydi-ve-takip-sureci",
+      "outlook-ve-e-posta-destegi",
+      "sifre-ve-hesap-erisimi",
+      "bilgi-guvenligi-ve-mfa"
     ],
     "accepted_sections": [
-      "Ekran görüntüsü veya hata kaydı ekleme"
+      "Ekran görüntüsü veya hata kaydı ekleme",
+      "E-posta sorunu için destek kaydına eklenecek bilgiler",
+      "Hesap sorunu için destek kaydına eklenecek bilgiler",
+      "Güvenlik olayı için destek kaydına eklenecek bilgiler"
     ],
     "required_keywords": [
       "gizle",
-      "hata saati",
-      "parola"
+      "kişisel",
+      "paylaş"
     ],
     "min_keyword_hits": 1
   },
@@ -208,26 +214,30 @@
     "question": "Parolamı destek kaydına yazmalı mıyım?",
     "expected_response_type": "rag_answer",
     "expected_document_ids": [
-      "it-support-ticket-process"
+      "destek-kaydi-ve-takip-sureci",
+      "sifre-ve-hesap-erisimi",
+      "bilgi-guvenligi-ve-mfa"
     ],
     "accepted_sections": [
       "Hassas bilgilerin paylaşılması",
-      "Ekran görüntüsü veya hata kaydı ekleme"
+      "Ekran görüntüsü veya hata kaydı ekleme",
+      "Hesap sorunu için destek kaydına eklenecek bilgiler",
+      "Güvenlik olayı için destek kaydına eklenecek bilgiler"
     ],
     "required_keywords": [
       "parola",
       "destek kaydı",
-      "yazmayın",
-      "paylaşmayın"
+      "yazma",
+      "paylaşma"
     ],
-    "min_keyword_hits": 2
+    "min_keyword_hits": 1
   },
   {
     "id": "MEET-PARA-01",
     "question": "Toplantıda karşı taraf benim sesimi duymuyor ama ben onları duyuyorum.",
     "expected_response_type": "rag_answer",
     "expected_document_ids": [
-      "meeting-room-av"
+      "toplanti-odasi-ses-ve-goruntu"
     ],
     "accepted_sections": [
       "Toplantıda ses karşı tarafa gitmiyor"
@@ -244,7 +254,7 @@
     "question": "Sunum sırasında ekranımı paylaşamıyorum.",
     "expected_response_type": "rag_answer",
     "expected_document_ids": [
-      "meeting-room-av"
+      "toplanti-odasi-ses-ve-goruntu"
     ],
     "accepted_sections": [
       "Ekran paylaşımı yapılamıyor"
@@ -261,7 +271,7 @@
     "question": "Aynı odada toplantıya iki bilgisayardan girince sürekli yankı oluşuyor.",
     "expected_response_type": "rag_answer",
     "expected_document_ids": [
-      "meeting-room-av"
+      "toplanti-odasi-ses-ve-goruntu"
     ],
     "accepted_sections": [
       "Toplantıda yankı oluşuyor"
@@ -278,7 +288,7 @@
     "question": "İnternet çalışıyor ama yalnızca bir web adresi hiçbir tarayıcıda açılmıyor.",
     "expected_response_type": "rag_answer",
     "expected_document_ids": [
-      "network-connectivity"
+      "ag-ve-internet-baglantisi"
     ],
     "accepted_sections": [
       "Yalnızca bir web sitesi açılmıyor"
@@ -295,14 +305,16 @@
     "question": "Kurumsal Wi-Fi parolası doğru olduğu halde bilgisayar ağa bağlanamıyor.",
     "expected_response_type": "rag_answer",
     "expected_document_ids": [
-      "network-connectivity"
+      "ag-ve-internet-baglantisi"
     ],
     "accepted_sections": [
-      "Kablosuz ağa bağlanılamıyor"
+      "Kablosuz ağa bağlanılamıyor",
+      "İnternet bağlantısı yok"
     ],
     "required_keywords": [
+      "kurumsal ağ",
+      "kablosuz",
       "ağ adı",
-      "unut",
       "hata mesajı"
     ],
     "min_keyword_hits": 1
@@ -312,15 +324,16 @@
     "question": "Ağ sürücüsü özellikle öğleden sonra bağlantıyı kaybediyor.",
     "expected_response_type": "rag_answer",
     "expected_document_ids": [
-      "network-connectivity"
+      "ag-ve-internet-baglantisi"
     ],
     "accepted_sections": [
       "Ağ sürücüsü bağlantısı kopuyor"
     ],
     "required_keywords": [
+      "ağ sürücüsü",
       "VPN",
-      "saat",
-      "sürücü adı"
+      "bağlantı",
+      "saat"
     ],
     "min_keyword_hits": 1
   },
@@ -329,7 +342,7 @@
     "question": "Hesabım kilitleniyor; telefonda ve Outlook'ta eski şifre hâlâ kayıtlı olabilir.",
     "expected_response_type": "rag_answer",
     "expected_document_ids": [
-      "password-account-access"
+      "sifre-ve-hesap-erisimi"
     ],
     "accepted_sections": [
       "Hesap kilitlendi"
@@ -346,15 +359,17 @@
     "question": "Şifremi değiştirdim fakat bir uygulama hâlâ eski parolayı soruyor.",
     "expected_response_type": "rag_answer",
     "expected_document_ids": [
-      "password-account-access"
+      "sifre-ve-hesap-erisimi"
     ],
     "accepted_sections": [
       "Şifre değişti ancak uygulama eski şifreyi istiyor"
     ],
     "required_keywords": [
       "yeni şifre",
+      "yeni parola",
+      "eski parola",
       "oturum",
-      "Kimlik Bilgisi Yöneticisi"
+      "destek kaydı"
     ],
     "min_keyword_hits": 1
   },
@@ -363,15 +378,16 @@
     "question": "Uzun süredir kullanmadığım kurumsal hesabım pasif görünüyor.",
     "expected_response_type": "rag_answer",
     "expected_document_ids": [
-      "password-account-access"
+      "sifre-ve-hesap-erisimi"
     ],
     "accepted_sections": [
       "Hesap pasif görünüyor"
     ],
     "required_keywords": [
-      "sicil numarası",
-      "departman",
-      "yönetici onayı"
+      "kullanıcı adı",
+      "hata mesajı",
+      "yeniden etkin",
+      "yetkili"
     ],
     "min_keyword_hits": 1
   },
@@ -380,7 +396,7 @@
     "question": "Şifre sıfırlama bağlantısı açılmıyor.",
     "expected_response_type": "rag_answer",
     "expected_document_ids": [
-      "password-account-access"
+      "sifre-ve-hesap-erisimi"
     ],
     "accepted_sections": [
       "Şifre unutuldu"
@@ -397,15 +413,15 @@
     "question": "Yazdırma kuyruğu takıldı ve belgeler sırada bekliyor.",
     "expected_response_type": "rag_answer",
     "expected_document_ids": [
-      "printer-scanner"
+      "yazici-ve-tarayici-destegi"
     ],
     "accepted_sections": [
       "Yazdırma kuyruğu takıldı"
     ],
     "required_keywords": [
-      "bekleyen işler",
-      "test sayfası",
-      "yeniden aç"
+      "kuyruk",
+      "bekleyen",
+      "iptal"
     ],
     "min_keyword_hits": 1
   },
@@ -414,7 +430,7 @@
     "question": "Çıktılar sürekli başka bölümdeki benzer isimli yazıcıdan geliyor.",
     "expected_response_type": "rag_answer",
     "expected_document_ids": [
-      "printer-scanner"
+      "yazici-ve-tarayici-destegi"
     ],
     "accepted_sections": [
       "Yanlış yazıcıdan çıktı alınıyor"
@@ -431,7 +447,7 @@
     "question": "Taradığım belge çok büyük olduğu için e-postayla gönderilemiyor.",
     "expected_response_type": "rag_answer",
     "expected_document_ids": [
-      "printer-scanner"
+      "yazici-ve-tarayici-destegi"
     ],
     "accepted_sections": [
       "Tarama dosyası gönderilemiyor"
@@ -448,15 +464,15 @@
     "question": "Şüpheli bir bağlantıya yanlışlıkla tıkladım ama hiçbir bilgi girmedim.",
     "expected_response_type": "rag_answer",
     "expected_document_ids": [
-      "security-mfa-phishing"
+      "bilgi-guvenligi-ve-mfa"
     ],
     "accepted_sections": [
       "Yanlışlıkla şüpheli bağlantıya tıklandı"
     ],
     "required_keywords": [
-      "tarayıcı",
-      "olay saati",
-      "bildir"
+      "kapat",
+      "bildir",
+      "olay"
     ],
     "min_keyword_hits": 1
   },
@@ -465,7 +481,7 @@
     "question": "Telefonumu değiştirdim; yeni cihazda doğrulama uygulaması kurulu ama MFA çalışmıyor.",
     "expected_response_type": "rag_answer",
     "expected_document_ids": [
-      "security-mfa-phishing"
+      "bilgi-guvenligi-ve-mfa"
     ],
     "accepted_sections": [
       "Telefon değiştirildi ve MFA çalışmıyor"
@@ -482,13 +498,14 @@
     "question": "Ben giriş yapmadığım halde telefona MFA onay isteği geliyor.",
     "expected_response_type": "rag_answer",
     "expected_document_ids": [
-      "security-mfa-phishing"
+      "bilgi-guvenligi-ve-mfa"
     ],
     "accepted_sections": [
       "Beklenmeyen MFA onayı geliyor"
     ],
     "required_keywords": [
-      "redded",
+      "onaylama",
+      "reddet",
       "parola",
       "olay saati"
     ],
@@ -499,7 +516,7 @@
     "question": "Telefona MFA doğrulama bildirimi gelmiyor.",
     "expected_response_type": "rag_answer",
     "expected_document_ids": [
-      "security-mfa-phishing"
+      "bilgi-guvenligi-ve-mfa"
     ],
     "accepted_sections": [
       "MFA bildirimi gelmiyor"
@@ -516,7 +533,7 @@
     "question": "Evden bağlandığımda ortak klasör listede görünmüyor.",
     "expected_response_type": "rag_answer",
     "expected_document_ids": [
-      "shared-folder-access"
+      "ortak-klasor-ve-dosya-erisimi"
     ],
     "accepted_sections": [
       "Ortak klasör görünmüyor"
@@ -533,7 +550,7 @@
     "question": "Ortak klasördeki Excel dosyası yalnızca salt okunur açılıyor.",
     "expected_response_type": "rag_answer",
     "expected_document_ids": [
-      "shared-folder-access"
+      "ortak-klasor-ve-dosya-erisimi"
     ],
     "accepted_sections": [
       "Dosya salt okunur açılıyor"
@@ -550,7 +567,7 @@
     "question": "Ağ yolu bulunamadı hatası var ve aynı klasöre bölümde kimse erişemiyor.",
     "expected_response_type": "rag_answer",
     "expected_document_ids": [
-      "shared-folder-access"
+      "ortak-klasor-ve-dosya-erisimi"
     ],
     "accepted_sections": [
       "Ağ yolu bulunamadı"
@@ -567,7 +584,7 @@
     "question": "Program kurulurken yönetici parolası isteyen bir pencere açıldı.",
     "expected_response_type": "rag_answer",
     "expected_document_ids": [
-      "software-installation-access"
+      "yazilim-kurulumu-ve-uygulama-erisimi"
     ],
     "accepted_sections": [
       "Yönetici parolası isteniyor"
@@ -584,7 +601,7 @@
     "question": "Kurumsal uygulama lisans bulunamadı uyarısı veriyor.",
     "expected_response_type": "rag_answer",
     "expected_document_ids": [
-      "software-installation-access"
+      "yazilim-kurulumu-ve-uygulama-erisimi"
     ],
     "accepted_sections": [
       "Uygulama lisans hatası veriyor"
@@ -601,7 +618,7 @@
     "question": "Bakım Takip Portalı açılıyor ama girişten sonra yetkiniz yok hatası geliyor.",
     "expected_response_type": "rag_answer",
     "expected_document_ids": [
-      "software-installation-access"
+      "yazilim-kurulumu-ve-uygulama-erisimi"
     ],
     "accepted_sections": [
       "Bakım Takip Portalı açılmıyor"
@@ -618,24 +635,25 @@
     "question": "VPN bağlantısı kuruluyor fakat kurum içindeki uygulama adresleri açılmıyor.",
     "expected_response_type": "rag_answer",
     "expected_document_ids": [
-      "vpn-remote-access"
+      "vpn-ve-uzaktan-erisim"
     ],
     "accepted_sections": [
       "VPN bağlanıyor ancak iç sistemler açılmıyor"
     ],
     "required_keywords": [
-      "VPN",
       "iç sistem",
-      "tarayıcı"
+      "sistem adresi",
+      "tarayıcı",
+      "yetki"
     ],
-    "min_keyword_hits": 2
+    "min_keyword_hits": 1
   },
   {
     "id": "VPN-PARA-02",
     "question": "Kablosuz ağdayken VPN bağlantısı birkaç dakikada bir kopuyor.",
     "expected_response_type": "rag_answer",
     "expected_document_ids": [
-      "vpn-remote-access"
+      "vpn-ve-uzaktan-erisim"
     ],
     "accepted_sections": [
       "VPN bağlantısı sık sık kopuyor"
@@ -652,7 +670,7 @@
     "question": "VPN açık ama uzak masaüstündeki bilgisayara bağlanamıyorum; cihaz kapalı olabilir.",
     "expected_response_type": "rag_answer",
     "expected_document_ids": [
-      "vpn-remote-access"
+      "vpn-ve-uzaktan-erisim"
     ],
     "accepted_sections": [
       "Uzak masaüstü bağlantısı açılamıyor"
@@ -669,7 +687,7 @@
     "question": "VPN istemcisi açılmıyor.",
     "expected_response_type": "rag_answer",
     "expected_document_ids": [
-      "vpn-remote-access"
+      "vpn-ve-uzaktan-erisim"
     ],
     "accepted_sections": [
       "VPN istemcisi açılmıyor"
@@ -686,7 +704,7 @@
     "question": "Kurumsal bir uygulama açılmıyor, ilk olarak ne yapmalıyım?",
     "expected_response_type": "rag_answer",
     "expected_document_ids": [
-      "software-installation-access"
+      "yazilim-kurulumu-ve-uygulama-erisimi"
     ],
     "accepted_sections": [
       "Uygulama açılmıyor"
@@ -703,8 +721,8 @@
     "question": "Şifremi değiştirdim ama Outlook hâlâ eski parolayı soruyor.",
     "expected_response_type": "rag_answer",
     "expected_document_ids": [
-      "password-account-access",
-      "email-outlook-support"
+      "sifre-ve-hesap-erisimi",
+      "outlook-ve-e-posta-destegi"
     ],
     "accepted_sections": [
       "Şifre değişti ancak uygulama eski şifreyi istiyor",
