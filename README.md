@@ -6,7 +6,7 @@ Yerel LLM ve RAG tabanlı IT destek chatbot prototipi.
 
 İZELTAŞ IT Danışma Asistanı, kullanıcıların IT süreçleri ve destek soruları için yerel kaynaklara dayalı, kısa Türkçe yanıtlar üretir. Sistem, ilgili doküman bölümlerini RAG yaklaşımıyla bulur, yanıtı yerel Ollama modelleriyle oluşturur ve kullanılan kaynakları arayüzde gösterir.
 
-Proje yazılım mühendisliği stajı kapsamında yerel geliştirme, test ve demonstrasyon amacıyla hazırlanmıştır. Gerçek şirket verileri yerine 12 kategorize mock IT destek dokümanı kullanılır; doküman işleme, retrieval ve model inference yerel ortamda gerçekleşir.
+Proje yazılım mühendisliği stajı kapsamında yerel geliştirme, test ve demonstrasyon amacıyla hazırlanmıştır. Gerçek şirket verileri yerine zenginleştirilmiş ve Türkçeleştirilmiş 12 kategorize mock IT destek dokümanı kullanılır; doküman işleme, retrieval ve model inference yerel ortamda gerçekleşir.
 
 ## Temel özellikler
 
@@ -152,6 +152,8 @@ npm.cmd --prefix frontend run lint
 npm.cmd --prefix frontend run build
 ```
 
+Güncel retrieval ayarları `topK = 5`, `SCORE_THRESHOLD = 0.54` ve `MAX_SOURCES = 3` değerlerini kullanır. Skor/distance değeri küçüldükçe eşleşme daha iyi kabul edilir.
+
 Çalışan yerel sistemde 50 vakalı RAG regresyonunu başlatmak için:
 
 ```powershell
@@ -161,7 +163,9 @@ python scripts/run_rag_evaluation.py `
   --repeat 1
 ```
 
-Repo ayrıca retrieval normalizasyonu, tekrarlı kararlılık ve güvenlik vakaları ile kaydedilmiş CSV sonuçları içerir. Test kapsamı ve sonuç dosyaları için [Değerlendirme Dokümantasyonu](docs/evaluation/README.md) incelenebilir. Komut sonuçları çalıştırılan ortamdan doğrulanmalıdır; README sabit bir pass veya performans sonucu iddia etmez.
+Repository'de kayıtlı son final regresyon çalıştırması 50 vakanın 50'sinde başarılıdır. Ayrıntılı sonuçlar ve özet, `docs/evaluation/results/qwen3-4b-instruct-2507-prompt-fallback/` altındaki `results.csv` ve `summary.csv` dosyalarındadır.
+
+Repo ayrıca retrieval normalizasyonu, tekrarlı kararlılık ve güvenlik vakaları ile kaydedilmiş CSV sonuçları içerir. Test kapsamı ve sonuç dosyaları için [Değerlendirme Dokümantasyonu](docs/evaluation/README.md) incelenebilir.
 
 ## Dokümantasyon
 
