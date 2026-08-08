@@ -247,10 +247,6 @@ def test_admin_can_get_category_counts() -> None:
                     "category": "account",
                     "count": 25,
                 },
-                {
-                    "category": "unknown",
-                    "count": 2,
-                },
             ]
         )
     )
@@ -271,14 +267,14 @@ def test_admin_can_get_category_counts() -> None:
             "category": "account",
             "count": 25,
         },
-        {
-            "category": "unknown",
-            "count": 2,
-        },
     ]
 
     assert (
-        "GROUP BY COALESCE(category, 'unknown')"
+        "WHERE response_type = 'rag_answer'"
+        in fake_db.execute_calls[0]["query"]
+    )
+    assert (
+        "AND category IS NOT NULL"
         in fake_db.execute_calls[0]["query"]
     )
 

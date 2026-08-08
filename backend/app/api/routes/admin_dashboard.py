@@ -164,10 +164,12 @@ def get_category_counts(
         text(
             """
             SELECT
-                COALESCE(category, 'unknown') AS category,
+                category,
                 COUNT(*) AS count
             FROM chat_logs
-            GROUP BY COALESCE(category, 'unknown')
+            WHERE response_type = 'rag_answer'
+              AND category IS NOT NULL
+            GROUP BY category
             ORDER BY count DESC
             """
         )

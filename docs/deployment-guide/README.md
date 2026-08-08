@@ -22,7 +22,7 @@ Tarayıcı
 - PostgreSQL, n8n, backend ve frontend Docker Compose içinde çalışır.
 - Ollama'ya container içinden `host.docker.internal` üzerinden erişilir.
 - Varsayılan yayımlanan servis portları yalnızca `127.0.0.1` adresine bağlanır.
-- Veri seti gerçek şirket verisi değil, mock IT destek dokümanlarıdır.
+- Veri seti gerçek şirket verisi değil, zenginleştirilmiş ve Türkçeleştirilmiş 12 kategorize mock IT destek dokümanıdır.
 
 ## 3. Ön gereksinimler
 
@@ -128,7 +128,7 @@ N8N_FEEDBACK_WEBHOOK_URL=http://n8n:5678/webhook/feedback
 N8N_REINDEX_WEBHOOK_URL=http://n8n:5678/webhook/admin-document-reindex
 
 RAG_TOP_K=5
-RAG_SCORE_THRESHOLD=0.51
+RAG_SCORE_THRESHOLD=0.54
 RAG_MAX_SOURCES=3
 
 JWT_ALGORITHM=HS256
@@ -139,6 +139,8 @@ VITE_AUTH_API_URL=http://127.0.0.1:8000/auth
 VITE_RAG_API_URL=http://127.0.0.1:8000/chat
 VITE_FEEDBACK_API_URL=http://127.0.0.1:8000/feedback
 ```
+
+Retrieval en fazla beş aday getirir, `0.54` veya daha düşük skor/distance değerlerini kabul eder ve yanıtta en fazla üç kaynak gösterir. Bu retrieval ölçümünde düşük değer daha iyi eşleşme anlamına gelir.
 
 Compose; veritabanı URL'sini, webhook URL'lerini ve secret'ını, RAG ayarlarını, health URL'lerini ve JWT ayarlarını backend'e açıkça iletir. `REQUEST_TIMEOUT_SECONDS=60`, `REINDEX_TIMEOUT_SECONDS=300`, `SERVICE_STATUS_TIMEOUT_SECONDS=3` ve `MAX_QUESTION_LENGTH=1000` Docker Compose tarafından iletilmez; Docker kurulumunda backend kodundaki bu varsayılanlar kullanılır. Ayrı manuel backend kurulumu için mevcut `backend/.env.example`, desteklenen ortam değişkenlerini gösterir.
 
@@ -396,6 +398,8 @@ python scripts/run_rag_evaluation.py `
   --cases docs/evaluation/cases/rag-regression-cases-mock-data.json `
   --repeat 1
 ```
+
+Repository'de kayıtlı son final çalıştırma 50/50 başarılıdır. Sonuçlar `docs/evaluation/results/qwen3-4b-instruct-2507-prompt-fallback/results.csv`, özet metrikler ise aynı dizindeki `summary.csv` dosyasındadır.
 
 `--model` yalnızca sonuç klasörü ve CSV etiketi olarak kullanılır; n8n veya Ollama modelini değiştirmez. Ayrıntılı vakalar ve sonuçlar için `docs/evaluation/` dizinine bakın.
 
