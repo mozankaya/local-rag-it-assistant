@@ -147,7 +147,7 @@ function AdminDashboardPage({
               />
               <DistributionCard
                 title="Kategori dağılımı"
-                subtitle="Soruların konu başlıklarına göre dağılımı"
+                subtitle="RAG yanıtlarının IT kategorilerine göre dağılımı"
                 items={categories.map((item) => ({
                   key: item.category,
                   label: getCategoryLabel(item.category),
