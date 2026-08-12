@@ -39,6 +39,12 @@ Frontend n8n webhook'larını doğrudan çağırmaz. Kullanıcı ve admin istekl
 
 Docker Compose PostgreSQL + pgvector, n8n, FastAPI backend ve Nginx üzerinden sunulan frontend'i çalıştırır. Ollama donanım erişimi için host bilgisayarda çalışır.
 
+## Sistem Mimarisi
+
+Projenin genel sistem mimarisi aşağıdaki diyagramda gösterilmektedir.
+
+![İZELTAŞ IT Danışma Asistanı Sistem Mimarisi](docs/images/system-architecture.png)
+
 ## Teknolojiler
 
 | Katman | Teknoloji |
