@@ -141,7 +141,7 @@ def test_chat_returns_n8n_response(
             "question": "VPN bağlantısı kuramıyorum.",
             "rag_settings": {
                 "top_k": 5,
-                "score_threshold": 0.51,
+                "score_threshold": 0.54,
                 "max_sources": 3,
             },
         },

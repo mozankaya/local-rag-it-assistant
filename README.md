@@ -108,7 +108,7 @@ Tam yerel kurulum için Git, Docker Desktop, Docker Compose v2 ve Ollama gerekir
 Repoyu klonlayın:
 
 ```powershell
-git clone <repository-url>
+git clone https://github.com/mozankaya/local-rag-it-assistant.git
 Set-Location local-rag-it-assistant
 ```
 
@@ -170,12 +170,12 @@ Güncel retrieval ayarları `topK = 5`, `SCORE_THRESHOLD = 0.54` ve `MAX_SOURCES
 
 ```powershell
 python scripts/run_rag_evaluation.py `
-  --model qwen3-4b-instruct-2507-prompt-fallback `
+  --model qwen3-4b-instruct-2507 `
   --cases docs/evaluation/cases/rag-regression-cases-mock-data.json `
   --repeat 1
 ```
 
-Repository'de kayıtlı son final regresyon çalıştırması 50 vakanın 50'sinde başarılıdır. Ayrıntılı sonuçlar ve özet, `docs/evaluation/results/qwen3-4b-instruct-2507-prompt-fallback/` altındaki `results.csv` ve `summary.csv` dosyalarındadır.
+Repository'de kayıtlı son final regresyon çalıştırması 50 vakanın 50'sinde başarılıdır. Ayrıntılı sonuçlar ve özet, `docs/evaluation/results/qwen3-4b-instruct-2507/` altındaki `results.csv` ve `summary.csv` dosyalarındadır.
 
 Repo ayrıca retrieval normalizasyonu, tekrarlı kararlılık ve güvenlik vakaları ile kaydedilmiş CSV sonuçları içerir. Test kapsamı ve sonuç dosyaları için [Değerlendirme Dokümantasyonu](docs/evaluation/README.md) incelenebilir.
 

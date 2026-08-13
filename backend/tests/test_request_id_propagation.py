@@ -57,7 +57,7 @@ def test_chat_forwards_request_id_to_n8n(
         n8n_webhook_secret="test-webhook-secret",
         request_timeout_seconds=60.0,
         rag_top_k=5,
-        rag_score_threshold=0.51,
+        rag_score_threshold=0.54,
         rag_max_sources=3,
     )
 
@@ -81,7 +81,7 @@ def test_chat_forwards_request_id_to_n8n(
         "question": "VPN bağlantısı kuramıyorum.",
         "rag_settings": {
             "top_k": 5,
-            "score_threshold": 0.51,
+            "score_threshold": 0.54,
             "max_sources": 3,
         },
         "request_id": "test-request-123",

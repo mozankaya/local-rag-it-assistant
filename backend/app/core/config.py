@@ -27,7 +27,7 @@ class Settings(BaseSettings):
         le=50,
     )
     rag_score_threshold: float = Field(
-        default=0.51,
+        default=0.54,
         ge=0.0,
         le=2.0,
     )

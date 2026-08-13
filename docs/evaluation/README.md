@@ -1,35 +1,32 @@
-# RAG Evaluation
+# RAG Değerlendirmesi
 
-Bu klasör yalnızca güncel test vakalarını ve seçilmiş model sonuçlarını tutar.
+Bu dizin değerlendirme vaka dosyalarını ve kaydedilmiş final, destekleyici ve tarihsel sonuçları içerir.
 
-## Klasör Yapısı
+## Klasör yapısı
 
 ```text
 docs/evaluation/
-├── README.md
 ├── cases/
 │   ├── evaluation-cases.json
 │   ├── rag-regression-cases-mock-data.json
 │   ├── rag-security-cases.json
 │   └── retrieval-normalization-cases.json
 └── results/
-    ├── <model-etiketi>/
-    └── qwen3-4b-instruct-2507-prompt-fallback/
-        ├── results.csv
-        └── summary.csv
+    ├── qwen3-4b-instruct-2507/                  Final 50 vakalı regresyon
+    ├── qwen3-4b-instruct-2507-normalization/    Normalizasyon sonuçları
+    ├── qwen3-4b-instruct-2507-stability/        Kararlılık sonuçları
+    ├── security/
+    │   └── qwen3-4b-instruct-2507-security/     Güvenlik ve sağlamlık sonuçları
+    ├── qwen2.5-3b/                              Tarihsel model karşılaştırması
+    ├── phi4-mini-3.8b/                          Tarihsel model karşılaştırması
+    ├── qwen3-4b-historical-comparison/          Tarihsel model karşılaştırması
+    ├── qwen2.5-3b-normalization/                 Tarihsel normalizasyon sonucu
+    └── phi4-mini-3.8b-normalization/             Tarihsel normalizasyon sonucu
 ```
 
-Her test, `--model` parametresinde verilen etikete göre `results/` altında
-ayrı bir klasör oluşturur.
+Her çalışma sonuç dizininde ayrıntılı vaka kayıtlarını içeren `results.csv` ve toplu metrikleri içeren `summary.csv` bulunur.
 
-Aynı model etiketiyle test tekrar çalıştırıldığında ilgili klasördeki
-`results.csv` ve `summary.csv` dosyaları güncellenir. Böylece tarih damgalı
-çok sayıda CSV dosyası birikmez.
-
-Eski sonuçlara gerektiğinde Git geçmişinden veya oluşturulan tag'lerden
-erişilebilir.
-
-## Ortam Değişkenleri
+## Ortam değişkenleri
 
 PowerShell:
 
@@ -39,20 +36,41 @@ $env:RAG_LOGIN_EMAIL="admin@izeltas.local"
 $env:RAG_LOGIN_PASSWORD="<TEST_PASSWORD>"
 ```
 
-## Final RAG Regresyon Testi
+## Final RAG regresyonu
+
+Final değerlendirme, Ollama üzerinde çalışan `qwen3:4b-instruct-2507-q4_K_M` cevap modelini temsil eder. Değerlendiricideki `--model` argümanı çalışma etiketi, CSV `model` alanı ve sonuç dizini adı için kullanılır; n8n veya Ollama modelini seçmez ya da değiştirmez.
+
+Backend, n8n, PostgreSQL, Ollama ve gerekli workflow'lar çalışırken repo kökünden:
 
 ```powershell
 python scripts/run_rag_evaluation.py `
-  --model qwen3-4b-instruct-2507-prompt-fallback `
+  --model qwen3-4b-instruct-2507 `
   --cases docs/evaluation/cases/rag-regression-cases-mock-data.json `
   --repeat 1
 ```
 
-Güncel final regresyon seti 50 vaka içerir. Repository'de kayıtlı son çalıştırma 50/50 başarılıdır; kaynak, bölüm, anahtar kelime, yanıt türü ve yanıt biçimi kontrollerinin her biri 50/50 geçmiştir ve istek hatası yoktur. Bu sonuçların kaynağı `results/qwen3-4b-instruct-2507-prompt-fallback/summary.csv` dosyasıdır.
+Bu komut sonuçları `results/qwen3-4b-instruct-2507/` dizinine yazar. Kayıtlı final sonuçlarını korumak için mevcut CSV dosyalarının üzerine yazmadan önce ayrı bir kopya alınmalıdır.
 
-`results/qwen3-4b-instruct-2507-prompt-fallback/` dışındaki model sonuç dizinleri karşılaştırma için korunan tarihsel/baseline çalışmalardır. Önceki mock veri düzenini veya eski İngilizce `document_id` değerlerini yansıtabilirler ve güncel final sistem sonucu olarak değerlendirilmemelidir.
+## Sonuç dosyaları
 
-## Normalizasyon Testi
+[`results.csv`](results/qwen3-4b-instruct-2507/results.csv), her vaka için soru ve cevapla birlikte beklenen ve gerçekleşen cevap türünü, doküman ve bölüm eşleşmelerini, kaynak skorlarını, anahtar kelime ve cevap biçimi kontrollerini, genel vaka sonucunu, cevap süresini, istek hatasını ve isteğe bağlı manuel değerlendirme alanlarını içerir.
+
+[`summary.csv`](results/qwen3-4b-instruct-2507/summary.csv), toplam çalışma ve başarılı vaka sayılarını; kaynak, bölüm, anahtar kelime, cevap türü ve cevap biçimi eşleşme sayılarını; istek hatası sayısını ve ortalama, minimum ve maksimum cevap sürelerini özetler.
+
+## Güncel sonuç özeti
+
+| Test | Sonuç |
+|---|---|
+| Final regresyon | 50/50 |
+| İstek hataları | 0 |
+| Ortalama cevap süresi | 3.223 s |
+| Normalizasyon | 12/12 |
+| Kararlılık | 147/147 |
+| Güvenlik ve sağlamlık | 18/18 |
+
+`50/50`, hazırlanmış mock/sentetik final regresyon setindeki bütün vakaların geçtiğini ifade eder; evrensel bir doğruluk oranı değildir.
+
+Normalizasyon testi repo kökünden şu komutla çalıştırılabilir:
 
 ```powershell
 python scripts/run_rag_evaluation.py `
@@ -61,28 +79,27 @@ python scripts/run_rag_evaluation.py `
   --repeat 1
 ```
 
-## Tarihsel Model Karşılaştırması
+## Tarihsel model karşılaştırması
 
-Önceki model veya veri düzeniyle karşılaştırma gerektiğinde tarihsel
-`evaluation-cases.json` seti farklı bir sonuç etiketiyle çalıştırılabilir:
+Bu sonuçlar ayrı bir 49 vakalı tarihsel karşılaştırmaya aittir ve final 50 vakalı regresyonla birleştirilmemelidir.
+
+| Model | Sonuç |
+|---|---|
+| Qwen2.5 3B | 45/49 |
+| Phi4-mini 3.8B | 44/49 |
+| Qwen3 4B | 49/49 |
+
+Bu karşılaştırma sonucunda Qwen3 4B final cevap modeli olarak seçilmiştir. `--model` gerçek runtime modelini değiştirmediği için karşılaştırma öncesinde hedef model n8n/Ollama yapılandırmasında ayrıca doğrulanmalıdır.
+
+Tarihsel Qwen3 çalıştırması, final sonuçlarını ezmemesi için ayrı bir etiket kullanır:
 
 ```powershell
 python scripts/run_rag_evaluation.py `
-  --model qwen3-4b-instruct-2507-prompt-fallback `
+  --model qwen3-4b-historical-comparison `
   --cases docs/evaluation/cases/evaluation-cases.json `
   --repeat 1
 ```
 
-`--model` parametresi yalnızca sonuç klasörünü ve CSV içindeki model etiketini
-belirler. n8n veya Ollama üzerindeki gerçek modeli otomatik olarak değiştirmez.
+## Manuel değerlendirme
 
-## Manuel Değerlendirme
-
-`results.csv` içinde şu alanlar manuel olarak doldurulabilir:
-
-- `manual_quality_score`: 1–5
-- `manual_notes`: Kaynak sadakati, çelişki veya kaynak dışı bilgi notu
-
-Otomatik metrikler retrieval ve cevap biçimi kontrollerini yapar. Kaynağın
-anlamını tersine çevirme veya kaynakta olmayan bilgi ekleme gibi sorunlar
-manuel olarak değerlendirilmelidir.
+`results.csv` içindeki `manual_quality_score` ve `manual_notes` alanları kaynak sadakati, çelişki veya kaynak dışı bilgi gibi otomatik kontrollerin kapsamadığı noktalar için kullanılabilir.

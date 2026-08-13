@@ -12,10 +12,12 @@ Docker Compose, PostgreSQL + pgvector, n8n, FastAPI backend ve React frontend se
 
 ```text
 Tarayıcı
-  → React + TypeScript frontend
+  → React + TypeScript / Nginx
   → FastAPI (Bearer JWT)
-  → n8n (X-Internal-Webhook-Key)
-  → PostgreSQL + pgvector ve host üzerindeki Ollama
+      ├─→ PostgreSQL
+      └─→ n8n (X-Internal-Webhook-Key)
+            ├─→ PostgreSQL + pgvector
+            └─→ Ollama (host işletim sistemi)
 ```
 
 - Frontend yalnızca FastAPI ile iletişim kurar; n8n webhook'larını doğrudan çağırmaz.
@@ -52,7 +54,7 @@ Docker komutlarından önce Docker Desktop'ın çalıştığını doğrulayın.
 Çalışma dizini: reponun oluşturulacağı üst dizin.
 
 ```powershell
-git clone <repository-url>
+git clone https://github.com/mozankaya/local-rag-it-assistant.git
 ```
 
 Bundan sonraki "repo kökü" ifadeleri klonlanan `local-rag-it-assistant` dizinini belirtir.
@@ -272,6 +274,8 @@ Webhook workflow'larında production `/webhook/...` URL'lerinin kullanılabilmes
 
 Cleanup workflow yerel bakım için isteğe bağlı olarak etkinleştirilebilir; her gün 03:00'te 30 günden eski chat ve feedback loglarını siler.
 
+Bu log saklama politikası kullanıcı hesaplarından ayrıdır. Pasif bir kullanıcı, pasifleştirildikten 30 gün (720 saat) sonra backend kullanıcı yönetimi üzerinden kalıcı silinmeye uygun hale gelir; Database Retention Cleanup kullanıcı hesaplarını silmez.
+
 ## 10. Demo kullanıcılarını oluşturma
 
 Backend container çalışırken, çalışma dizini `docker/`:
@@ -394,12 +398,12 @@ Backend, n8n, PostgreSQL, Ollama ve gerekli workflow'lar çalışırken, çalı�
 
 ```powershell
 python scripts/run_rag_evaluation.py `
-  --model qwen3-4b-instruct-2507-prompt-fallback `
+  --model qwen3-4b-instruct-2507 `
   --cases docs/evaluation/cases/rag-regression-cases-mock-data.json `
   --repeat 1
 ```
 
-Repository'de kayıtlı son final çalıştırma 50/50 başarılıdır. Sonuçlar `docs/evaluation/results/qwen3-4b-instruct-2507-prompt-fallback/results.csv`, özet metrikler ise aynı dizindeki `summary.csv` dosyasındadır.
+Repository'de kayıtlı son final çalıştırma 50/50 başarılıdır. Sonuçlar `docs/evaluation/results/qwen3-4b-instruct-2507/results.csv`, özet metrikler ise aynı dizindeki `summary.csv` dosyasındadır.
 
 `--model` yalnızca sonuç klasörü ve CSV etiketi olarak kullanılır; n8n veya Ollama modelini değiştirmez. Ayrıntılı vakalar ve sonuçlar için `docs/evaluation/` dizinine bakın.
 
