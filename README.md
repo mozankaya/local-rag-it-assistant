@@ -45,6 +45,12 @@ Projenin genel sistem mimarisi aşağıdaki diyagramda gösterilmektedir.
 
 ![İZELTAŞ IT Danışma Asistanı Sistem Mimarisi](docs/images/system-architecture.png)
 
+## RAG Sorgu Akışı
+
+Kullanıcı sorgusunun retrieval, kaynak seçimi ve cevap üretimi aşamaları aşağıdaki akışta gösterilmektedir.
+
+![İZELTAŞ IT Danışma Asistanı RAG Sorgu Akışı](docs/images/rag-query-flow.png)
+
 ## Teknolojiler
 
 | Katman | Teknoloji |
